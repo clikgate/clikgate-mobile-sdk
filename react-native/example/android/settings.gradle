@@ -1,0 +1,27 @@
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'ClikgateExample'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+
+// Native Clikgate SDK in this monorepo (com.clikgate:clikgate-android):
+//
+//  - Default: the artifact from `../../../android/gradlew :clikgate:publishToMavenLocal`
+//    (gradle.properties sets clikgate.useMavenLocal=true; `npm run example:android` at the package
+//    root publishes it first).
+//  - -Pclikgate.useLocalSdk=true: composite build of ../../../android with the module substituted
+//    by its :clikgate project, as in the Flutter example. Gradle refuses two Android Gradle Plugin
+//    versions in one build, and android/ pins AGP 8.9.1 (Flutter 3.35) while React Native 0.86
+//    uses AGP 8.12.0, so this only works once both use the same AGP version.
+//  - Neither: Maven Central (published releases).
+def clikgateAndroidSdk = file("../../../android")
+if (new File(clikgateAndroidSdk, "settings.gradle.kts").exists() &&
+    providers.gradleProperty("clikgate.useLocalSdk").getOrElse("false") == "true") {
+  includeBuild(clikgateAndroidSdk) {
+    dependencySubstitution {
+      substitute(module("com.clikgate:clikgate-android")).using(project(":clikgate"))
+      substitute(module("com.clikgate:clikgate-engage")).using(project(":clikgate-engage"))
+    }
+  }
+}

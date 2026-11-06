@@ -1,0 +1,27 @@
+{
+  "matched": true,
+  "click_id": "clk_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "deep_link": {
+    "url": "https://inv.myapp.com/p/dress",
+    "path": "/products/42",
+    "data": {
+      "product_id": "42"
+    },
+    "is_deferred": false
+  },
+  "link": {
+    "id": "lnk_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "kind": "standard",
+    "external_reference": "off_7",
+    "campaign_id": null,
+    "metadata": {
+      "creator_id": "cr_91"
+    }
+  },
+  "is_reengagement": false,
+  "referral": null,
+  "match_type": "app_link",
+  "status": "matched",
+  "web_url": null,
+  "block_message": null
+}

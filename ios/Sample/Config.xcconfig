@@ -1,0 +1,10 @@
+// Sample configuration. Override locally (don't commit real keys): copy to Local.xcconfig.
+// The SDK key is public (cg_sdk_...), but use your own app's key.
+CLIKGATE_SDK_KEY = cg_sdk_replace_me
+// Universal Link domain (Associated Domains entitlement + SDK linkDomains).
+CLIKGATE_LINK_DOMAIN = inv.myapp.com
+CLIKGATE_URL_SCHEME = clikgatesample
+// e.g. http:/$()/localhost:8000 for a local backend ("//" starts a comment in xcconfig).
+CLIKGATE_API_BASE_URL = https:/$()/sdk.clikgate.com
+CLIKGATE_PROGRAM_ID = rpg_replace_me
+#include? "Local.xcconfig"

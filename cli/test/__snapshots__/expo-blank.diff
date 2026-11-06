@@ -1,0 +1,60 @@
+--- a/App.tsx
++++ b/App.tsx
+@@ -2,5 +2,26 @@
+ import { StyleSheet, Text, View } from 'react-native';
+ 
++// clikgate-setup:start
++import { Clikgate } from '@clikgate/react-native';
++import { useEffect } from 'react';
++
++Clikgate.configure({
++  sdkKey: 'cg_sdk_test_abc123',
++  // acme.dev.ciz.to (test links) only in development builds
++  linkDomains: __DEV__ ? ['acme.ciz.to', 'go.acme.com', 'acme.dev.ciz.to'] : ['acme.ciz.to', 'go.acme.com'],
++}).catch(console.warn);
++// clikgate-setup:end
++
+ export default function App() {
++  // clikgate-setup:start
++  useEffect(
++    () =>
++      Clikgate.onDeepLink((link) => {
++        // Open the screen for link.path (link.data has the link's data)
++        console.log('Clikgate deep link', link.path);
++      }),
++    []
++  );
++  // clikgate-setup:end
+   return (
+     <View style={styles.container}>
+
+--- a/app.json
++++ b/app.json
+@@ -21,5 +21,17 @@
+     "web": {
+       "favicon": "./assets/favicon.png"
+-    }
++    },
++    "plugins": [
++      [
++        "@clikgate/react-native",
++        {
++          "linkDomains": [
++            "acme.ciz.to",
++            "go.acme.com"
++          ],
++          "testLinkDomain": "acme.dev.ciz.to"
++        }
++      ]
++    ]
+   }
+ }
+
+--- a/package.json
++++ b/package.json
+@@ -4,4 +4,5 @@
+   "main": "index.ts",
+   "dependencies": {
++    "@clikgate/react-native": "^1.6.1",
+     "expo": "~58.0.19",
+     "expo-status-bar": "~58.0.4",

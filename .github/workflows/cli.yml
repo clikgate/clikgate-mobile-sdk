@@ -1,0 +1,278 @@
+# Setup command (cli/): unit and snapshot tests, a Node 18 smoke test of the bundle, end-to-end
+# runs on fresh projects from each official template with Android debug and release builds, and
+# iOS project-file validation on Linux (no Mac in CI: iOS changes are not build-tested here).
+name: cli
+
+on:
+  # cli/ itself, plus the SDK sources it snapshots: the versions it writes (cli/src/constants.ts,
+  # checked by scripts/check_cli_sdk_versions.mjs) and the configure APIs / Expo plugin its
+  # start-up snippets and the e2e builds use. Keep the two lists identical.
+  push:
+    branches: [main]
+    paths:
+      - "cli/**"
+      - "scripts/check_cli_sdk_versions.mjs"
+      - "scripts/scan_release_packages.py"
+      - ".github/workflows/cli.yml"
+      - "android/gradle.properties"
+      - "android/clikgate/build.gradle.kts"
+      - "android/clikgate/src/main/**"
+      - "ios/Clikgate.podspec"
+      - "ios/Sources/Clikgate/Public/**"
+      - "flutter/pubspec.yaml"
+      - "flutter/lib/**"
+      - "flutter/android/**"
+      - "react-native/package.json"
+      - "react-native/src/**"
+      - "react-native/plugin/**"
+      - "react-native/app.plugin.js"
+      - "react-native/android/**"
+  pull_request:
+    paths:
+      - "cli/**"
+      - "scripts/check_cli_sdk_versions.mjs"
+      - "scripts/scan_release_packages.py"
+      - ".github/workflows/cli.yml"
+      - "android/gradle.properties"
+      - "android/clikgate/build.gradle.kts"
+      - "android/clikgate/src/main/**"
+      - "ios/Clikgate.podspec"
+      - "ios/Sources/Clikgate/Public/**"
+      - "flutter/pubspec.yaml"
+      - "flutter/lib/**"
+      - "flutter/android/**"
+      - "react-native/package.json"
+      - "react-native/src/**"
+      - "react-native/plugin/**"
+      - "react-native/app.plugin.js"
+      - "react-native/android/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cli-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LIVE_DOMAINS: ciz.to,go.example.com
+  TEST_KEY: cg_sdk_test_ci0000000000
+
+jobs:
+  sdk-versions:
+    # The versions and coordinates the command writes (cli/src/constants.ts) must equal the SDKs
+    # in this repository: android/gradle.properties, ios/Clikgate.podspec, flutter/pubspec.yaml,
+    # react-native/package.json.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: node scripts/check_cli_sdk_versions.mjs
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+        env:
+          CLIKGATE_SETUP_NO_TOOLS: "1"
+      - run: npm run build
+      # Change 12, S.4: nothing internal ships (bundled dependencies excluded by their esbuild module markers;
+      # see scripts/scan_release_packages.py).
+      - name: Scan the package
+        run: python3 ../scripts/scan_release_packages.py --cli .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cli-bundle
+          path: cli/dist/cli.cjs
+          if-no-files-found: error
+
+  node18-smoke:
+    # The published bundle must run on the oldest supported Node (S.1: Node 18+).
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 18
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cli-bundle
+          path: bundle
+      - name: Offline setup and doctor on every fixture
+        run: |
+          node bundle/cli.cjs --version
+          for f in cli/test/fixtures/*/; do
+            name=$(basename "$f")
+            dir="$RUNNER_TEMP/$name"
+            cp -R "$f" "$dir"
+            node bundle/cli.cjs --cwd "$dir" --sdk-key "$TEST_KEY" --domain "$LIVE_DOMAINS" --yes --no-install --no-color
+            node bundle/cli.cjs doctor --json --cwd "$dir" --domain "$LIVE_DOMAINS" > "$RUNNER_TEMP/$name.json"
+            # ios-swiftui has no Podfile: adding the Swift package is a manual step, so doctor
+            # correctly reports the missing dependency there and nothing else.
+            node -e "const [f,n]=process.argv.slice(1); const r=require(f); const expected=n==='ios-swiftui'?['sdk.dependency']:[]; const bad=r.checks.filter(c=>c.status==='fail'&&!expected.includes(c.id)); if(bad.length){console.error(JSON.stringify(bad,null,2)); process.exit(1)}" "$RUNNER_TEMP/$name.json" "$name"
+          done
+
+  ios-files:
+    # No Mac in CI: validate that the edited iOS files parse and link the right entitlements
+    # per configuration (Debug has dev.ciz.to, Release/Profile never).
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+      - run: npm ci && npm run build
+        working-directory: cli
+      - name: Fresh templates (Flutter, React Native CLI) and the hand-made Xcode App fixtures
+        run: |
+          cd "$RUNNER_TEMP"
+          flutter create --no-pub --org com.example --platforms android,ios flutter_app
+          npx --yes @react-native-community/cli@latest init RnApp --skip-install --skip-git-init --install-pods false
+          cp -R "$GITHUB_WORKSPACE/cli/test/fixtures/ios-swiftui" swiftui
+          cp -R "$GITHUB_WORKSPACE/cli/test/fixtures/ios-uikit" uikit
+      - name: Setup, then validate the iOS project files
+        run: |
+          set -e
+          CLI="$GITHUB_WORKSPACE/cli/dist/cli.cjs"
+          V="$GITHUB_WORKSPACE/cli/scripts/validate-ios.mjs"
+          for p in flutter_app RnApp swiftui uikit; do
+            node "$CLI" --cwd "$RUNNER_TEMP/$p" --sdk-key "$TEST_KEY" --domain "$LIVE_DOMAINS" --yes --no-install --no-color
+            dir="$RUNNER_TEMP/$p"; [ -d "$dir/ios" ] && dir="$dir/ios"
+            (cd "$GITHUB_WORKSPACE/cli" && node "$V" "$dir" --live "$LIVE_DOMAINS")
+          done
+      - name: Swift syntax check of the edited sources (swiftc -parse)
+        run: |
+          for f in "$RUNNER_TEMP"/swiftui/MyApp/*.swift "$RUNNER_TEMP"/uikit/UIKitApp/*.swift; do swiftc -parse "$f"; done
+
+  e2e-android:
+    # Fresh projects from each official template → setup (offline) → Android debug and release
+    # builds against the SDKs built from this checkout's sources → merged-manifest check → doctor.
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [flutter, react-native, expo-blank, expo-router, android-compose, android-views]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - if: matrix.template == 'flutter'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+      - name: Build the setup command
+        run: npm ci && npm run build
+        working-directory: cli
+      - name: Native Android SDK (this checkout) to Maven local
+        run: |
+          (cd android && ./gradlew --no-daemon :clikgate:publishToMavenLocal)
+          mkdir -p ~/.gradle/init.d
+          cp cli/scripts/maven-local.init.gradle ~/.gradle/init.d/
+      - name: Fresh project
+        id: project
+        run: |
+          cd "$RUNNER_TEMP"
+          case "${{ matrix.template }}" in
+            flutter)
+              flutter create --org com.example --platforms android,ios app
+              echo "android=app/android" >> "$GITHUB_OUTPUT"
+              echo "outputs=app/build/app" >> "$GITHUB_OUTPUT" ;;
+            react-native)
+              npx --yes @react-native-community/cli@latest init App --directory app --skip-install --skip-git-init --install-pods false --package-name com.example.app
+              echo "android=app/android" >> "$GITHUB_OUTPUT"
+              echo "outputs=app/android/app/build" >> "$GITHUB_OUTPUT" ;;
+            expo-blank)
+              npx --yes create-expo-app@latest app --template blank-typescript --no-install
+              echo "android=app/android" >> "$GITHUB_OUTPUT"
+              echo "outputs=app/android/app/build" >> "$GITHUB_OUTPUT" ;;
+            expo-router)
+              npx --yes create-expo-app@latest app --no-install
+              echo "android=app/android" >> "$GITHUB_OUTPUT"
+              echo "outputs=app/android/app/build" >> "$GITHUB_OUTPUT" ;;
+            android-compose|android-views)
+              # Android Studio templates can't be generated headless: use the fixtures made from
+              # Android Studio's template sources, plus a Gradle wrapper.
+              cp -R "$GITHUB_WORKSPACE/cli/test/fixtures/${{ matrix.template }}" app
+              (cd app && gradle wrapper --gradle-version 8.14.3)
+              echo "android=app" >> "$GITHUB_OUTPUT"
+              echo "outputs=app/app/build" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Expo app identifiers
+        if: startsWith(matrix.template, 'expo')
+        run: |
+          cd "$RUNNER_TEMP/app"
+          node -e "const f='app.json',j=require('./'+f);j.expo.android={...j.expo.android,package:'com.example.app'};j.expo.ios={...j.expo.ios,bundleIdentifier:'com.example.app'};require('fs').writeFileSync(f,JSON.stringify(j,null,2))"
+      - name: Setup (offline, --yes)
+        run: node cli/dist/cli.cjs --cwd "$RUNNER_TEMP/app" --sdk-key "$TEST_KEY" --domain "$LIVE_DOMAINS" --yes --no-install --no-color
+      - name: Second run changes nothing
+        run: |
+          cd "$RUNNER_TEMP/app" && find . -type f -not -path './node_modules/*' -not -path './.clikgate-setup-backup/*' -exec sha1sum {} + | sort > /tmp/before
+          node "$GITHUB_WORKSPACE/cli/dist/cli.cjs" --cwd . --sdk-key "$TEST_KEY" --domain "$LIVE_DOMAINS" --yes --no-install --no-color | grep -q "Everything is already set up"
+          find . -type f -not -path './node_modules/*' -not -path './.clikgate-setup-backup/*' -exec sha1sum {} + | sort > /tmp/after
+          diff /tmp/before /tmp/after
+      - name: Resolve the SDK from this checkout
+        run: |
+          cd "$RUNNER_TEMP/app"
+          case "${{ matrix.template }}" in
+            flutter)
+              printf 'dependency_overrides:\n  clikgate_flutter:\n    path: %s/flutter\n' "$GITHUB_WORKSPACE" > pubspec_overrides.yaml
+              flutter pub get
+              flutter analyze --no-fatal-infos lib/main.dart
+              echo "clikgate.useMavenLocal=true" >> android/gradle.properties ;;
+            react-native|expo-blank|expo-router)
+              (cd "$GITHUB_WORKSPACE/react-native" && npm ci && npm run build)
+              npm install
+              npm install --install-links "$GITHUB_WORKSPACE/react-native"
+              npx tsc --noEmit || true   # template type errors aren't ours; the compile below is the check
+              if [ "${{ matrix.template }}" != react-native ]; then npx expo prebuild --platform android --no-install; fi
+              echo "clikgate.useMavenLocal=true" >> android/gradle.properties ;;
+          esac
+      - name: Android debug and release builds
+        run: |
+          cd "$RUNNER_TEMP/${{ steps.project.outputs.android }}"
+          if [ "${{ matrix.template }}" = flutter ]; then
+            cd .. && flutter build apk --debug && flutter build apk --release && cd android
+          else
+            ./gradlew --no-daemon :app:assembleDebug :app:assembleRelease
+          fi
+      - name: dev.ciz.to only in the debug build
+        run: cli/scripts/check-merged-manifests.sh "$RUNNER_TEMP/${{ steps.project.outputs.outputs }}" "$LIVE_DOMAINS"
+      - name: Expo production variant never gets the test domain
+        if: startsWith(matrix.template, 'expo')
+        run: |
+          cd "$RUNNER_TEMP/app"
+          APP_VARIANT=production npx expo prebuild --platform ios --no-install
+          node "$GITHUB_WORKSPACE/cli/scripts/validate-ios.mjs" ios --live "$LIVE_DOMAINS"
+      - name: doctor --json (local checks)
+        run: |
+          node cli/dist/cli.cjs doctor --json --cwd "$RUNNER_TEMP/app" --domain "$LIVE_DOMAINS" > "$RUNNER_TEMP/doctor.json"
+          node -e "const r=require(process.argv[1]); console.log(JSON.stringify(r.summary)); if(!r.ok) process.exit(1)" "$RUNNER_TEMP/doctor.json"

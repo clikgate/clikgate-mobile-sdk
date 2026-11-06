@@ -1,0 +1,447 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/install_request.schema.json",
+  "title": "install_request",
+  "type": "object",
+  "properties": {
+    "installation_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "keychain_previous_installation_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "app_version": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "sdk_version": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "platform": {
+      "enum": [
+        "ios",
+        "android"
+      ]
+    },
+    "os_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 30
+    },
+    "device_model": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 60
+    },
+    "locale": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 35
+    },
+    "timezone": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "screen": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "w": {
+              "type": "integer"
+            },
+            "h": {
+              "type": "integer"
+            },
+            "scale": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "w",
+            "h",
+            "scale"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "launch_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 4096
+    },
+    "install_referrer": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "referrer": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 4096
+            },
+            "referrer_click_timestamp_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "install_begin_timestamp_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "referrer_click_timestamp_server_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "install_begin_timestamp_server_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "install_version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "google_play_instant": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "installer_package": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "pasteboard_token": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^cgdl_[0-9A-Za-z]{26}$"
+    },
+    "push": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "enum": [
+                "apns",
+                "fcm"
+              ]
+            },
+            "token": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "apns_environment": {
+              "enum": [
+                "production",
+                "sandbox",
+                null
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "token"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "attestation": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "app_attest",
+                "app_attest_assertion",
+                "play_integrity"
+              ]
+            },
+            "token": {
+              "type": "string"
+            },
+            "key_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "challenge": {
+              "type": "string"
+            },
+            "request_type": {
+              "enum": [
+                "standard",
+                "classic"
+              ]
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "type",
+            "token",
+            "challenge"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "apple_search_ads_token": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 8192
+    },
+    "consent": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "tracking_allowed": {
+              "type": "boolean"
+            },
+            "analytics": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "attribution": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "ad_user_data": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "ad_personalization": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "region": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(EEA|UK|[A-Z]{2})$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "updated_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "google_click_ids": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "gclid": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "gbraid": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wbraid": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source": {
+              "enum": [
+                "deep_link",
+                "install_referrer"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "source"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "app_instance_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "device_check_token": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 16384
+    },
+    "idfv": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "google_on_device_measurement": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "odm_info": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384
+            },
+            "sdk_version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "odm_info"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "is_emulator": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "is_rooted": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "installation_id",
+    "app_version",
+    "sdk_version",
+    "platform"
+  ]
+}

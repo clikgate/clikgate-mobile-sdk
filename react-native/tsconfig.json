@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "@clikgate/react-native": ["./src/index"],
+      "@clikgate/react-native-engage": ["../react-native-engage/src/index"]
+    },
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "customConditions": ["clikgate-react-native-source", "react-native-strict-api"],
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": ["jest", "node"],
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src", "example/src", "example/index.js"],
+  "exclude": ["node_modules", "lib", "plugin", "example/node_modules"]
+}

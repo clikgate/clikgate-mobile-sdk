@@ -1,0 +1,20 @@
+{
+  "app_version": "3.4.1",
+  "os_version": "14",
+  "is_cold_start": true,
+  "consent": {
+    "analytics": "granted",
+    "attribution": "granted",
+    "ad_user_data": "denied",
+    "ad_personalization": "unknown",
+    "region": null,
+    "updated_at": "2026-10-20T09:58:00.000Z"
+  },
+  "google_click_ids": {
+    "gclid": "Cj0KCQjw-test_gclid",
+    "gbraid": null,
+    "wbraid": null,
+    "source": "deep_link"
+  },
+  "app_instance_id": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d"
+}

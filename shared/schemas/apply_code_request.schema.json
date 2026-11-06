@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/apply_code_request.schema.json",
+  "title": "apply_code_request",
+  "type": "object",
+  "properties": {
+    "program_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "program_id",
+    "code"
+  ]
+}

@@ -1,0 +1,38 @@
+name: clikgate_flutter_example
+description: "Clikgate Flutter example (two variants: sample backend, or the Engage add-on): deep links, deferred deep links, referrals, leaderboards, push-token registration."
+publish_to: 'none'
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  clikgate_flutter:
+    path: ../
+  # Engage variant only (CLIKGATE_VARIANT=engage): invite, stats, leaderboard and promo codes
+  # without a backend. The backend variant doesn't use it (tree-shaken from its builds).
+  clikgate_engage:
+    path: ../../flutter_engage
+  # Pinned to releases contemporary with Flutter 3.35 (AGP 8.9 / Kotlin 2.1 toolchain);
+  # later FlutterFire releases need newer Kotlin/AGP. Bump together with Flutter.
+  share_plus: '>=12.0.0 <12.1.0'
+  # Backend variant: HTTP calls to samples/backend.
+  http: ^1.2.2
+  firebase_core: '>=4.1.1 <4.2.0'
+  firebase_messaging: '>=16.0.2 <16.1.0'
+
+# clikgate_engage depends on the hosted clikgate_flutter; in the monorepo both resolve to ../.
+dependency_overrides:
+  clikgate_flutter:
+    path: ../
+
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

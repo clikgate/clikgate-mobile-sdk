@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (android:dataExtractionRules). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="clikgate.prefs.xml" />
+        <exclude domain="database" path="clikgate_events.db" />
+        <exclude domain="database" path="clikgate_events.db-journal" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="clikgate.prefs.xml" />
+        <exclude domain="database" path="clikgate_events.db" />
+        <exclude domain="database" path="clikgate_events.db-journal" />
+    </device-transfer>
+</data-extraction-rules>

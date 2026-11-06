@@ -1,0 +1,13 @@
+{
+  "platform": "android",
+  "app_version": "3.4.1",
+  "sdk_version": "1.5.0",
+  "consent": {
+    "analytics": "unknown",
+    "attribution": "denied",
+    "ad_user_data": "denied",
+    "ad_personalization": "denied",
+    "region": "DE",
+    "updated_at": "2026-10-20T10:05:00Z"
+  }
+}

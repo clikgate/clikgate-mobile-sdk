@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/share_event_response.schema.json",
+  "title": "share_event_response",
+  "type": "object",
+  "properties": {
+    "object": {
+      "const": "share_event"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "link_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "app": {
+      "enum": [
+        "whatsapp",
+        "instagram",
+        "facebook",
+        "tiktok",
+        "x",
+        "linkedin",
+        "telegram",
+        "sms",
+        "email",
+        "youtube",
+        "slack",
+        "imessage",
+        "discord",
+        "snapchat",
+        "other"
+      ]
+    },
+    "share_ending": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "enum": [
+        "preview",
+        "helper"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "livemode": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "object",
+    "id",
+    "link_id",
+    "app",
+    "source",
+    "occurred_at"
+  ]
+}

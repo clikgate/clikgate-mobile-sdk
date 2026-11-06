@@ -1,0 +1,229 @@
+class Clikgate
+  static const String pluginVersion
+  static const ClikgateReferrals referrals
+  static Future<bool> isFeatureEnabled(String key)
+  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true,})
+  static Stream<ClikgateDeepLink> get onDeepLink
+  static Stream<ClikgateBrowserHandoff> get onBrowserHandoff
+  static Future<ClikgateAttribution> getAttribution()
+  static Future<void> track(String name, {ClikgateMoney? revenue, Map<String, Object?>? properties})
+  static Future<GoalResult> goal(String key, {Object? value, String? currency, String? reference, ClikgateProvider? provider, bool? isFirst, String? label})
+  static Future<void> identifyUser({String? label, String? customerId = _keepCustomerId, String? identityToken})
+  static Future<void> setTrackingEnabled(bool enabled)
+  static Future<void> setPushToken(String? token, {required PushProvider provider})
+  static bool isClikgateMessage(Map<String, dynamic>? data)
+  static Future<bool> handleUrl(String url)
+  static Future<void> setConsent({ConsentState? analytics, ConsentState? attribution, ConsentState? adUserData, ConsentState? adPersonalization,})
+  static Future<ClikgateConsent> getConsent()
+  static Future<void> setConsentRegion(String? region)
+  static Future<void> enableFirebaseForwarding({bool logAttributionEvent = true, bool setUserProperties = true, bool mirrorEvents = false, Map<String, String> eventNameMap = const {},})
+  static Future<Map<String, String>> attributionMetadata()
+  static Future<void> enableGoogleOnDeviceMeasurement()
+  static Future<String> nativeSdkVersion()
+  static Future<ClikgateRequestContext> getRequestContext()
+  static Future<void> reportServerError(String code, {String? feature})
+  static Future<void> resetForTesting()
+class ClikgateException implements Exception
+  const ClikgateException(this.code, this.message, {this.status, this.param, this.feature, this.offlineTouchId})
+  factory ClikgateException.fromPlatformException(PlatformException e)
+  final String code
+  final String message
+  final int? status
+  final String? param
+  final String? feature
+  final String? offlineTouchId
+  static const notConfigured
+  static const networkError
+  static const optedOut
+  static const invalidArgument
+  static const timeout
+  static const installPending
+  static const unsupportedPlatform
+  static const featureDisabled
+  String toString()
+class ClikgateMoney
+  const ClikgateMoney.ofMinor(this.amountMinor, this.currency)
+  const ClikgateMoney(this.amountMinor, this.currency)
+  final int amountMinor
+  final String currency
+  bool operator ==(Object other)
+  int get hashCode
+  String toString()
+enum PushProvider
+  fcm
+  apns
+enum ClikgateLogLevel
+  verbose
+  debug
+  info
+  warn
+  error
+  none
+enum ClikgateEnvironment
+  production
+  sandbox
+enum ClikgateAttestation
+  off
+  ifAvailable
+enum ClikgatePasteboardMode
+  off
+  automatic
+  pasteControlOnly
+enum ClikgateAttributionStatus
+  pending
+  attributed
+  organic
+  static ClikgateAttributionStatus parse(Object? value)
+enum GoalStatus
+  counted
+  waiting
+  refused
+  static GoalStatus parse(Object? value)
+enum GoalKind
+  standard
+  payment
+  static GoalKind? parse(Object? value)
+class GoalResult
+  const GoalResult({required this.status, this.reason, this.goalKind, this.valueIgnored = false})
+  factory GoalResult.fromMap(Map<String, dynamic> m)
+  final GoalStatus status
+  final String? reason
+  final GoalKind? goalKind
+  final bool valueIgnored
+  bool operator ==(Object other)
+  int get hashCode
+  String toString()
+class ClikgateLink
+  const ClikgateLink({required this.id, required this.kind, this.externalReference, this.campaignId, this.metadata = const {},})
+  factory ClikgateLink.fromMap(Map<String, dynamic> m)
+  final String id
+  final String kind
+  final String? externalReference
+  final String? campaignId
+  final Map<String, dynamic> metadata
+  bool get isReferral
+class Referral
+  const Referral({required this.referralId, required this.programId, required this.status, required this.referrerId, this.source, this.referrerDisplayName, this.createdAt,})
+  factory Referral.fromMap(Map<String, dynamic> m)
+  final String referralId
+  final String programId
+  final String status
+  final String? source
+  final String referrerId
+  final String? referrerDisplayName
+  final DateTime? createdAt
+class ClikgateDeepLink
+  const ClikgateDeepLink({this.url, this.path, this.data = const {}, this.isDeferred = false, this.clickId, this.matchType, this.link, this.referral, this.blockMessage,})
+  factory ClikgateDeepLink.fromMap(Map<String, dynamic> m)
+  final String? url
+  final String? path
+  final Map<String, dynamic> data
+  final bool isDeferred
+  final String? clickId
+  final String? matchType
+  final ClikgateLink? link
+  final Referral? referral
+  final String? blockMessage
+  String toString()
+class ClikgateBrowserHandoff
+  const ClikgateBrowserHandoff({required this.url, required this.host})
+  factory ClikgateBrowserHandoff.fromMap(Map<String, dynamic> m)
+  final String url
+  final String host
+  String toString()
+class ClikgateAttribution
+  const ClikgateAttribution({required this.status, this.matchType, this.confidence, this.clickId, this.clickedAt, this.isReinstall = false, this.installId, this.link,})
+  factory ClikgateAttribution.fromMap(Map<String, dynamic> m)
+  final ClikgateAttributionStatus status
+  final String? matchType
+  final double? confidence
+  final String? clickId
+  final DateTime? clickedAt
+  final bool isReinstall
+  final String? installId
+  final ClikgateLink? link
+  bool get isAttributed
+class ReferredBy
+  const ReferredBy({required this.referred, this.referral})
+  factory ReferredBy.fromMap(Map<String, dynamic> m)
+  final bool referred
+  final Referral? referral
+abstract final class ClikgateFeatures
+  static const appAttribution
+  static const referrals
+  static const leaderboards
+  static const identityChecks
+  static const whatsappAttribution
+  static const offlineCodes
+  static const skanPostbacks
+  static const uninstallTracking
+  static const probabilisticMatching
+  static const appleSearchAds
+class ClikgateRequestContext
+  const ClikgateRequestContext({required this.installationId, required this.sdkKey, required this.environment, required this.apiBaseUrl, required this.sdkVersion, this.identityToken, this.customerUserId, this.nativeSdkVersion,})
+  factory ClikgateRequestContext.fromMap(Map<String, dynamic> m)
+  final String installationId
+  final String sdkKey
+  final String environment
+  final String apiBaseUrl
+  final String? identityToken
+  final String? customerUserId
+  final String sdkVersion
+  final String? nativeSdkVersion
+  Map<String, String> get headers
+  String toString()
+enum ConsentState
+  granted
+  denied
+  unknown
+  static ConsentState parse(Object? value)
+class ClikgateConsent
+  const ClikgateConsent({this.analytics = ConsentState.unknown, this.attribution = ConsentState.unknown, this.adUserData = ConsentState.unknown, this.adPersonalization = ConsentState.unknown, this.region, this.required,})
+  factory ClikgateConsent.fromMap(Map<String, dynamic> m)
+  final ConsentState analytics
+  final ConsentState attribution
+  final ConsentState adUserData
+  final ConsentState adPersonalization
+  final String? region
+  final bool? required
+  bool operator ==(Object other)
+  int get hashCode
+  String toString()
+class ClikgateProvider
+  final String value
+  static const paystack
+  static const flutterwave
+  static const monnify
+  static const squad
+  static const opay
+  static const interswitch
+  static const remita
+  static const korapay
+  static const paga
+  static const moniepoint
+  static const hubtel
+  static const mpesa
+  static const pesapal
+  static const mtnMomo
+  static const airtelMoney
+  static const yoco
+  static const payfast
+  static const peachPayments
+  static const dpoPay
+  static const stripe
+  static const paypal
+  static const adyen
+  static const square
+  static const checkoutCom
+  static const shopify
+  static const woocommerce
+  static const custom
+  static const List<ClikgateProvider> values
+  static ClikgateProvider? fromString(String value)
+  bool operator ==(Object other)
+  int get hashCode
+  String toString()
+class ClikgateReferrals
+  const ClikgateReferrals()
+  Future<Referral> applyCode({required String programId, required String code})
+  Future<ReferredBy> referredBy()

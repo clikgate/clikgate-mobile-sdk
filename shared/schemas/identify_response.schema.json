@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/identify_response.schema.json",
+  "title": "identify_response",
+  "type": "object",
+  "properties": {
+    "customer_user_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "identity_verified": {
+      "type": "boolean"
+    },
+    "person_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "label_ignored": {
+      "enum": [
+        "plan",
+        "lower_rank",
+        null
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "customer_user_id",
+    "identity_verified"
+  ]
+}

@@ -1,0 +1,62 @@
+# Publishes @clikgate/setup to npm with trusted publishing (OIDC): no npm token is stored, and
+# npm adds provenance automatically for a public repository. Push a tag `cli-v<version>` that
+# equals cli/package.json "version". One-time owner setup: docs/SETUP_COMMAND.md, "Publishing".
+# Before publishing, the versions the command writes must equal the SDKs in this repository
+# (scripts/check_cli_sdk_versions.mjs).
+#
+# npmjs.com › @clikgate/setup › Settings › Trusted publisher must name exactly:
+#   organisation/user: clikgate · repository: clikgate-mobile-sdk · workflow: cli-release.yml · environment: npm
+name: cli-release
+
+on:
+  push:
+    tags: ["cli-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing (and provenance)
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          # Trusted publishing needs Node >= 22.14.0 and npm >= 11.5.1.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: npm with trusted-publishing support
+        run: npm install --global npm@11.21.0 && npm --version
+      - name: Tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [ "cli-v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME doesn't match cli/package.json $version"; exit 1; }
+      - name: SDK versions match cli/src/constants.ts
+        run: node ../scripts/check_cli_sdk_versions.mjs
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+        env:
+          CLIKGATE_SETUP_NO_TOOLS: "1"
+      - run: npm run build
+      - name: The package contains only the bundle, the doctor schema, README and LICENSE
+        run: |
+          npm pack --dry-run --json | node -e "
+            const files = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0].files.map(f => f.path).sort();
+            const allowed = ['LICENSE', 'README.md', 'dist/cli.cjs', 'package.json', 'schema/doctor-report.schema.json'];
+            const extra = files.filter(f => !allowed.includes(f));
+            if (extra.length) { console.error('Unexpected files:', extra); process.exit(1); }
+            console.log(files.join('\n'));"
+      # Change 12, S.4: nothing internal ships (bundled dependencies excluded by their esbuild module markers;
+      # see scripts/scan_release_packages.py).
+      - name: Scan the package
+        run: python3 ../scripts/scan_release_packages.py --cli .
+      - name: Publish (trusted publishing, provenance)
+        run: npm publish --access public

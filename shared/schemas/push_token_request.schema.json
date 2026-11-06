@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/push_token_request.schema.json",
+  "title": "push_token_request",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "enum": [
+        "apns",
+        "fcm"
+      ]
+    },
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "apns_environment": {
+      "enum": [
+        "production",
+        "sandbox",
+        null
+      ]
+    },
+    "consent": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "tracking_allowed": {
+              "type": "boolean"
+            },
+            "analytics": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "attribution": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "ad_user_data": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "ad_personalization": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "region": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(EEA|UK|[A-Z]{2})$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "updated_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "provider",
+    "token"
+  ]
+}

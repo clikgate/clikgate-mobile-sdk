@@ -1,0 +1,26 @@
+{
+  "matched": true,
+  "click_id": "clk_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "deep_link": {
+    "url": "https://inv.myapp.com/p/dress",
+    "path": "/u/ada%40example.com/orders/8f14e45f-ceea-467f-a0e6-0d2a0f7e3b9c?coupon=SAVE10#top",
+    "data": {},
+    "is_deferred": false
+  },
+  "link": {
+    "id": "lnk_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "kind": "standard",
+    "external_reference": "off_7",
+    "campaign_id": null,
+    "metadata": {
+      "creator_id": "cr_91"
+    }
+  },
+  "is_reengagement": false,
+  "referral": null,
+  "match_type": "app_link",
+  "status": "matched",
+  "web_url": null,
+  "block_message": null,
+  "debug_view": true
+}

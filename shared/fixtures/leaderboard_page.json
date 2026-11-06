@@ -1,0 +1,30 @@
+{
+  "leaderboard_id": "lb_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "name": "Weekly top inviters",
+  "metric": "qualified",
+  "segment": null,
+  "period": {
+    "key": "2026-W43",
+    "status": "open",
+    "starts_at": "2026-10-19T23:00:00Z",
+    "ends_at": "2026-10-26T23:00:00Z"
+  },
+  "entries": [
+    {
+      "rank": 1,
+      "referrer_id": "rfr_01JAB3C4D5E6F7G8H9JKMNPQRS",
+      "display": "Ada O.",
+      "score": 12,
+      "pending": 3,
+      "is_me": false
+    },
+    {
+      "rank": 2,
+      "referrer_id": "rfr_01JAB3C4D5E6F7G8H9JKMNPQRT",
+      "display": "B**42X",
+      "score": 9,
+      "pending": 0,
+      "is_me": true
+    }
+  ]
+}

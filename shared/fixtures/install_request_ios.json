@@ -1,0 +1,38 @@
+{
+  "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
+  "keychain_previous_installation_id": null,
+  "app_version": "3.4.1",
+  "sdk_version": "1.5.0",
+  "platform": "ios",
+  "os_version": "18.1",
+  "device_model": "iPhone15,2",
+  "locale": "en-NG",
+  "timezone": "Africa/Lagos",
+  "launch_url": null,
+  "pasteboard_token": "cgdl_9Xk2abcdefghijklmnopqrstuv",
+  "push": {
+    "provider": "apns",
+    "token": "a1b2c3d4",
+    "apns_environment": "production"
+  },
+  "consent": {
+    "analytics": "granted",
+    "attribution": "granted",
+    "ad_user_data": "denied",
+    "ad_personalization": "unknown",
+    "region": null,
+    "updated_at": "2026-10-20T09:58:00.000Z"
+  },
+  "google_click_ids": {
+    "gclid": null,
+    "gbraid": "0AAAAAtestgbraid",
+    "wbraid": null,
+    "source": "deep_link"
+  },
+  "device_check_token": "ZGV2aWNlY2hlY2stdG9rZW4=",
+  "google_on_device_measurement": {
+    "odm_info": "abcdEfadGdaf",
+    "sdk_version": "3.7.0"
+  },
+  "is_emulator": false
+}

@@ -1,0 +1,32 @@
+{
+  "source": "clikgate_api docs/openapi.json, components.schemas.Provider.enum",
+  "providers": [
+    "paystack",
+    "flutterwave",
+    "monnify",
+    "squad",
+    "opay",
+    "interswitch",
+    "remita",
+    "korapay",
+    "paga",
+    "moniepoint",
+    "hubtel",
+    "mpesa",
+    "pesapal",
+    "mtn_momo",
+    "airtel_money",
+    "yoco",
+    "payfast",
+    "peach_payments",
+    "dpo_pay",
+    "stripe",
+    "paypal",
+    "adyen",
+    "square",
+    "checkout_com",
+    "shopify",
+    "woocommerce",
+    "custom"
+  ]
+}

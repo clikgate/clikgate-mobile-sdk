@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/referral_stats_response.schema.json",
+  "title": "referral_stats_response",
+  "type": "object",
+  "properties": {
+    "referrer_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "program_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "code": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "short_url": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "blocked"
+      ]
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "clicks": {
+          "type": "integer"
+        },
+        "installs": {
+          "type": "integer"
+        },
+        "signups": {
+          "type": "integer"
+        },
+        "in_progress": {
+          "type": "integer"
+        },
+        "qualified": {
+          "type": "integer"
+        },
+        "disqualified": {
+          "type": "integer"
+        },
+        "rejected": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "clicks",
+        "installs",
+        "signups",
+        "in_progress",
+        "qualified",
+        "disqualified",
+        "rejected"
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "referrer_id",
+    "program_id",
+    "code",
+    "url",
+    "short_url",
+    "status",
+    "stats"
+  ]
+}

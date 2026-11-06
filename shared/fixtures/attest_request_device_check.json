@@ -1,0 +1,15 @@
+{
+  "type": "app_attest_assertion",
+  "challenge": "atc_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "token": "YXNzZXJ0aW9u",
+  "key_id": "a2V5LWlk",
+  "device_check_token": "ZGV2aWNlY2hlY2stdG9rZW4=",
+  "consent": {
+    "analytics": "granted",
+    "attribution": "granted",
+    "ad_user_data": "denied",
+    "ad_personalization": "unknown",
+    "region": null,
+    "updated_at": "2026-10-20T09:58:00.000Z"
+  }
+}

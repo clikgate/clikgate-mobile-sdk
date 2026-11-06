@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/install_ping_response.schema.json",
+  "title": "install_ping_response",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "ok"
+  ]
+}

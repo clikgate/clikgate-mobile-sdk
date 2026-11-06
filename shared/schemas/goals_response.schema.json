@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/goals_response.schema.json",
+  "title": "goals_response",
+  "type": "object",
+  "properties": {
+    "accepted": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "duplicates": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rejected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "param": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "index": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "missing": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "enum": [
+                "provider",
+                "reference"
+              ]
+            }
+          }
+        },
+        "additionalProperties": true,
+        "required": [
+          "goal",
+          "reference",
+          "code"
+        ]
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goal": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "counted",
+              "waiting",
+              "refused"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "goal_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "standard",
+                  "payment"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "counted": {
+            "type": "boolean"
+          },
+          "value_ignored": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true,
+        "required": [
+          "index",
+          "goal",
+          "reference",
+          "status",
+          "counted"
+        ]
+      }
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "accepted",
+    "duplicates",
+    "rejected"
+  ]
+}

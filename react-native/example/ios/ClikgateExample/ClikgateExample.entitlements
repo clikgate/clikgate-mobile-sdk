@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Universal Links for the Clikgate link domain (build setting CLIKGATE_LINK_DOMAIN). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:$(CLIKGATE_LINK_DOMAIN)</string>
+	</array>
+	<!-- Silent pushes for uninstall checks (APNs). -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

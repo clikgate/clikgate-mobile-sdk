@@ -1,0 +1,158 @@
+name: iOS SDK
+
+on:
+  push:
+    branches: [main]
+    paths: ["ios/**", "shared/**", ".github/workflows/ios.yml"]
+    tags: ["ios-v*"]
+  pull_request:
+    paths: ["ios/**", "shared/**", ".github/workflows/ios.yml"]
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LANG: en_US.UTF-8
+  SIMULATOR: "platform=iOS Simulator,name=iPhone 16,OS=latest"
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)" && xcodebuild -version
+
+      - name: Unit tests, core + Engage (simulator)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild test -scheme Clikgate-Package -destination "$SIMULATOR" -derivedDataPath build/dd | tee build/test.log | grep -E "Executed|error:|TEST (SUCC|FAIL)"
+
+      - name: Public API snapshots + core/Engage boundary (spec 0.4, section 20)
+        working-directory: ios
+        run: ./scripts/check_api.sh
+
+      - name: Size budgets (core < 400 KB, Engage < 80 KB)
+        working-directory: ios
+        run: ./scripts/check_size.sh
+
+      - name: Build for devices (generic iOS)
+        working-directory: ios
+        run: |
+          xcodebuild build -scheme Clikgate -destination "generic/platform=iOS" -derivedDataPath build/dd -quiet
+          xcodebuild build -scheme ClikgateEngage -destination "generic/platform=iOS" -derivedDataPath build/dd -quiet
+
+      - name: Sample app (simulator, unsigned)
+        working-directory: ios/Sample
+        run: |
+          xcodebuild build -project ClikgateSample.xcodeproj -scheme ClikgateSample \
+            -destination "generic/platform=iOS Simulator" -derivedDataPath ../build/sample \
+            CODE_SIGNING_ALLOWED=NO -quiet
+
+      - name: CocoaPods lint (Core default subspec and Engage)
+        working-directory: ios
+        run: |
+          pod lib lint Clikgate.podspec --allow-warnings --platforms=ios
+          pod lib lint Clikgate.podspec --allow-warnings --platforms=ios --subspec=Engage
+
+      - name: XCFrameworks (Clikgate + ClikgateEngage) + size report
+        working-directory: ios
+        run: ./scripts/build_xcframework.sh build/xcframework
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-sdk
+          path: |
+            ios/build/test.log
+            ios/build/xcframework/*.zip
+            ios/build/xcframework/*.sha256
+
+  # Configured, not yet exercised. Needs secrets:
+  #   COCOAPODS_TRUNK_TOKEN  — `pod trunk me` session token of an owner of the Clikgate pod
+  #   SPM_MIRROR_TOKEN       — token with push access to clikgate/clikgate-ios-sdk (the SPM mirror)
+  release:
+    if: startsWith(github.ref, 'refs/tags/ios-v')
+    needs: test
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)"
+
+      # Core and Engage ship together (one podspec with the Engage subspec, one SPM package with
+      # both products), so the tag must match the core version, the Engage version and the podspec.
+      - name: Check versions match the tag (core, Engage, podspec)
+        run: |
+          VERSION="${GITHUB_REF_NAME#ios-v}"
+          grep -q "sdkVersion = \"$VERSION\"" ios/Sources/Clikgate/Public/Clikgate.swift \
+            || { echo "Clikgate.sdkVersion != $VERSION"; exit 1; }
+          grep -q "static var version: String { \"$VERSION\" }" ios/Sources/ClikgateEngage/ClikgateEngage.swift \
+            || { echo "ClikgateEngage.version != $VERSION"; exit 1; }
+          grep -q "s.version          = '$VERSION'" ios/Clikgate.podspec \
+            || { echo "Clikgate.podspec version != $VERSION"; exit 1; }
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build XCFrameworks (Clikgate + ClikgateEngage)
+        working-directory: ios
+        run: ./scripts/build_xcframework.sh build/xcframework
+
+      # CocoaPods source: the podspec lives in ios/, so the pod is shipped as a zip of ios/
+      # (file patterns are relative to the zip root). See Clikgate.podspec.
+      - name: Package CocoaPods source zip
+        run: |
+          cd ios
+          zip -qry "../Clikgate-ios-${VERSION}.zip" Package.swift Clikgate.podspec Sources LICENSE
+
+      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      - name: Scan the release packages
+        run: python3 scripts/scan_release_packages.py "Clikgate-ios-${VERSION}.zip" ios/build/xcframework/*.xcframework.zip
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "iOS SDK $VERSION" --notes "Clikgate iOS SDK $VERSION" \
+            "Clikgate-ios-${VERSION}.zip" \
+            "ios/build/xcframework/Clikgate-${VERSION}.xcframework.zip" \
+            "ios/build/xcframework/Clikgate-${VERSION}.xcframework.zip.sha256" \
+            "ios/build/xcframework/ClikgateEngage-${VERSION}.xcframework.zip" \
+            "ios/build/xcframework/ClikgateEngage-${VERSION}.xcframework.zip.sha256"
+
+      # Swift Package Manager needs Package.swift at a repository root and a plain semver tag, so the
+      # package is published to a mirror repository (clikgate/clikgate-ios-sdk) tagged "$VERSION". The mirror
+      # gets only what SPM needs (scripts/spm_mirror.py: Package.swift without test targets, Sources, LICENSE,
+      # README.md), never Tests, the sample app or DECISIONS.md; the same set is scanned first.
+      - name: Assemble and scan the SPM mirror
+        run: |
+          python3 scripts/spm_mirror.py "$RUNNER_TEMP/spm-mirror"
+          (cd "$RUNNER_TEMP/spm-mirror" && swift package dump-package > /dev/null)
+          python3 scripts/scan_release_packages.py "$RUNNER_TEMP/spm-mirror"
+
+      - name: Publish SPM mirror
+        env:
+          SPM_MIRROR_TOKEN: ${{ secrets.SPM_MIRROR_TOKEN }}
+        working-directory: ${{ runner.temp }}/spm-mirror
+        run: |
+          git init -q -b main
+          git config user.name "clikgate-release-bot"
+          git config user.email "sdk@clikgate.com"
+          git add -A
+          git commit -q -m "Clikgate iOS SDK $VERSION"
+          git tag "$VERSION"
+          git push "https://x-access-token:${SPM_MIRROR_TOKEN}@github.com/clikgate/clikgate-ios-sdk.git" main --force
+          git push "https://x-access-token:${SPM_MIRROR_TOKEN}@github.com/clikgate/clikgate-ios-sdk.git" "$VERSION"
+
+      - name: CocoaPods trunk push
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: pod trunk push ios/Clikgate.podspec --allow-warnings

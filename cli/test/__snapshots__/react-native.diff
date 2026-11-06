@@ -1,0 +1,125 @@
+--- a/App.tsx
++++ b/App.tsx
+@@ -13,5 +13,26 @@
+ } from 'react-native-safe-area-context';
+ 
++// clikgate-setup:start
++import { Clikgate } from '@clikgate/react-native';
++import { useEffect } from 'react';
++
++Clikgate.configure({
++  sdkKey: 'cg_sdk_test_abc123',
++  // acme.dev.ciz.to (test links) only in development builds
++  linkDomains: __DEV__ ? ['acme.ciz.to', 'go.acme.com', 'acme.dev.ciz.to'] : ['acme.ciz.to', 'go.acme.com'],
++}).catch(console.warn);
++// clikgate-setup:end
++
+ function App() {
++  // clikgate-setup:start
++  useEffect(
++    () =>
++      Clikgate.onDeepLink((link) => {
++        // Open the screen for link.path (link.data has the link's data)
++        console.log('Clikgate deep link', link.path);
++      }),
++    []
++  );
++  // clikgate-setup:end
+   const isDarkMode = useColorScheme() === 'dark';
+ 
+
+--- /dev/null
++++ b/android/app/src/debug/AndroidManifest.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Debug builds only: merged into the main manifest by the Android build. -->
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
++    <application>
++        <activity android:name=".MainActivity">
++            <!-- clikgate-setup:start -->
++            <!-- Clikgate test links (debug builds only) -->
++            <intent-filter android:autoVerify="true">
++                <action android:name="android.intent.action.VIEW" />
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++                <data android:scheme="https" />
++                <data android:host="acme.dev.ciz.to" />
++            </intent-filter>
++            <!-- clikgate-setup:end -->
++        </activity>
++    </application>
++</manifest>
+
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -23,4 +23,15 @@
+             <category android:name="android.intent.category.LAUNCHER" />
+         </intent-filter>
++        <!-- clikgate-setup:start -->
++        <!-- Clikgate App Links (all builds) -->
++        <intent-filter android:autoVerify="true">
++            <action android:name="android.intent.action.VIEW" />
++            <category android:name="android.intent.category.DEFAULT" />
++            <category android:name="android.intent.category.BROWSABLE" />
++            <data android:scheme="https" />
++            <data android:host="acme.ciz.to" />
++            <data android:host="go.acme.com" />
++        </intent-filter>
++        <!-- clikgate-setup:end -->
+       </activity>
+     </application>
+
+--- a/ios/RnApp.xcodeproj/project.pbxproj
++++ b/ios/RnApp.xcodeproj/project.pbxproj
+@@ -262,4 +262,5 @@
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				CLANG_ENABLE_MODULES = YES;
++				CODE_SIGN_ENTITLEMENTS = RnApp/RnAppDebug.entitlements;
+ 				CURRENT_PROJECT_VERSION = 1;
+ 				ENABLE_BITCODE = NO;
+@@ -292,4 +293,5 @@
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				CLANG_ENABLE_MODULES = YES;
++				CODE_SIGN_ENTITLEMENTS = RnApp/RnApp.entitlements;
+ 				CURRENT_PROJECT_VERSION = 1;
+ 				INFOPLIST_FILE = RnApp/Info.plist;
+
+--- /dev/null
++++ b/ios/RnApp/RnApp.entitlements
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>com.apple.developer.associated-domains</key>
++	<array>
++		<string>applinks:acme.ciz.to</string>
++		<string>applinks:go.acme.com</string>
++	</array>
++</dict>
++</plist>
+
+--- /dev/null
++++ b/ios/RnApp/RnAppDebug.entitlements
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>com.apple.developer.associated-domains</key>
++	<array>
++		<string>applinks:acme.ciz.to</string>
++		<string>applinks:go.acme.com</string>
++		<string>applinks:acme.dev.ciz.to</string>
++	</array>
++</dict>
++</plist>
+
+--- a/package.json
++++ b/package.json
+@@ -11,4 +11,5 @@
+   },
+   "dependencies": {
++    "@clikgate/react-native": "^1.6.1",
+     "react": "19.3.0",
+     "react-native": "0.88.0",

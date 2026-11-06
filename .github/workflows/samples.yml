@@ -1,0 +1,23 @@
+name: Sample backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["samples/backend/**", ".github/workflows/samples.yml"]
+  pull_request:
+    paths: ["samples/backend/**", ".github/workflows/samples.yml"]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: samples/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest

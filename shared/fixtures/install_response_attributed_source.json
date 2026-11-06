@@ -1,0 +1,41 @@
+{
+  "install_id": "ins_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "attribution": {
+    "status": "attributed",
+    "match_type": "app_link",
+    "confidence": 1.0,
+    "click_id": "clk_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "clicked_at": "2026-10-20T09:59:00Z",
+    "is_reinstall": false,
+    "link": {
+      "id": "lnk_01JAB3C4D5E6F7G8H9JKMNPQRS",
+      "kind": "referral",
+      "external_reference": null,
+      "campaign_id": null,
+      "metadata": {}
+    },
+    "source": "google",
+    "medium": "cpc",
+    "campaign": "lagos_launch",
+    "channel": "ads"
+  },
+  "deep_link": {
+    "url": "https://inv.myapp.com/r/ADA42",
+    "path": "/welcome",
+    "data": {
+      "ref": "ADA42",
+      "screen": "referral_welcome"
+    },
+    "is_deferred": true
+  },
+  "referral": {
+    "referral_id": "ref_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "program_id": "rpg_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "status": "installed",
+    "source": "link",
+    "referrer_id": "rfr_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "referrer_display_name": "Ada",
+    "created_at": "2026-10-20T10:00:01Z"
+  },
+  "retry_after_ms": null
+}

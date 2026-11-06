@@ -1,0 +1,75 @@
+export CLIKGATE_PROVIDERS
+export Clikgate
+export ClikgateError
+export ClikgateMoney
+export ClikgateProvider
+export GoalKind
+export GoalStatus
+export VERSION
+export default
+export isClikgateMessage
+export providerFromString
+export referrals
+Clikgate.attributionMetadata
+Clikgate.configure
+Clikgate.enableFirebaseForwarding
+Clikgate.enableGoogleOnDeviceMeasurement
+Clikgate.getAttribution
+Clikgate.getConsent
+Clikgate.getRequestContext
+Clikgate.goal
+Clikgate.handleUrl
+Clikgate.identifyUser
+Clikgate.isClikgateMessage
+Clikgate.isFeatureEnabled
+Clikgate.nativeSdkVersion
+Clikgate.onBrowserHandoff
+Clikgate.onDeepLink
+Clikgate.pluginVersion
+Clikgate.referrals
+Clikgate.reportServerError
+Clikgate.setConsent
+Clikgate.setConsentRegion
+Clikgate.setPushToken
+Clikgate.setTrackingEnabled
+Clikgate.track
+Clikgate.referrals.applyCode
+Clikgate.referrals.referredBy
+ClikgateError.codeNotFound
+ClikgateError.featureDisabled
+ClikgateError.fromNative
+ClikgateError.installPending
+ClikgateError.invalidArgument
+ClikgateError.networkError
+ClikgateError.notConfigured
+ClikgateError.optedOut
+ClikgateError.rateLimited
+ClikgateError.timeout
+ClikgateError.unsupportedPlatform
+type BrowserHandoffListener
+type ClikgateAttestation
+type ClikgateAttribution
+type ClikgateAttributionStatus
+type ClikgateBrowserHandoff
+type ClikgateConfig
+type ClikgateConsent
+type ClikgateConsentUpdate
+type ClikgateDeepLink
+type ClikgateEnvironment
+type ClikgateErrorCode
+type ClikgateFeature
+type ClikgateFirebaseForwardingOptions
+type ClikgateLink
+type ClikgateLogLevel
+type ClikgatePasteboardMode
+type ClikgateReferrals
+type ClikgateRequestContext
+type ConsentState
+type DeepLinkListener
+type GoalOptions
+type GoalResult
+type IdentifyUserOptions
+type JsonMap
+type PushProvider
+type Referral
+type ReferredBy

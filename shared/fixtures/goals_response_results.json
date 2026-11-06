@@ -1,0 +1,52 @@
+{
+  "accepted": 2,
+  "duplicates": 0,
+  "rejected": [
+    {
+      "index": 2,
+      "goal": "order_paid",
+      "reference": "ORD-1",
+      "code": "payment_goal_needs_confirmation",
+      "param": "provider",
+      "message": "order_paid is a Payment goal: send provider and reference so your payment provider or server can confirm it.",
+      "missing": [
+        "provider"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "index": 0,
+      "goal": "account_opened",
+      "reference": "APP-1",
+      "status": "counted",
+      "reason": null,
+      "goal_kind": "standard",
+      "counted": true,
+      "value_ignored": false,
+      "id": "cnv_01JAB3C4D5E6F7G8H9JKMNPQRS"
+    },
+    {
+      "index": 1,
+      "goal": "purchase",
+      "reference": "T123456",
+      "status": "waiting",
+      "reason": "waiting_for_confirmation",
+      "goal_kind": "payment",
+      "counted": false,
+      "value_ignored": true,
+      "id": "prp_01JAB3C4D5E6F7G8H9JKMNPQRS"
+    },
+    {
+      "index": 2,
+      "goal": "order_paid",
+      "reference": "ORD-1",
+      "status": "refused",
+      "reason": "payment_goal_needs_confirmation",
+      "goal_kind": "payment",
+      "counted": false,
+      "value_ignored": false,
+      "id": null
+    }
+  ]
+}

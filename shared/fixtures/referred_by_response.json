@@ -1,0 +1,12 @@
+{
+  "referred": true,
+  "referral": {
+    "referral_id": "ref_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "program_id": "rpg_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "status": "holding",
+    "source": "link",
+    "referrer_id": "rfr_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "referrer_display_name": "Ada",
+    "created_at": "2026-10-20T10:00:01Z"
+  }
+}

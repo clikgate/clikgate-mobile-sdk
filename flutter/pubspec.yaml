@@ -1,0 +1,35 @@
+name: clikgate_flutter
+description: "Clikgate deep linking, install attribution, referrals and uninstall tracking for Flutter apps (Android and iOS)."
+version: 1.5.1
+homepage: https://clikgate.com
+repository: https://github.com/clikgate/clikgate-mobile-sdk/tree/main/flutter
+issue_tracker: https://github.com/clikgate/clikgate-mobile-sdk/issues
+topics:
+  - deep-linking
+  - attribution
+  - referral
+  - analytics
+
+environment:
+  sdk: ^3.5.0
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  # Public-API snapshot test (syntactic parse only).
+  analyzer: '>=7.4.0 <9.0.0'
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.clikgate.clikgate_flutter
+        pluginClass: ClikgateFlutterPlugin
+      ios:
+        pluginClass: ClikgateFlutterPlugin

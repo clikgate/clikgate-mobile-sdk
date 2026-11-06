@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/install_ping_request.schema.json",
+  "title": "install_ping_request",
+  "type": "object",
+  "properties": {
+    "platform": {
+      "enum": [
+        "ios",
+        "android"
+      ]
+    },
+    "app_version": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "sdk_version": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "consent": {
+      "type": "object",
+      "properties": {
+        "tracking_allowed": {
+          "type": "boolean"
+        },
+        "analytics": {
+          "enum": [
+            "granted",
+            "denied",
+            "unknown"
+          ]
+        },
+        "attribution": {
+          "enum": [
+            "granted",
+            "denied",
+            "unknown"
+          ]
+        },
+        "ad_user_data": {
+          "enum": [
+            "granted",
+            "denied",
+            "unknown"
+          ]
+        },
+        "ad_personalization": {
+          "enum": [
+            "granted",
+            "denied",
+            "unknown"
+          ]
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(EEA|UK|[A-Z]{2})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "platform",
+    "app_version",
+    "sdk_version",
+    "consent"
+  ]
+}

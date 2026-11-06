@@ -1,0 +1,9 @@
+{
+  "error": {
+    "type": "not_found",
+    "code": "code_not_found",
+    "message": "No active referrer has this code.",
+    "param": "code",
+    "request_id": "req_01JAB3C4D5E6F7G8H9JKMNPQRS"
+  }
+}

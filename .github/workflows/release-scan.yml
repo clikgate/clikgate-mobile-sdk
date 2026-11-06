@@ -1,0 +1,92 @@
+name: Release packages scan
+
+# Change 12, S.4: what customers get contains no internal comments, TODO/FIXME notes, internal-document
+# references, internal or staff URLs and hosts, local paths, staff-only references or debug code.
+# Each job builds the package the way its release job does and runs scripts/scan_release_packages.py
+# on it; the release jobs (android.yml, ios.yml, flutter.yml, react-native.yml) run the same scan
+# right before publishing (the setup command's package is scanned in cli.yml and cli-release.yml). Also checks that the generated Provider types match shared/providers.json.
+# Same checks locally: scripts/check_sdk_boundaries.sh (providers) and the commands below.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["cli/**", ".github/workflows/cli.yml", ".github/workflows/cli-release.yml", "docs/**", "samples/**"]
+  pull_request:
+    paths-ignore: ["cli/**", ".github/workflows/cli.yml", ".github/workflows/cli-release.yml", "docs/**", "samples/**"]
+
+concurrency:
+  group: release-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  providers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generated Provider types match shared/providers.json
+        run: python3 scripts/generate_providers.py --check
+      - name: Generated ShareApp and share tables match shared/share_targets.json
+        run: python3 scripts/generate_share_targets.py --check
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the release AARs and sources jars
+        run: ./gradlew :clikgate:assembleRelease :clikgate-engage:assembleRelease :clikgate:releaseSourcesJar :clikgate-engage:releaseSourcesJar
+      - name: Scan
+        run: |
+          python3 ../scripts/scan_release_packages.py clikgate/build/outputs/aar/clikgate-release.aar \
+            clikgate-engage/build/outputs/aar/clikgate-engage-release.aar clikgate/build/libs/clikgate-sources.jar \
+            clikgate-engage/build/libs/clikgate-engage-sources.jar
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)" && xcodebuild -version
+      - name: Build the XCFrameworks
+        working-directory: ios
+        run: ./scripts/build_xcframework.sh build/xcframework
+      - name: Scan the CocoaPods source zip's files, the SPM mirror's files and the XCFramework zips
+        run: python3 scripts/scan_release_packages.py --pod ios --spm ios/build/xcframework/*.xcframework.zip
+      - name: The SPM mirror's manifest resolves without the test targets
+        run: python3 scripts/spm_mirror.py "$RUNNER_TEMP/spm-mirror" && cd "$RUNNER_TEMP/spm-mirror" && swift package dump-package > /dev/null
+
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan the pub packages
+        run: python3 scripts/scan_release_packages.py --pub flutter --pub flutter_engage
+
+  react-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: react-native/package-lock.json
+      - name: Build the packages
+        run: |
+          (cd react-native && npm ci)
+          (cd react-native-engage && npm run devlink && npm run -s build)
+      - name: Scan what npm pack includes
+        run: python3 scripts/scan_release_packages.py --npm react-native --npm react-native-engage

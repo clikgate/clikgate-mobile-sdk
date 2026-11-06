@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/referral_link_request.schema.json",
+  "title": "referral_link_request",
+  "type": "object",
+  "properties": {
+    "program_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "display_name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 100
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "program_id"
+  ]
+}
