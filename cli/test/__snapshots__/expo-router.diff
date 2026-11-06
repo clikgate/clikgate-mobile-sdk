@@ -1,0 +1,58 @@
+--- a/app.json
++++ b/app.json
+@@ -33,4 +33,14 @@
+           "imageWidth": 76
+         }
++      ],
++      [
++        "@clikgate/react-native",
++        {
++          "linkDomains": [
++            "acme.ciz.to",
++            "go.acme.com"
++          ],
++          "testLinkDomain": "acme.dev.ciz.to"
++        }
+       ]
+     ],
+
+--- a/package.json
++++ b/package.json
+@@ -4,4 +4,5 @@
+   "main": "expo-router/entry",
+   "dependencies": {
++    "@clikgate/react-native": "^1.6.1",
+     "@expo/ui": "~58.0.23",
+     "expo": "~58.0.19",
+
+--- a/src/app/_layout.tsx
++++ b/src/app/_layout.tsx
+@@ -6,7 +6,28 @@
+ import AppTabs from '@/components/app-tabs';
+ 
++// clikgate-setup:start
++import { Clikgate } from '@clikgate/react-native';
++import { useEffect } from 'react';
++
++Clikgate.configure({
++  sdkKey: 'cg_sdk_test_abc123',
++  // acme.dev.ciz.to (test links) only in development builds
++  linkDomains: __DEV__ ? ['acme.ciz.to', 'go.acme.com', 'acme.dev.ciz.to'] : ['acme.ciz.to', 'go.acme.com'],
++}).catch(console.warn);
++// clikgate-setup:end
++
+ SplashScreen.preventAutoHideAsync();
+ 
+ export default function TabLayout() {
++  // clikgate-setup:start
++  useEffect(
++    () =>
++      Clikgate.onDeepLink((link) => {
++        // Open the screen for link.path (link.data has the link's data)
++        console.log('Clikgate deep link', link.path);
++      }),
++    []
++  );
++  // clikgate-setup:end
+   const colorScheme = useColorScheme();
+   return (

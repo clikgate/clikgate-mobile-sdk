@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/install_response.schema.json",
+  "title": "install_response",
+  "type": "object",
+  "properties": {
+    "install_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "attribution": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "attributed",
+            "organic"
+          ]
+        },
+        "match_type": {
+          "enum": [
+            "app_link",
+            "install_referrer",
+            "pasteboard",
+            "probabilistic",
+            "apple_search_ads",
+            "code_entry",
+            null
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "click_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clicked_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_reinstall": {
+          "type": "boolean"
+        },
+        "link": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+                },
+                "kind": {
+                  "enum": [
+                    "standard",
+                    "referral"
+                  ]
+                },
+                "external_reference": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "campaign_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": true,
+              "required": [
+                "id",
+                "kind",
+                "metadata"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "medium": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "campaign": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "channel": {
+          "enum": [
+            "ads",
+            "whatsapp",
+            "referral",
+            "offline_code",
+            "link",
+            "organic",
+            null
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "match_type",
+        "confidence",
+        "click_id",
+        "clicked_at",
+        "is_reinstall",
+        "link"
+      ]
+    },
+    "deep_link": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "path": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "data": {
+              "type": "object"
+            },
+            "is_deferred": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "url",
+            "path",
+            "data",
+            "is_deferred"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "referral": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "referral_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "program_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "status": {
+              "enum": [
+                "installed",
+                "signed_up",
+                "in_progress",
+                "holding",
+                "qualified",
+                "disqualified",
+                "rejected"
+              ]
+            },
+            "source": {
+              "enum": [
+                "link",
+                "code_entry",
+                "byo_code",
+                "offline_code",
+                null
+              ]
+            },
+            "referrer_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "referrer_display_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "created_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "referral_id",
+            "program_id",
+            "status",
+            "referrer_id",
+            "referrer_display_name"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "retry_after_ms": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "matched",
+        "no_match",
+        "password_required",
+        "blocked",
+        null
+      ]
+    },
+    "web_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "block_message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "debug_view": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "install_id",
+    "attribution",
+    "deep_link",
+    "referral",
+    "retry_after_ms"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "password_required"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "web_url": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deep_link": {
+            "type": "null"
+          },
+          "attribution": {
+            "properties": {
+              "click_id": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "block_message": {
+            "type": "string"
+          },
+          "deep_link": {
+            "type": "null"
+          },
+          "attribution": {
+            "properties": {
+              "click_id": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

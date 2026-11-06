@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/referral_link_response.schema.json",
+  "title": "referral_link_response",
+  "type": "object",
+  "properties": {
+    "referrer_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "program_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "code": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "short_url": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "referrer_id",
+    "program_id",
+    "code",
+    "url",
+    "short_url"
+  ]
+}

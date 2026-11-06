@@ -1,0 +1,141 @@
+Clikgate ClikgateError.clientLinkCreationDisabled: static var clientLinkCreationDisabled: String { get }
+Clikgate ClikgateError.codeDisabled: static var codeDisabled: String { get }
+Clikgate ClikgateError.codeExpired: static var codeExpired: String { get }
+Clikgate ClikgateError.hostedPageUnavailable: static var hostedPageUnavailable: String { get }
+Clikgate ClikgateError.invalidSegment: static var invalidSegment: String { get }
+Clikgate ClikgateError.leaderboardNotFound: static var leaderboardNotFound: String { get }
+Clikgate ClikgateError.periodNotFound: static var periodNotFound: String { get }
+Clikgate ClikgateError.redemptionLimitReached: static var redemptionLimitReached: String { get }
+Clikgate ClikgateError.referralLinkLimit: static var referralLinkLimit: String { get }
+Clikgate ClikgateError.referrerNotFound: static var referrerNotFound: String { get }
+Clikgate ClikgateError.shareUnavailable: static var shareUnavailable: String { get }
+ClikgateEngage.clearCache(): static func clearCache()
+ClikgateEngage.codes: static let codes: ClikgateEngageCodes
+ClikgateEngage.leaderboards: static let leaderboards: ClikgateEngageLeaderboards
+ClikgateEngage.referrals: static let referrals: ClikgateEngageReferrals
+ClikgateEngage.share: static let share: ClikgateEngageShare
+ClikgateEngage.version: static var version: String { get }
+ClikgateEngage: enum ClikgateEngage
+ClikgateEngageCodes.redeem(_:): func redeem(_ code: String) async throws -> ClikgateRedemption
+ClikgateEngageCodes.redeem(_:completion:): func redeem(_ code: String, completion: @escaping @MainActor (Result<ClikgateRedemption, ClikgateError>) -> Void)
+ClikgateEngageCodes: final class ClikgateEngageCodes
+ClikgateEngageLeaderboards.aroundMe(id:radius:period:segment:): func aroundMe(id: String, radius: Int = 5, period: ClikgateLeaderboardPeriodSelector = .current, segment: String? = nil) async throws -> ClikgateLeaderboardPage
+ClikgateEngageLeaderboards.aroundMe(id:radius:period:segment:completion:): func aroundMe(id: String, radius: Int = 5, period: ClikgateLeaderboardPeriodSelector = .current, segment: String? = nil, completion: @escaping @MainActor (Result<ClikgateLeaderboardPage, ClikgateError>) -> Void)
+ClikgateEngageLeaderboards.hostedPageUrl(id:period:): func hostedPageUrl(id: String, period: ClikgateLeaderboardPeriodSelector = .current) async throws -> URL
+ClikgateEngageLeaderboards.hostedPageUrl(id:period:completion:): func hostedPageUrl(id: String, period: ClikgateLeaderboardPeriodSelector = .current, completion: @escaping @MainActor (Result<URL, ClikgateError>) -> Void)
+ClikgateEngageLeaderboards.me(id:period:segment:): func me(id: String, period: ClikgateLeaderboardPeriodSelector = .current, segment: String? = nil) async throws -> ClikgateMyRank
+ClikgateEngageLeaderboards.me(id:period:segment:completion:): func me(id: String, period: ClikgateLeaderboardPeriodSelector = .current, segment: String? = nil, completion: @escaping @MainActor (Result<ClikgateMyRank, ClikgateError>) -> Void)
+ClikgateEngageLeaderboards.setOptOut(programId:optOut:): func setOptOut(programId: String, optOut: Bool) async throws
+ClikgateEngageLeaderboards.setOptOut(programId:optOut:completion:): func setOptOut(programId: String, optOut: Bool, completion: (@MainActor (Result<Void, ClikgateError>) -> Void)? = nil)
+ClikgateEngageLeaderboards.top(id:period:segment:limit:): func top(id: String, period: ClikgateLeaderboardPeriodSelector = .current, segment: String? = nil, limit: Int = 50) async throws -> ClikgateLeaderboardPage
+ClikgateEngageLeaderboards.top(id:period:segment:limit:completion:): func top(id: String, period: ClikgateLeaderboardPeriodSelector = .current, segment: String? = nil, limit: Int = 50, completion: @escaping @MainActor (Result<ClikgateLeaderboardPage, ClikgateError>) -> Void)
+ClikgateEngageLeaderboards: final class ClikgateEngageLeaderboards
+ClikgateEngageReferrals.createLink(programId:displayName:): func createLink(programId: String, displayName: String? = nil) async throws -> ClikgateReferralLink
+ClikgateEngageReferrals.createLink(programId:displayName:completion:): func createLink(programId: String, displayName: String? = nil, completion: @escaping @MainActor (Result<ClikgateReferralLink, ClikgateError>) -> Void)
+ClikgateEngageReferrals.myStats(programId:): func myStats(programId: String) async throws -> ClikgateReferralStats
+ClikgateEngageReferrals.myStats(programId:completion:): func myStats(programId: String, completion: @escaping @MainActor (Result<ClikgateReferralStats, ClikgateError>) -> Void)
+ClikgateEngageReferrals: final class ClikgateEngageReferrals
+ClikgateEngageShare.link(_:message:app:shareUrls:from:): @discardableResult @MainActor func link(_ url: String, message: String? = nil, app: ClikgateShareApp? = nil, shareUrls: [String : String]? = nil, from presenter: UIViewController? = nil) async throws -> Bool
+ClikgateEngageShare.referralLink(_:message:app:from:): @discardableResult @MainActor func referralLink(_ link: ClikgateReferralLink, message: String? = nil, app: ClikgateShareApp? = nil, from presenter: UIViewController? = nil) async throws -> Bool
+ClikgateEngageShare.system(text:from:): @MainActor func system(text: String, from presenter: UIViewController? = nil) throws
+ClikgateEngageShare.whatsApp(text:from:): @MainActor func whatsApp(text: String, from presenter: UIViewController? = nil) async throws -> Bool
+ClikgateEngageShare.whatsApp(text:from:completion:): @MainActor func whatsApp(text: String, from presenter: UIViewController? = nil, completion: (@MainActor (Result<Bool, ClikgateError>) -> Void)?)
+ClikgateEngageShare: final class ClikgateEngageShare
+ClikgateLeaderboardEntry.display: let display: String
+ClikgateLeaderboardEntry.isMe: let isMe: Bool
+ClikgateLeaderboardEntry.pending: let pending: Int?
+ClikgateLeaderboardEntry.rank: let rank: Int
+ClikgateLeaderboardEntry.referrerId: let referrerId: String
+ClikgateLeaderboardEntry.score: let score: Int
+ClikgateLeaderboardEntry: struct ClikgateLeaderboardEntry
+ClikgateLeaderboardPage.entries: let entries: [ClikgateLeaderboardEntry]
+ClikgateLeaderboardPage.leaderboardId: let leaderboardId: String
+ClikgateLeaderboardPage.metric: let metric: String?
+ClikgateLeaderboardPage.name: let name: String?
+ClikgateLeaderboardPage.period: let period: ClikgateLeaderboardPeriod
+ClikgateLeaderboardPage.segment: let segment: String?
+ClikgateLeaderboardPage: struct ClikgateLeaderboardPage
+ClikgateLeaderboardPeriod.endsAt: var endsAt: Date? { get }
+ClikgateLeaderboardPeriod.endsAtRaw: let endsAtRaw: String?
+ClikgateLeaderboardPeriod.key: let key: String
+ClikgateLeaderboardPeriod.startsAt: var startsAt: Date? { get }
+ClikgateLeaderboardPeriod.startsAtRaw: let startsAtRaw: String?
+ClikgateLeaderboardPeriod.status: let status: String
+ClikgateLeaderboardPeriod: struct ClikgateLeaderboardPeriod
+ClikgateLeaderboardPeriodSelector.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateLeaderboardPeriodSelector.current: static let current: ClikgateLeaderboardPeriodSelector
+ClikgateLeaderboardPeriodSelector.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateLeaderboardPeriodSelector.hashValue: var hashValue: Int { get }
+ClikgateLeaderboardPeriodSelector.init(extendedGraphemeClusterLiteral:): init(extendedGraphemeClusterLiteral value: Self.StringLiteralType)
+ClikgateLeaderboardPeriodSelector.init(rawValue:): init(rawValue: String)
+ClikgateLeaderboardPeriodSelector.init(stringLiteral:): init(stringLiteral value: String)
+ClikgateLeaderboardPeriodSelector.init(unicodeScalarLiteral:): init(unicodeScalarLiteral value: Self.ExtendedGraphemeClusterLiteralType)
+ClikgateLeaderboardPeriodSelector.key(_:): static func key(_ key: String) -> ClikgateLeaderboardPeriodSelector
+ClikgateLeaderboardPeriodSelector.previous: static let previous: ClikgateLeaderboardPeriodSelector
+ClikgateLeaderboardPeriodSelector.rawValue: let rawValue: String
+ClikgateLeaderboardPeriodSelector: struct ClikgateLeaderboardPeriodSelector
+ClikgateMyRank.bestRank: let bestRank: Int?
+ClikgateMyRank.embedUrl: let embedUrl: URL?
+ClikgateMyRank.gapToNext: let gapToNext: Int?
+ClikgateMyRank.leaderboardId: let leaderboardId: String
+ClikgateMyRank.optedOut: let optedOut: Bool
+ClikgateMyRank.pending: let pending: Int?
+ClikgateMyRank.period: let period: ClikgateLeaderboardPeriod
+ClikgateMyRank.periodEndsAt: var periodEndsAt: Date? { get }
+ClikgateMyRank.periodEndsAtRaw: let periodEndsAtRaw: String?
+ClikgateMyRank.rank: let rank: Int?
+ClikgateMyRank.referrerId: let referrerId: String
+ClikgateMyRank.score: let score: Int
+ClikgateMyRank: struct ClikgateMyRank
+ClikgateRedemption.RedeemedCode.campaignId: let campaignId: String?
+ClikgateRedemption.RedeemedCode.code: let code: String
+ClikgateRedemption.RedeemedCode.kind: let kind: String
+ClikgateRedemption.RedeemedCode.linkId: let linkId: String?
+ClikgateRedemption.RedeemedCode.programId: let programId: String?
+ClikgateRedemption.RedeemedCode.referrerId: let referrerId: String?
+ClikgateRedemption.RedeemedCode: struct RedeemedCode
+ClikgateRedemption.code: let code: ClikgateRedemption.RedeemedCode
+ClikgateRedemption.offlineTouchId: let offlineTouchId: String
+ClikgateRedemption.referral: let referral: ClikgateReferral?
+ClikgateRedemption: struct ClikgateRedemption
+ClikgateReferralLink.code: let code: String
+ClikgateReferralLink.init(referrerId:programId:code:url:shortUrl:): init(referrerId: String, programId: String, code: String, url: String, shortUrl: String?)
+ClikgateReferralLink.programId: let programId: String
+ClikgateReferralLink.referrerId: let referrerId: String
+ClikgateReferralLink.shortUrl: let shortUrl: String?
+ClikgateReferralLink.url: let url: String
+ClikgateReferralLink: struct ClikgateReferralLink
+ClikgateReferralStats.clicks: let clicks: Int
+ClikgateReferralStats.code: let code: String
+ClikgateReferralStats.disqualified: let disqualified: Int
+ClikgateReferralStats.inProgress: let inProgress: Int
+ClikgateReferralStats.installs: let installs: Int
+ClikgateReferralStats.programId: let programId: String
+ClikgateReferralStats.qualified: let qualified: Int
+ClikgateReferralStats.referrerId: let referrerId: String
+ClikgateReferralStats.rejected: let rejected: Int
+ClikgateReferralStats.shortUrl: let shortUrl: String?
+ClikgateReferralStats.signups: let signups: Int
+ClikgateReferralStats.status: let status: String
+ClikgateReferralStats.url: let url: String
+ClikgateReferralStats: struct ClikgateReferralStats
+ClikgateShareApp.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateShareApp.discord: case discord
+ClikgateShareApp.email: case email
+ClikgateShareApp.facebook: case facebook
+ClikgateShareApp.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateShareApp.hashValue: var hashValue: Int { get }
+ClikgateShareApp.imessage: case imessage
+ClikgateShareApp.init(rawValue:): init?(rawValue: String)
+ClikgateShareApp.instagram: case instagram
+ClikgateShareApp.linkedin: case linkedin
+ClikgateShareApp.other: case other
+ClikgateShareApp.slack: case slack
+ClikgateShareApp.sms: case sms
+ClikgateShareApp.snapchat: case snapchat
+ClikgateShareApp.telegram: case telegram
+ClikgateShareApp.tiktok: case tiktok
+ClikgateShareApp.whatsapp: case whatsapp
+ClikgateShareApp.x: case x
+ClikgateShareApp.youtube: case youtube
+ClikgateShareApp: enum ClikgateShareApp

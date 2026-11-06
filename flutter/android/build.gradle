@@ -1,0 +1,70 @@
+group = "com.clikgate.clikgate_flutter"
+version = "1.5.1"
+
+buildscript {
+    ext.kotlin_version = "2.1.0"
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.9.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+    }
+}
+
+// Native SDK dependency (com.clikgate:clikgate-android).
+//  - Releases: resolved from Maven Central.
+//  - This monorepo: the example app's settings.gradle.kts includes ../../android as a composite
+//    build and substitutes the module with the :clikgate project (no publishing needed).
+//  - Other apps developing against an unpublished SDK: run `./gradlew :clikgate:publishToMavenLocal`
+//    in android/ and set `clikgate.useMavenLocal=true` in the app's android/gradle.properties.
+def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "1.5.1"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+if (project.findProperty("clikgate.useMavenLocal") == "true") {
+    rootProject.allprojects {
+        repositories {
+            mavenLocal {
+                content { includeGroup("com.clikgate") }
+            }
+        }
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+android {
+    namespace = "com.clikgate.clikgate_flutter"
+
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+
+    defaultConfig {
+        minSdk = 21
+    }
+}
+
+dependencies {
+    implementation("com.clikgate:clikgate-android:$clikgateAndroidVersion")
+}

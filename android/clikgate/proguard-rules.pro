@@ -1,0 +1,1 @@
+# No library-level shrinking.

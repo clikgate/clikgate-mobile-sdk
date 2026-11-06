@@ -1,0 +1,147 @@
+abstract interface class EngageCore
+  Future<bool> isFeatureEnabled(String key)
+  Future<ClikgateRequestContext> requestContext()
+  Future<void> reportServerError(String code, {String? feature})
+class ClikgateCoreBridge implements EngageCore
+  const ClikgateCoreBridge()
+  Future<bool> isFeatureEnabled(String key)
+  Future<ClikgateRequestContext> requestContext()
+  Future<void> reportServerError(String code, {String? feature})
+typedef EngageUrlOpener = Future<bool> Function(Uri uri);
+typedef EngageTextSharer = Future<void> Function(String text, {String? subject});
+typedef EngageLinkSharer = Future<bool> Function(Map<String, Object?> args);
+class ClikgateEngage
+  ClikgateEngage({http.Client? httpClient, EngageCore core = const ClikgateCoreBridge(), EngageUrlOpener? openUrl, EngageTextSharer? shareText, EngageLinkSharer? shareLink, Duration cacheTtl = const Duration(seconds: 60), Duration retryDelay = const Duration(milliseconds: 500), DateTime Function()? clock,})
+  static const String version
+  final EngageReferrals referrals
+  final EngageShare share
+  final EngageLeaderboards leaderboards
+  final EngageCodes codes
+  void clearCache()
+class EngageReferrals
+  Future<ReferralLink> createLink({required String programId, String? displayName})
+  Future<ReferralStats> myStats({required String programId})
+class EngageShare
+  Future<bool> link(String url, {String? message, ShareApp? app, Map<ShareApp, String>? shareUrls})
+  Future<bool> referralLink(ReferralLink link, {String? message, ShareApp? app})
+  Future<void> system({required String text, String? subject})
+  Future<bool> whatsApp({required String text})
+  static Uri whatsAppUri(String text)
+class EngageLeaderboards
+  Future<LeaderboardPage> top(String leaderboardId, {LeaderboardPeriod period = LeaderboardPeriod.current, String? segment, int limit = 50})
+  Future<MyRank> me(String leaderboardId, {LeaderboardPeriod period = LeaderboardPeriod.current, String? segment})
+  Future<LeaderboardPage> aroundMe(String leaderboardId, {int radius = 5, LeaderboardPeriod period = LeaderboardPeriod.current, String? segment})
+  Future<void> setOptOut({required String programId, required bool optOut})
+  Future<Uri> hostedPageUrl(String leaderboardId, {LeaderboardPeriod period = LeaderboardPeriod.current})
+class EngageCodes
+  Future<Redemption> redeem(String code)
+abstract final class ClikgateEngageErrors
+  static const notIdentified
+  static const shareUnavailable
+  static const hostedPageUnavailable
+class ReferralLink
+  const ReferralLink({required this.referrerId, required this.programId, required this.code, required this.url, required this.shortUrl,})
+  factory ReferralLink.fromJson(Map<String, dynamic> j)
+  final String referrerId
+  final String programId
+  final String code
+  final String url
+  final String shortUrl
+class ReferralStats
+  const ReferralStats({required this.referrerId, required this.programId, required this.code, required this.url, required this.shortUrl, required this.status, this.clicks = 0, this.installs = 0, this.signups = 0, this.inProgress = 0, this.qualified = 0, this.disqualified = 0, this.rejected = 0,})
+  factory ReferralStats.fromJson(Map<String, dynamic> j)
+  final String referrerId
+  final String programId
+  final String code
+  final String url
+  final String shortUrl
+  final String status
+  final int clicks
+  final int installs
+  final int signups
+  final int inProgress
+  final int qualified
+  final int disqualified
+  final int rejected
+class LeaderboardPeriod
+  const LeaderboardPeriod.key(this.value)
+  static const current
+  static const previous
+  final String value
+  bool operator ==(Object other)
+  int get hashCode
+  String toString()
+class LeaderboardPeriodInfo
+  const LeaderboardPeriodInfo({required this.key, required this.status, this.startsAt, this.endsAt})
+  factory LeaderboardPeriodInfo.fromJson(Map<String, dynamic> j)
+  final String key
+  final String status
+  final DateTime? startsAt
+  final DateTime? endsAt
+class LeaderboardEntry
+  const LeaderboardEntry({required this.rank, required this.referrerId, required this.display, required this.score, this.pending, this.isMe = false,})
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> j)
+  final int rank
+  final String referrerId
+  final String display
+  final int score
+  final int? pending
+  final bool isMe
+class LeaderboardPage
+  const LeaderboardPage({required this.leaderboardId, required this.period, this.name, this.metric, this.segment, this.entries = const [],})
+  factory LeaderboardPage.fromJson(Map<String, dynamic> j)
+  final String leaderboardId
+  final String? name
+  final String? metric
+  final String? segment
+  final LeaderboardPeriodInfo period
+  final List<LeaderboardEntry> entries
+  LeaderboardEntry? get myEntry
+class MyRank
+  const MyRank({required this.leaderboardId, required this.period, required this.referrerId, this.rank, this.score = 0, this.pending, this.gapToNext, this.bestRank, this.periodEndsAt, this.optedOut = false,})
+  factory MyRank.fromJson(Map<String, dynamic> j)
+  final String leaderboardId
+  final LeaderboardPeriodInfo period
+  final String referrerId
+  final int? rank
+  final int score
+  final int? pending
+  final int? gapToNext
+  final int? bestRank
+  final DateTime? periodEndsAt
+  final bool optedOut
+class RedeemedCode
+  const RedeemedCode({required this.code, required this.kind, this.linkId, this.campaignId, this.referrerId, this.programId,})
+  factory RedeemedCode.fromJson(Map<String, dynamic> j)
+  final String code
+  final String kind
+  final String? linkId
+  final String? campaignId
+  final String? referrerId
+  final String? programId
+  bool get isReferral
+class Redemption
+  const Redemption({required this.offlineTouchId, required this.code, this.referral})
+  factory Redemption.fromJson(Map<String, dynamic> j)
+  final String offlineTouchId
+  final RedeemedCode code
+  final Referral? referral
+enum ShareApp
+  whatsapp
+  instagram
+  facebook
+  tiktok
+  x
+  linkedin
+  telegram
+  sms
+  email
+  youtube
+  slack
+  imessage
+  discord
+  snapchat
+  other
+  const ShareApp(this.value)
+  final String value
+  static ShareApp? fromString(String value)

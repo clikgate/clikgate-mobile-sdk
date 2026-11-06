@@ -1,0 +1,545 @@
+public final class com/clikgate/Attestation : java/lang/Enum {
+	public static final field OFF Lcom/clikgate/Attestation;
+	public static final field PLAY_INTEGRITY_IF_AVAILABLE Lcom/clikgate/Attestation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/Attestation;
+	public static fun values ()[Lcom/clikgate/Attestation;
+}
+
+public abstract interface class com/clikgate/AttributionListener {
+	public abstract fun onAttribution (Lcom/clikgate/ClikgateAttribution;)V
+}
+
+public abstract interface class com/clikgate/BrowserHandoffListener {
+	public abstract fun onBrowserHandoff (Lcom/clikgate/ClikgateBrowserHandoff;)V
+}
+
+public final class com/clikgate/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field SDK_VERSION Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class com/clikgate/Clikgate {
+	public static final field INSTANCE Lcom/clikgate/Clikgate;
+	public static final field sdkVersion Ljava/lang/String;
+	public static final fun attribution (Lcom/clikgate/AttributionListener;)V
+	public static final fun attributionMetadata ()Ljava/util/Map;
+	public static final fun awaitAttribution (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitRequestContext (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun configure (Landroid/content/Context;Ljava/lang/String;)V
+	public static final fun configure (Landroid/content/Context;Ljava/lang/String;Lcom/clikgate/ClikgateOptions;)V
+	public static synthetic fun configure$default (Landroid/content/Context;Ljava/lang/String;Lcom/clikgate/ClikgateOptions;ILjava/lang/Object;)V
+	public static final fun enableFirebaseForwarding ()V
+	public static final fun enableFirebaseForwarding (Lcom/clikgate/FirebaseForwardingOptions;)V
+	public static synthetic fun enableFirebaseForwarding$default (Lcom/clikgate/FirebaseForwardingOptions;ILjava/lang/Object;)V
+	public static final fun getConsent ()Lcom/clikgate/ClikgateConsent;
+	public static final fun getReferrals ()Lcom/clikgate/ClikgateReferrals;
+	public static final fun goal (Ljava/lang/String;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/Provider;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/Provider;Ljava/lang/Boolean;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/Provider;Ljava/lang/Boolean;Ljava/lang/String;)V
+	public static final fun goal (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/Provider;Ljava/lang/Boolean;Ljava/lang/String;Lcom/clikgate/GoalResultListener;)V
+	public static synthetic fun goal$default (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/Provider;Ljava/lang/Boolean;Ljava/lang/String;Lcom/clikgate/GoalResultListener;ILjava/lang/Object;)V
+	public static final fun goalFromWrapper (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Lcom/clikgate/GoalResultListener;Ljava/lang/String;)Lcom/clikgate/ClikgateError;
+	public static synthetic fun goalFromWrapper$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Lcom/clikgate/GoalResultListener;Ljava/lang/String;ILjava/lang/Object;)Lcom/clikgate/ClikgateError;
+	public static final fun handleIntent (Landroid/app/Activity;Landroid/content/Intent;)Z
+	public static final fun handleUrl (Landroid/net/Uri;)Z
+	public static final fun handleUrl (Ljava/lang/String;)Z
+	public static final fun identifyUser ()V
+	public static final fun identifyUser (Ljava/lang/String;)V
+	public static final fun identifyUser (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun identifyUser (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun identifyUser$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public static final fun isClikgateMessage (Landroid/os/Bundle;)Z
+	public static final fun isClikgateMessage (Ljava/util/Map;)Z
+	public static final fun isConfigured ()Z
+	public static final fun isFeatureEnabled (Ljava/lang/String;)Z
+	public static final fun onBrowserHandoff (Lcom/clikgate/BrowserHandoffListener;)V
+	public static final fun onDeepLink (Lcom/clikgate/DeepLinkListener;)V
+	public static final fun reportServerError (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun requestContext (Lcom/clikgate/ClikgateCallback;)V
+	public static final fun setConsent ()V
+	public static final fun setConsent (Lcom/clikgate/ConsentState;)V
+	public static final fun setConsent (Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;)V
+	public static final fun setConsent (Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;)V
+	public static final fun setConsent (Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;)V
+	public static synthetic fun setConsent$default (Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;ILjava/lang/Object;)V
+	public static final fun setConsentRegion (Ljava/lang/String;)V
+	public static final fun setPushToken (Ljava/lang/String;)V
+	public static final fun setPushToken (Ljava/lang/String;Lcom/clikgate/PushProvider;)V
+	public static synthetic fun setPushToken$default (Ljava/lang/String;Lcom/clikgate/PushProvider;ILjava/lang/Object;)V
+	public static final fun setTrackingEnabled (Z)V
+	public static final fun setWrapper (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun track (Ljava/lang/String;)V
+	public static final fun track (Ljava/lang/String;Lcom/clikgate/ClikgateMoney;)V
+	public static final fun track (Ljava/lang/String;Lcom/clikgate/ClikgateMoney;Ljava/util/Map;)V
+	public static synthetic fun track$default (Ljava/lang/String;Lcom/clikgate/ClikgateMoney;Ljava/util/Map;ILjava/lang/Object;)V
+	public static final fun trackValidated (Ljava/lang/String;Lcom/clikgate/ClikgateMoney;Ljava/util/Map;)Lcom/clikgate/ClikgateError;
+}
+
+public final class com/clikgate/ClikgateAttribution {
+	public static final field Companion Lcom/clikgate/ClikgateAttribution$Companion;
+	public static final field STATUS_ATTRIBUTED Ljava/lang/String;
+	public static final field STATUS_ORGANIC Ljava/lang/String;
+	public static final field STATUS_PENDING Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Lcom/clikgate/ClikgateLink;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Double;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Lcom/clikgate/ClikgateLink;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Lcom/clikgate/ClikgateLink;)Lcom/clikgate/ClikgateAttribution;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateAttribution;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Lcom/clikgate/ClikgateLink;ILjava/lang/Object;)Lcom/clikgate/ClikgateAttribution;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClickId ()Ljava/lang/String;
+	public final fun getClickedAt ()Ljava/lang/String;
+	public final fun getConfidence ()Ljava/lang/Double;
+	public final fun getInstallId ()Ljava/lang/String;
+	public final fun getLink ()Lcom/clikgate/ClikgateLink;
+	public final fun getMatchType ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isAttributed ()Z
+	public final fun isReinstall ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateAttribution$Companion {
+}
+
+public final class com/clikgate/ClikgateBrowserHandoff {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/clikgate/ClikgateBrowserHandoff;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateBrowserHandoff;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/clikgate/ClikgateBrowserHandoff;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/clikgate/ClikgateCallback {
+	public abstract fun onResult (Lcom/clikgate/ClikgateResult;)V
+}
+
+public final class com/clikgate/ClikgateConsent {
+	public fun <init> (Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Ljava/lang/String;Ljava/lang/Boolean;)V
+	public final fun component1 ()Lcom/clikgate/ConsentState;
+	public final fun component2 ()Lcom/clikgate/ConsentState;
+	public final fun component3 ()Lcom/clikgate/ConsentState;
+	public final fun component4 ()Lcom/clikgate/ConsentState;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/Boolean;
+	public final fun copy (Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/clikgate/ClikgateConsent;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateConsent;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Lcom/clikgate/ConsentState;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/clikgate/ClikgateConsent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdPersonalization ()Lcom/clikgate/ConsentState;
+	public final fun getAdUserData ()Lcom/clikgate/ConsentState;
+	public final fun getAnalytics ()Lcom/clikgate/ConsentState;
+	public final fun getAttribution ()Lcom/clikgate/ConsentState;
+	public final fun getRegion ()Ljava/lang/String;
+	public final fun getRequired ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateDeepLink {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ZLjava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateLink;Lcom/clikgate/Referral;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ZLjava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateLink;Lcom/clikgate/Referral;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Lcom/clikgate/ClikgateLink;
+	public final fun component8 ()Lcom/clikgate/Referral;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ZLjava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateLink;Lcom/clikgate/Referral;Ljava/lang/String;)Lcom/clikgate/ClikgateDeepLink;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateDeepLink;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ZLjava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateLink;Lcom/clikgate/Referral;Ljava/lang/String;ILjava/lang/Object;)Lcom/clikgate/ClikgateDeepLink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlockMessage ()Ljava/lang/String;
+	public final fun getClickId ()Ljava/lang/String;
+	public final fun getData ()Ljava/util/Map;
+	public final fun getLink ()Lcom/clikgate/ClikgateLink;
+	public final fun getMatchType ()Ljava/lang/String;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getReferral ()Lcom/clikgate/Referral;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isDeferred ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateError : java/lang/Exception {
+	public static final field CONSENT_REQUIRED Ljava/lang/String;
+	public static final field Companion Lcom/clikgate/ClikgateError$Companion;
+	public static final field FEATURE_DISABLED Ljava/lang/String;
+	public static final field INSTALL_PENDING Ljava/lang/String;
+	public static final field INVALID_ARGUMENT Ljava/lang/String;
+	public static final field INVALID_SDK_KEY Ljava/lang/String;
+	public static final field NETWORK_ERROR Ljava/lang/String;
+	public static final field NOT_CONFIGURED Ljava/lang/String;
+	public static final field OPTED_OUT Ljava/lang/String;
+	public static final field SDK_DISABLED Ljava/lang/String;
+	public static final field SDK_VERSION_BLOCKED Ljava/lang/String;
+	public static final field SERVER_ERROR Ljava/lang/String;
+	public static final field TIMEOUT Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;Ljava/lang/Throwable;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;Ljava/lang/Throwable;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getFeature ()Ljava/lang/String;
+	public final fun getOfflineTouchId ()Ljava/lang/String;
+	public final fun getParam ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/Integer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateError$Companion {
+}
+
+public final class com/clikgate/ClikgateFeatures {
+	public static final field APPLE_SEARCH_ADS Ljava/lang/String;
+	public static final field APP_ATTRIBUTION Ljava/lang/String;
+	public static final field IDENTITY_CHECKS Ljava/lang/String;
+	public static final field INSTANCE Lcom/clikgate/ClikgateFeatures;
+	public static final field LEADERBOARDS Ljava/lang/String;
+	public static final field OFFLINE_CODES Ljava/lang/String;
+	public static final field PROBABILISTIC_MATCHING Ljava/lang/String;
+	public static final field REFERRALS Ljava/lang/String;
+	public static final field SKAN_POSTBACKS Ljava/lang/String;
+	public static final field UNINSTALL_TRACKING Ljava/lang/String;
+	public static final field WHATSAPP_ATTRIBUTION Ljava/lang/String;
+}
+
+public abstract interface annotation class com/clikgate/ClikgateInternalApi : java/lang/annotation/Annotation {
+}
+
+public final class com/clikgate/ClikgateLink {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lcom/clikgate/ClikgateLink;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateLink;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/clikgate/ClikgateLink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCampaignId ()Ljava/lang/String;
+	public final fun getExternalReference ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKind ()Ljava/lang/String;
+	public final fun getMetadata ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateMoney {
+	public static final field Companion Lcom/clikgate/ClikgateMoney$Companion;
+	public fun <init> (JLjava/lang/String;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (JLjava/lang/String;)Lcom/clikgate/ClikgateMoney;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateMoney;JLjava/lang/String;ILjava/lang/Object;)Lcom/clikgate/ClikgateMoney;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmountMinor ()J
+	public final fun getCurrency ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun ofMinor (JLjava/lang/String;)Lcom/clikgate/ClikgateMoney;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateMoney$Companion {
+	public final fun ofMinor (JLjava/lang/String;)Lcom/clikgate/ClikgateMoney;
+}
+
+public final class com/clikgate/ClikgateOptions {
+	public static final field Companion Lcom/clikgate/ClikgateOptions$Companion;
+	public static final field DEFAULT_API_BASE_URL Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;J)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;Z)V
+	public synthetic fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Lcom/clikgate/LogLevel;
+	public final fun component3 ()Lcom/clikgate/Environment;
+	public final fun component4 ()Lcom/clikgate/Attestation;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()J
+	public final fun component7 ()Ljava/lang/Long;
+	public final fun component8 ()Z
+	public final fun copy (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;Z)Lcom/clikgate/ClikgateOptions;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateOptions;Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZILjava/lang/Object;)Lcom/clikgate/ClikgateOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiBaseUrl ()Ljava/lang/String;
+	public final fun getAttestation ()Lcom/clikgate/Attestation;
+	public final fun getCloudProjectNumber ()Ljava/lang/Long;
+	public final fun getDeferredDeepLinkTimeoutMs ()J
+	public final fun getEnvironment ()Lcom/clikgate/Environment;
+	public final fun getLinkDomains ()Ljava/util/List;
+	public final fun getLogLevel ()Lcom/clikgate/LogLevel;
+	public final fun getPlatformDomainBrowserFallback ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateOptions$Companion {
+}
+
+public final class com/clikgate/ClikgateReferrals {
+	public static final field INSTANCE Lcom/clikgate/ClikgateReferrals;
+	public static final fun applyCode (Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun awaitApplyCode (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun awaitReferredBy (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun referredBy (Lcom/clikgate/ClikgateCallback;)V
+}
+
+public final class com/clikgate/ClikgateRequestContext {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getApiBaseUrl ()Ljava/lang/String;
+	public final fun getCustomerUserId ()Ljava/lang/String;
+	public final fun getEnvironment ()Ljava/lang/String;
+	public final fun getIdentityToken ()Ljava/lang/String;
+	public final fun getInstallationId ()Ljava/lang/String;
+	public final fun getNativeSdkVersion ()Ljava/lang/String;
+	public final fun getSdkKey ()Ljava/lang/String;
+	public final fun getSdkVersion ()Ljava/lang/String;
+	public final fun headers ()Ljava/util/Map;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/clikgate/ClikgateResult {
+	public final fun errorOrNull ()Lcom/clikgate/ClikgateError;
+	public final fun getOrNull ()Ljava/lang/Object;
+	public final fun getOrThrow ()Ljava/lang/Object;
+	public final fun isSuccess ()Z
+}
+
+public final class com/clikgate/ClikgateResult$Failure : com/clikgate/ClikgateResult {
+	public fun <init> (Lcom/clikgate/ClikgateError;)V
+	public final fun component1 ()Lcom/clikgate/ClikgateError;
+	public final fun copy (Lcom/clikgate/ClikgateError;)Lcom/clikgate/ClikgateResult$Failure;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateResult$Failure;Lcom/clikgate/ClikgateError;ILjava/lang/Object;)Lcom/clikgate/ClikgateResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/clikgate/ClikgateError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateResult$Success : com/clikgate/ClikgateResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcom/clikgate/ClikgateResult$Success;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateResult$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcom/clikgate/ClikgateResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ConsentState : java/lang/Enum {
+	public static final field Companion Lcom/clikgate/ConsentState$Companion;
+	public static final field DENIED Lcom/clikgate/ConsentState;
+	public static final field GRANTED Lcom/clikgate/ConsentState;
+	public static final field UNKNOWN Lcom/clikgate/ConsentState;
+	public static final fun fromWire (Ljava/lang/String;)Lcom/clikgate/ConsentState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/ConsentState;
+	public static fun values ()[Lcom/clikgate/ConsentState;
+}
+
+public final class com/clikgate/ConsentState$Companion {
+	public final fun fromWire (Ljava/lang/String;)Lcom/clikgate/ConsentState;
+}
+
+public abstract interface class com/clikgate/DeepLinkListener {
+	public abstract fun onDeepLink (Lcom/clikgate/ClikgateDeepLink;)V
+}
+
+public final class com/clikgate/Environment : java/lang/Enum {
+	public static final field PRODUCTION Lcom/clikgate/Environment;
+	public static final field SANDBOX Lcom/clikgate/Environment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/Environment;
+	public static fun values ()[Lcom/clikgate/Environment;
+}
+
+public final class com/clikgate/FirebaseForwardingOptions {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public fun <init> (ZZ)V
+	public fun <init> (ZZZ)V
+	public fun <init> (ZZZLjava/util/Map;)V
+	public synthetic fun <init> (ZZZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (ZZZLjava/util/Map;)Lcom/clikgate/FirebaseForwardingOptions;
+	public static synthetic fun copy$default (Lcom/clikgate/FirebaseForwardingOptions;ZZZLjava/util/Map;ILjava/lang/Object;)Lcom/clikgate/FirebaseForwardingOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEventNameMap ()Ljava/util/Map;
+	public final fun getLogAttributionEvent ()Z
+	public final fun getMirrorEvents ()Z
+	public final fun getSetUserProperties ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/GoalKind : java/lang/Enum {
+	public static final field PAYMENT Lcom/clikgate/GoalKind;
+	public static final field STANDARD Lcom/clikgate/GoalKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/GoalKind;
+	public static fun values ()[Lcom/clikgate/GoalKind;
+}
+
+public final class com/clikgate/GoalResult {
+	public fun <init> (Lcom/clikgate/GoalStatus;Ljava/lang/String;Lcom/clikgate/GoalKind;Z)V
+	public final fun component1 ()Lcom/clikgate/GoalStatus;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/clikgate/GoalKind;
+	public final fun component4 ()Z
+	public final fun copy (Lcom/clikgate/GoalStatus;Ljava/lang/String;Lcom/clikgate/GoalKind;Z)Lcom/clikgate/GoalResult;
+	public static synthetic fun copy$default (Lcom/clikgate/GoalResult;Lcom/clikgate/GoalStatus;Ljava/lang/String;Lcom/clikgate/GoalKind;ZILjava/lang/Object;)Lcom/clikgate/GoalResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGoalKind ()Lcom/clikgate/GoalKind;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getStatus ()Lcom/clikgate/GoalStatus;
+	public final fun getValueIgnored ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/clikgate/GoalResultListener {
+	public abstract fun onResult (Lcom/clikgate/GoalResult;)V
+}
+
+public final class com/clikgate/GoalStatus : java/lang/Enum {
+	public static final field COUNTED Lcom/clikgate/GoalStatus;
+	public static final field REFUSED Lcom/clikgate/GoalStatus;
+	public static final field WAITING Lcom/clikgate/GoalStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/GoalStatus;
+	public static fun values ()[Lcom/clikgate/GoalStatus;
+}
+
+public final class com/clikgate/LogLevel : java/lang/Enum {
+	public static final field DEBUG Lcom/clikgate/LogLevel;
+	public static final field ERROR Lcom/clikgate/LogLevel;
+	public static final field INFO Lcom/clikgate/LogLevel;
+	public static final field NONE Lcom/clikgate/LogLevel;
+	public static final field VERBOSE Lcom/clikgate/LogLevel;
+	public static final field WARN Lcom/clikgate/LogLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/LogLevel;
+	public static fun values ()[Lcom/clikgate/LogLevel;
+}
+
+public final class com/clikgate/Provider {
+	public static final field ADYEN Lcom/clikgate/Provider;
+	public static final field AIRTEL_MONEY Lcom/clikgate/Provider;
+	public static final field CHECKOUT_COM Lcom/clikgate/Provider;
+	public static final field CUSTOM Lcom/clikgate/Provider;
+	public static final field Companion Lcom/clikgate/Provider$Companion;
+	public static final field DPO_PAY Lcom/clikgate/Provider;
+	public static final field FLUTTERWAVE Lcom/clikgate/Provider;
+	public static final field HUBTEL Lcom/clikgate/Provider;
+	public static final field INTERSWITCH Lcom/clikgate/Provider;
+	public static final field KORAPAY Lcom/clikgate/Provider;
+	public static final field MONIEPOINT Lcom/clikgate/Provider;
+	public static final field MONNIFY Lcom/clikgate/Provider;
+	public static final field MPESA Lcom/clikgate/Provider;
+	public static final field MTN_MOMO Lcom/clikgate/Provider;
+	public static final field OPAY Lcom/clikgate/Provider;
+	public static final field PAGA Lcom/clikgate/Provider;
+	public static final field PAYFAST Lcom/clikgate/Provider;
+	public static final field PAYPAL Lcom/clikgate/Provider;
+	public static final field PAYSTACK Lcom/clikgate/Provider;
+	public static final field PEACH_PAYMENTS Lcom/clikgate/Provider;
+	public static final field PESAPAL Lcom/clikgate/Provider;
+	public static final field REMITA Lcom/clikgate/Provider;
+	public static final field SHOPIFY Lcom/clikgate/Provider;
+	public static final field SQUAD Lcom/clikgate/Provider;
+	public static final field SQUARE Lcom/clikgate/Provider;
+	public static final field STRIPE Lcom/clikgate/Provider;
+	public static final field WOOCOMMERCE Lcom/clikgate/Provider;
+	public static final field YOCO Lcom/clikgate/Provider;
+	public static final field entries Ljava/util/List;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun fromString (Ljava/lang/String;)Lcom/clikgate/Provider;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/Provider$Companion {
+	public final fun fromString (Ljava/lang/String;)Lcom/clikgate/Provider;
+}
+
+public final class com/clikgate/PushProvider : java/lang/Enum {
+	public static final field APNS Lcom/clikgate/PushProvider;
+	public static final field FCM Lcom/clikgate/PushProvider;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/PushProvider;
+	public static fun values ()[Lcom/clikgate/PushProvider;
+}
+
+public final class com/clikgate/Referral {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/clikgate/Referral;
+	public static synthetic fun copy$default (Lcom/clikgate/Referral;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/clikgate/Referral;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedAt ()Ljava/lang/String;
+	public final fun getProgramId ()Ljava/lang/String;
+	public final fun getReferralId ()Ljava/lang/String;
+	public final fun getReferrerDisplayName ()Ljava/lang/String;
+	public final fun getReferrerId ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ReferredBy {
+	public fun <init> (ZLcom/clikgate/Referral;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Lcom/clikgate/Referral;
+	public final fun copy (ZLcom/clikgate/Referral;)Lcom/clikgate/ReferredBy;
+	public static synthetic fun copy$default (Lcom/clikgate/ReferredBy;ZLcom/clikgate/Referral;ILjava/lang/Object;)Lcom/clikgate/ReferredBy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReferral ()Lcom/clikgate/Referral;
+	public final fun getReferred ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

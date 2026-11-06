@@ -1,0 +1,95 @@
+{
+  "app_id": "app_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "environment": "production",
+  "server_time": "2026-10-20T10:00:00Z",
+  "link_domains": [
+    "inv.myapp.com",
+    "ciz.to"
+  ],
+  "features": {
+    "deferred_deep_linking": true,
+    "pasteboard_matching": "on_interstitial_tap",
+    "probabilistic_matching": false,
+    "apple_search_ads": false,
+    "uninstall_tracking": true,
+    "collect_advertising_id": false,
+    "restricted_mode": false,
+    "attestation": {
+      "ios_app_attest": "off",
+      "android_play_integrity": "off"
+    },
+    "app_attribution": true,
+    "referrals": true,
+    "leaderboards": true,
+    "identity_checks": false,
+    "whatsapp_attribution": false,
+    "offline_codes": true,
+    "skan_postbacks": false
+  },
+  "referral_programs": [
+    {
+      "id": "rpg_01JAB3C4D5E6F7G8H9JKMNPQRS",
+      "name": "Invite friends",
+      "status": "active",
+      "client_link_creation": true,
+      "allow_manual_code_entry": true,
+      "require_identity_token": true
+    }
+  ],
+  "conversion_value_schema": {
+    "id": "cvs_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "version": 1,
+    "rules": [
+      {
+        "fine_value": 1,
+        "coarse_value": "low",
+        "event": "signup",
+        "lock_window": false
+      },
+      {
+        "fine_value": 20,
+        "coarse_value": "medium",
+        "event": "purchase",
+        "min_revenue_minor": 500000,
+        "currency": "NGN",
+        "lock_window": false
+      }
+    ]
+  },
+  "batching": {
+    "max_batch_size": 100,
+    "flush_interval_seconds": 15,
+    "flush_at_count": 20,
+    "max_queue_events": 1000,
+    "max_queue_bytes": 1048576
+  },
+  "reattestation_interval_days": 7,
+  "session_timeout_minutes": 30,
+  "consent": {
+    "mode": "required_in_regions",
+    "required": false,
+    "region": "NG",
+    "required_regions": [
+      "EEA",
+      "UK",
+      "CH"
+    ],
+    "anonymous_counts": false,
+    "buffer_max_days": 7,
+    "buffer_max_events": 1000,
+    "identity_checks_basis": "fraud_prevention"
+  },
+  "min_supported_version": "1.0.0",
+  "latest_version": "1.3.0",
+  "version_status": "current",
+  "blocked_instructions": null,
+  "firebase_forwarding": {
+    "enabled": false,
+    "log_attribution_event": true,
+    "set_user_properties": true,
+    "mirror_events": false,
+    "report_app_instance_id": true
+  },
+  "private_mode": true,
+  "allow_labels": true
+}

@@ -1,0 +1,180 @@
+name: Flutter plugin + Engage add-on
+
+on:
+  push:
+    branches: [main]
+    paths: ["flutter/**", "flutter_engage/**", "android/**", "ios/**", "shared/**", ".github/workflows/flutter.yml"]
+    tags: ["flutter-v*", "flutter-engage-v*"]
+  pull_request:
+    paths: ["flutter/**", "flutter_engage/**", "android/**", "ios/**", "shared/**", ".github/workflows/flutter.yml"]
+
+concurrency:
+  group: flutter-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.35.4" # the first consumer app pins this version
+
+jobs:
+  dart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Plugin - pub get / analyze / test
+        working-directory: flutter
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Engage add-on (clikgate_engage, pure Dart) - pub get / analyze / test
+        working-directory: flutter_engage
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Public-API snapshots + core/Engage boundary (spec 20)
+        run: flutter/tool/check_api.sh
+      - name: Example - analyze / widget tests
+        working-directory: flutter/example
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Publish dry run
+        working-directory: flutter
+        run: flutter pub publish --dry-run
+      # Warns (hint) about pubspec_overrides.yaml (monorepo path to ../flutter); that file isn't published.
+      - name: Publish dry run (Engage)
+        working-directory: flutter_engage
+        run: flutter pub publish --dry-run
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      # The example's settings.gradle.kts includes ../../android as a composite build, so this
+      # also compiles the native SDK from source.
+      - name: Build example APK
+        working-directory: flutter/example
+        run: flutter build apk --debug -Pclikgate.linkDomain=inv.example.com
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Build example for the iOS simulator
+        working-directory: flutter/example
+        run: flutter build ios --simulator --debug --no-codesign
+
+  # Runs example/integration_test on an Android emulator against a sandbox backend.
+  # Configure repository variable CLIKGATE_API_BASE_URL and secrets CLIKGATE_SDK_KEY,
+  # CLIKGATE_PROGRAM_ID (the tests skip themselves when the URL is empty).
+  integration-android:
+    if: vars.CLIKGATE_API_BASE_URL != ''
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          working-directory: flutter/example
+          script: >-
+            flutter test integration_test
+            --dart-define=CLIKGATE_API_BASE_URL=${{ vars.CLIKGATE_API_BASE_URL }}
+            --dart-define=CLIKGATE_SDK_KEY=${{ secrets.CLIKGATE_SDK_KEY }}
+            --dart-define=CLIKGATE_PROGRAM_ID=${{ secrets.CLIKGATE_PROGRAM_ID }}
+
+  # Publishes clikgate_flutter to pub.dev on flutter-v* tags using pub.dev automated publishing
+  # (GitHub OIDC; enable it in the package admin page with tag pattern `flutter-v{{version}}`).
+  # Release com.clikgate:clikgate-android (and the iOS pod) with the same version first.
+  release:
+    if: startsWith(github.ref, 'refs/tags/flutter-v')
+    needs: [dart, android, ios]
+    runs-on: ubuntu-latest
+    environment: pub-dev
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Check tag matches pubspec version
+        working-directory: flutter
+        run: |
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          test "flutter-v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} != flutter-v$version"; exit 1; }
+      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      - name: Scan the package
+        run: python3 scripts/scan_release_packages.py --pub flutter
+      - name: Publish
+        working-directory: flutter
+        run: flutter pub publish --force
+
+  # Publishes clikgate_engage on flutter-engage-v* tags (after clikgate_flutter of the version it
+  # requires is on pub.dev). pubspec_overrides.yaml is removed first so the package resolves the
+  # hosted clikgate_flutter, as users will.
+  release-engage:
+    if: startsWith(github.ref, 'refs/tags/flutter-engage-v')
+    needs: [dart]
+    runs-on: ubuntu-latest
+    environment: pub-dev
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Check tag matches pubspec version
+        working-directory: flutter_engage
+        run: |
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          test "flutter-engage-v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} != flutter-engage-v$version"; exit 1; }
+      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      - name: Scan the package
+        run: python3 scripts/scan_release_packages.py --pub flutter_engage
+      - name: Publish
+        working-directory: flutter_engage
+        run: |
+          rm pubspec_overrides.yaml
+          flutter pub get
+          flutter pub publish --force

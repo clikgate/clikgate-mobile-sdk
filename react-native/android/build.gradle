@@ -1,0 +1,79 @@
+// Android side of @clikgate/react-native: a TurboModule over the native Clikgate Android SDK.
+//
+// Native SDK dependency (com.clikgate:clikgate-android):
+//  - Releases: resolved from Maven Central at the version below.
+//  - This monorepo: example/android/settings.gradle includes ../../../android as a composite
+//    build and substitutes the module with the :clikgate project (no publishing needed).
+//  - Other apps developing against an unpublished SDK: run `./gradlew :clikgate:publishToMavenLocal`
+//    in android/ and set `clikgate.useMavenLocal=true` in the app's android/gradle.properties.
+//  - `clikgate.androidVersion` (gradle property) overrides the SDK version.
+
+buildscript {
+  ext.ClikgateRN = [
+    kotlinVersion: "2.1.20",
+    minSdkVersion: 24,
+    compileSdkVersion: 36
+  ]
+
+  ext.clikgateRnExt = { prop ->
+    return rootProject.ext.has(prop) ? rootProject.ext.get(prop) : ClikgateRN[prop]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    // Only used when this project is built on its own; inside an app, the app's AGP and
+    // Kotlin Gradle plugin are used.
+    classpath "com.android.tools.build:gradle:8.12.0"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${clikgateRnExt('kotlinVersion')}"
+  }
+}
+
+def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "1.5.1"
+
+apply plugin: "com.android.library"
+
+if (project.extensions.findByName("kotlin") == null) {
+  apply plugin: "kotlin-android"
+}
+
+apply plugin: "com.facebook.react"
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+if (project.findProperty("clikgate.useMavenLocal") == "true") {
+  rootProject.allprojects {
+    repositories {
+      mavenLocal {
+        content { includeGroup("com.clikgate") }
+      }
+    }
+  }
+}
+
+android {
+  namespace "com.clikgate.reactnative"
+
+  compileSdkVersion clikgateRnExt("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion clikgateRnExt("minSdkVersion")
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation "com.clikgate:clikgate-android:${clikgateAndroidVersion}"
+}

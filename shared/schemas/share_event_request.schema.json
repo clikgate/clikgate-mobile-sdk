@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/share_event_request.schema.json",
+  "title": "share_event_request",
+  "type": "object",
+  "properties": {
+    "link_id": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "url": {
+      "type": "string",
+      "maxLength": 2048
+    },
+    "app": {
+      "enum": [
+        "whatsapp",
+        "instagram",
+        "facebook",
+        "tiktok",
+        "x",
+        "linkedin",
+        "telegram",
+        "sms",
+        "email",
+        "youtube",
+        "slack",
+        "imessage",
+        "discord",
+        "snapchat",
+        "other"
+      ]
+    },
+    "share_ending": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z]$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "web_key": {
+      "type": "string",
+      "maxLength": 80
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "app"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "link_id"
+      ]
+    },
+    {
+      "required": [
+        "url"
+      ]
+    }
+  ]
+}

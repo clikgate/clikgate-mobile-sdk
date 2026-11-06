@@ -1,0 +1,7 @@
+// Clikgate example settings shared by Debug/Release/Profile.
+// Universal Link domain for the Associated Domains entitlement (applinks:<domain>). Keep it in
+// sync with --dart-define=CLIKGATE_LINK_DOMAIN. Override locally in Flutter/ClikgateLocal.xcconfig.
+CLIKGATE_LINK_DOMAIN = inv.example.com
+// Custom scheme for the interstitial's "Open in app" button (same as Android).
+CLIKGATE_URL_SCHEME = clikgateexample
+#include? "ClikgateLocal.xcconfig"

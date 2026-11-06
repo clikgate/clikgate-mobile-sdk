@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower (android:fullBackupContent). -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="clikgate.prefs.xml" />
+    <exclude domain="database" path="clikgate_events.db" />
+    <exclude domain="database" path="clikgate_events.db-journal" />
+</full-backup-content>

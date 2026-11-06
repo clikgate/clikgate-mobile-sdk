@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/attest_challenge_response.schema.json",
+  "title": "attest_challenge_response",
+  "type": "object",
+  "properties": {
+    "challenge": {
+      "type": "string"
+    },
+    "nonce": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "challenge",
+    "nonce",
+    "expires_at"
+  ]
+}

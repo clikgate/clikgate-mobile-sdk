@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/attest_request.schema.json",
+  "title": "attest_request",
+  "type": "object",
+  "properties": {
+    "type": {
+      "enum": [
+        "app_attest",
+        "app_attest_assertion",
+        "play_integrity"
+      ]
+    },
+    "challenge": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "key_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "request_type": {
+      "enum": [
+        "standard",
+        "classic"
+      ]
+    },
+    "device_check_token": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 16384
+    },
+    "consent": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "tracking_allowed": {
+              "type": "boolean"
+            },
+            "analytics": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "attribution": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "ad_user_data": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "ad_personalization": {
+              "enum": [
+                "granted",
+                "denied",
+                "unknown"
+              ]
+            },
+            "region": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(EEA|UK|[A-Z]{2})$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "updated_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "challenge",
+    "token"
+  ]
+}

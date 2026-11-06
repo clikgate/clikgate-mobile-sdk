@@ -1,0 +1,115 @@
+{
+  "links": [
+    {
+      "url": "https://inv.myapp.com/summer",
+      "app": "whatsapp",
+      "expected": "https://inv.myapp.com/summer-w"
+    },
+    {
+      "url": "https://inv.myapp.com/summer/",
+      "app": "telegram",
+      "expected": "https://inv.myapp.com/summer-g"
+    },
+    {
+      "url": "https://inv.myapp.com/summer?utm_source=news#top",
+      "app": "email",
+      "expected": "https://inv.myapp.com/summer-e?utm_source=news#top"
+    },
+    {
+      "url": "https://inv.myapp.com/summer-i",
+      "app": "whatsapp",
+      "expected": "https://inv.myapp.com/summer-w"
+    },
+    {
+      "url": "https://inv.myapp.com/summer-W",
+      "app": "sms",
+      "expected": "https://inv.myapp.com/summer-s"
+    },
+    {
+      "url": "https://inv.myapp.com/summer-q3",
+      "app": "x",
+      "expected": "https://inv.myapp.com/summer-x"
+    },
+    {
+      "url": "https://inv.myapp.com/summer-dress-2026",
+      "app": "linkedin",
+      "expected": "https://inv.myapp.com/summer-dress-2026-l"
+    },
+    {
+      "url": "https://inv.myapp.com/summer",
+      "app": "slack",
+      "expected": "https://inv.myapp.com/summer"
+    },
+    {
+      "url": "https://inv.myapp.com/summer-w",
+      "app": "other",
+      "expected": "https://inv.myapp.com/summer"
+    },
+    {
+      "url": "https://inv.myapp.com/",
+      "app": "whatsapp",
+      "expected": "https://inv.myapp.com/"
+    },
+    {
+      "url": "https://inv.myapp.com",
+      "app": "whatsapp",
+      "expected": "https://inv.myapp.com"
+    },
+    {
+      "url": "myapp://open/summer",
+      "app": "whatsapp",
+      "expected": "myapp://open/summer"
+    },
+    {
+      "url": "https://inv.myapp.com/r/ADA42X",
+      "code": "ADA42X",
+      "app": "facebook",
+      "expected": "https://inv.myapp.com/r/ADA42X-f"
+    },
+    {
+      "url": "https://myapp.example/invite?ref=ADA42X&lang=en",
+      "code": "ADA42X",
+      "app": "sms",
+      "expected": "https://myapp.example/invite?ref=ADA42X-s&lang=en"
+    },
+    {
+      "url": "https://myapp.example/invite?ref=ADA42X",
+      "code": "ADA42X",
+      "app": "other",
+      "expected": "https://myapp.example/invite?ref=ADA42X"
+    }
+  ],
+  "texts": [
+    {
+      "message": null,
+      "url": "https://inv.myapp.com/summer-w",
+      "expected": "https://inv.myapp.com/summer-w"
+    },
+    {
+      "message": "Join me on MyApp",
+      "url": "https://inv.myapp.com/summer-w",
+      "expected": "Join me on MyApp https://inv.myapp.com/summer-w"
+    },
+    {
+      "message": "  ",
+      "url": "https://inv.myapp.com/summer",
+      "expected": "https://inv.myapp.com/summer"
+    }
+  ],
+  "android_packages": {
+    "com.whatsapp.w4b": "whatsapp",
+    "com.facebook.orca": "facebook",
+    "com.google.android.gm": "email",
+    "com.example.notes": "other"
+  },
+  "ios_activity_types": {
+    "net.whatsapp.WhatsApp.ShareExtension": "whatsapp",
+    "com.burbn.instagram.shareextension": "instagram",
+    "ph.telegra.Telegraph.Share": "telegram",
+    "com.apple.UIKit.activity.Message": "sms",
+    "com.apple.UIKit.activity.Mail": "email",
+    "com.apple.UIKit.activity.CopyToPasteboard": "other",
+    "com.example.notes.share": "other",
+    "net.whatsappfake.app": "other"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/opt_out_request.schema.json",
+  "title": "opt_out_request",
+  "type": "object",
+  "properties": {
+    "opt_out": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "opt_out"
+  ]
+}

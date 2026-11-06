@@ -1,0 +1,121 @@
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -53,3 +53,6 @@
+     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
++    // clikgate-setup:start
++    implementation 'com.clikgate:clikgate-android:1.5.1'
++    // clikgate-setup:end
+ }
+
+--- /dev/null
++++ b/app/src/debug/AndroidManifest.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Debug builds only: merged into the main manifest by the Android build. -->
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
++    <application>
++        <activity android:name=".MainActivity">
++            <!-- clikgate-setup:start -->
++            <!-- Clikgate test links (debug builds only) -->
++            <intent-filter android:autoVerify="true">
++                <action android:name="android.intent.action.VIEW" />
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++                <data android:scheme="https" />
++                <data android:host="acme.dev.ciz.to" />
++            </intent-filter>
++            <!-- clikgate-setup:end -->
++        </activity>
++    </application>
++</manifest>
+
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -11,5 +11,6 @@
+         android:roundIcon="@mipmap/ic_launcher_round"
+         android:supportsRtl="true"
+-        android:theme="@style/Theme.ViewsApp">
++        android:theme="@style/Theme.ViewsApp"
++        android:name=".ClikgateApplication">
+         <activity
+             android:name=".MainActivity"
+@@ -20,4 +21,15 @@
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
++            <!-- clikgate-setup:start -->
++            <!-- Clikgate App Links (all builds) -->
++            <intent-filter android:autoVerify="true">
++                <action android:name="android.intent.action.VIEW" />
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++                <data android:scheme="https" />
++                <data android:host="acme.ciz.to" />
++                <data android:host="go.acme.com" />
++            </intent-filter>
++            <!-- clikgate-setup:end -->
+         </activity>
+     </application>
+
+--- /dev/null
++++ b/app/src/main/java/com/example/viewsapp/ClikgateApplication.kt
+@@ -0,0 +1,28 @@
++package com.example.viewsapp
++
++import android.app.Application
++import android.content.pm.ApplicationInfo
++import android.util.Log
++import com.clikgate.Clikgate
++import com.clikgate.ClikgateOptions
++
++// Created by the Clikgate setup command (registered in AndroidManifest.xml).
++class ClikgateApplication : Application() {
++    override fun onCreate() {
++        super.onCreate()
++        // clikgate-setup:start
++        // acme.dev.ciz.to (test links) only in debug builds
++        val debuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
++        val linkDomains = if (debuggable) listOf("acme.ciz.to", "go.acme.com") + "acme.dev.ciz.to" else listOf("acme.ciz.to", "go.acme.com")
++        Clikgate.configure(
++            this,
++            sdkKey = "cg_sdk_test_abc123",
++            options = ClikgateOptions(linkDomains = linkDomains),
++        )
++        Clikgate.onDeepLink { link ->
++            // Open the screen for link.path (link.data has the link's data)
++            Log.i("Clikgate", "Deep link: ${link.path}")
++        }
++        // clikgate-setup:end
++    }
++}
+
+--- a/app/src/main/java/com/example/viewsapp/MainActivity.kt
++++ b/app/src/main/java/com/example/viewsapp/MainActivity.kt
+@@ -6,8 +6,15 @@
+ import androidx.core.view.ViewCompat
+ import androidx.core.view.WindowInsetsCompat
++// clikgate-setup:start
++import android.content.Intent
++import com.clikgate.Clikgate
++// clikgate-setup:end
+ 
+ class MainActivity : AppCompatActivity() {
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
++        // clikgate-setup:start
++        Clikgate.handleIntent(this, intent) // cold start
++        // clikgate-setup:end
+         enableEdgeToEdge()
+         setContentView(R.layout.activity_main)
+@@ -18,3 +25,11 @@
+         }
+     }
++
++    // clikgate-setup:start
++    override fun onNewIntent(intent: Intent) {
++        super.onNewIntent(intent)
++        setIntent(intent)
++        Clikgate.handleIntent(this, intent) // warm start
++    }
++    // clikgate-setup:end
+ }

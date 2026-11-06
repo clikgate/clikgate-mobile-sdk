@@ -1,0 +1,153 @@
+{
+  "name": "@clikgate/react-native",
+  "version": "1.6.1",
+  "description": "Clikgate deep linking, deferred deep links, install attribution, referrals and uninstall tracking for React Native (bridge over the native Clikgate Android and iOS SDKs), with an Expo config plugin.",
+  "main": "./lib/module/index.js",
+  "types": "./lib/typescript/src/index.d.ts",
+  "react-native": "./src/index.ts",
+  "source": "./src/index.ts",
+  "exports": {
+    ".": {
+      "clikgate-react-native-source": "./src/index.ts",
+      "types": "./lib/typescript/src/index.d.ts",
+      "default": "./lib/module/index.js"
+    },
+    "./app.plugin.js": "./app.plugin.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "plugin/build",
+    "app.plugin.js",
+    "*.podspec",
+    "react-native.config.js",
+    "README.md",
+    "CHANGELOG.md",
+    "!ios/build",
+    "!android/build",
+    "!android/.gradle",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
+  "scripts": {
+    "build": "npm run build:lib && npm run build:plugin",
+    "build:lib": "bob build",
+    "build:plugin": "tsc -p plugin/tsconfig.json",
+    "clean": "del-cli lib plugin/build android/build example/android/build example/android/app/build example/ios/build",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p plugin/tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"plugin/src/**/*.ts\" \"example/src/**/*.{ts,tsx}\" \"example/*.{js,ts,tsx}\" app.plugin.js",
+    "test": "jest",
+    "example:android": "(cd ../android && ./gradlew :clikgate:publishToMavenLocal) && cd example/android && ./gradlew assembleDebug"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "ios",
+    "android",
+    "deep-linking",
+    "deferred-deep-linking",
+    "attribution",
+    "referrals",
+    "uninstall-tracking",
+    "clikgate"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clikgate/clikgate-mobile-sdk.git",
+    "directory": "react-native"
+  },
+  "author": "Clikgate <sdk@clikgate.com> (https://clikgate.com)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/clikgate/clikgate-mobile-sdk/issues"
+  },
+  "homepage": "https://clikgate.com",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.1.0",
+    "@eslint/eslintrc": "^3.3.6",
+    "@eslint/js": "^9.39.5",
+    "@expo/config-plugins": "~57.0.10",
+    "@react-native/babel-preset": "0.86.3",
+    "@react-native/eslint-config": "0.86.3",
+    "@react-native/jest-preset": "0.86.3",
+    "@types/jest": "^29.5.14",
+    "@types/react": "^19.2.0",
+    "del-cli": "^7.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-ft-flow": "^3.0.11",
+    "eslint-plugin-prettier": "^5.5.6",
+    "jest": "^29.7.0",
+    "prettier": "^3.9.6",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-builder-bob": "^0.43.2",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "expo": ">=52",
+    "react": "*",
+    "react-native": ">=0.76.0"
+  },
+  "peerDependenciesMeta": {
+    "expo": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">= 20.19.4"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "exclude": "**/{__tests__,__fixtures__,__mocks__}/**",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  },
+  "codegenConfig": {
+    "name": "RNClikgateSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.clikgate.reactnative"
+    },
+    "ios": {
+      "modulesProvider": {
+        "Clikgate": "RNClikgate"
+      }
+    }
+  },
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false
+  }
+}

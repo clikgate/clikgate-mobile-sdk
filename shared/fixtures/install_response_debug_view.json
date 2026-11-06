@@ -1,0 +1,27 @@
+{
+  "install_id": "ins_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "attribution": {
+    "status": "organic",
+    "match_type": null,
+    "confidence": null,
+    "click_id": null,
+    "clicked_at": null,
+    "is_reinstall": false,
+    "link": null,
+    "source": null,
+    "medium": null,
+    "campaign": null,
+    "channel": "organic"
+  },
+  "deep_link": {
+    "url": "https://yourapp.clk.ng/p/dress",
+    "path": "/products/42",
+    "data": {
+      "product_id": "42"
+    },
+    "is_deferred": true
+  },
+  "referral": null,
+  "retry_after_ms": null,
+  "debug_view": true
+}

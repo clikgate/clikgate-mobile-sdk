@@ -1,0 +1,23 @@
+# Build output and local machine files across the SDKs
+build/
+.gradle/
+local.properties
+.idea/
+*.iml
+.DS_Store
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+Pods/
+DerivedData/
+.build/
+.swiftpm/
+xcuserdata/
+node_modules/
+*.xcframework
+*.xcframework.zip
+
+# cli/ (setup command, @clikgate/setup)
+cli/dist/
+cli/*.tgz
+.clikgate-setup-backup/

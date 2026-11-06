@@ -1,0 +1,19 @@
+{
+  "leaderboard_id": "lb_01JAB3C4D5E6F7G8H9JKMNPQRS",
+  "period": {
+    "key": "2026-W43",
+    "status": "open",
+    "starts_at": "2026-10-19T23:00:00Z",
+    "ends_at": "2026-10-26T23:00:00Z"
+  },
+  "referrer_id": "rfr_01JAB3C4D5E6F7G8H9JKMNPQRT",
+  "rank": 2,
+  "score": 9,
+  "pending": 0,
+  "gap_to_next": 3,
+  "best_rank": 2,
+  "period_ends_at": "2026-10-26T23:00:00Z",
+  "opted_out": false,
+  "embed_token": null,
+  "embed_url": null
+}

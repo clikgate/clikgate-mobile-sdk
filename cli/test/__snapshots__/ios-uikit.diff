@@ -1,0 +1,119 @@
+--- a/Podfile
++++ b/Podfile
+@@ -3,4 +3,7 @@
+ 
+ target 'UIKitApp' do
++  # clikgate-setup:start
++  pod 'Clikgate', '~> 1.5'
++  # clikgate-setup:end
+   # Comment the next line if you don't want to use dynamic frameworks
+   use_frameworks!
+
+--- a/UIKitApp.xcodeproj/project.pbxproj
++++ b/UIKitApp.xcodeproj/project.pbxproj
+@@ -274,4 +274,5 @@
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
++				CODE_SIGN_ENTITLEMENTS = UIKitApp/UIKitAppDebug.entitlements;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				CURRENT_PROJECT_VERSION = 1;
+@@ -306,4 +307,5 @@
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
++				CODE_SIGN_ENTITLEMENTS = UIKitApp/UIKitApp.entitlements;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				CURRENT_PROJECT_VERSION = 1;
+
+--- a/UIKitApp/AppDelegate.swift
++++ b/UIKitApp/AppDelegate.swift
+@@ -5,4 +5,7 @@
+ 
+ import UIKit
++// clikgate-setup:start
++import Clikgate
++// clikgate-setup:end
+ 
+ @main
+@@ -12,4 +15,17 @@
+ 
+     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
++        // clikgate-setup:start
++        // acme.dev.ciz.to (test links) only in Debug builds
++        #if DEBUG
++        let linkDomains = ["acme.ciz.to", "go.acme.com", "acme.dev.ciz.to"]
++        #else
++        let linkDomains = ["acme.ciz.to", "go.acme.com"]
++        #endif
++        Clikgate.configure(sdkKey: "cg_sdk_test_abc123", options: ClikgateOptions(linkDomains: linkDomains))
++        Clikgate.shared.onDeepLink { link in
++            // Open the screen for link.path (link.data has the link's data)
++            print("Clikgate deep link:", link.path ?? "/")
++        }
++        // clikgate-setup:end
+         // Override point for customization after application launch.
+         return true
+
+--- a/UIKitApp/SceneDelegate.swift
++++ b/UIKitApp/SceneDelegate.swift
+@@ -5,4 +5,7 @@
+ 
+ import UIKit
++// clikgate-setup:start
++import Clikgate
++// clikgate-setup:end
+ 
+ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+@@ -12,4 +15,8 @@
+ 
+     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
++        // clikgate-setup:start
++        connectionOptions.userActivities.forEach { Clikgate.shared.continue(userActivity: $0) }
++        connectionOptions.urlContexts.forEach { Clikgate.shared.handle(url: $0.url) }
++        // clikgate-setup:end
+         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
+         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
+@@ -47,4 +54,13 @@
+ 
+ 
++    // clikgate-setup:start
++    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
++        Clikgate.shared.continue(userActivity: userActivity)
++    }
++
++    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
++        URLContexts.forEach { Clikgate.shared.handle(url: $0.url) }
++    }
++    // clikgate-setup:end
+ }
+ 
+
+--- /dev/null
++++ b/UIKitApp/UIKitApp.entitlements
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>com.apple.developer.associated-domains</key>
++	<array>
++		<string>applinks:acme.ciz.to</string>
++		<string>applinks:go.acme.com</string>
++	</array>
++</dict>
++</plist>
+
+--- /dev/null
++++ b/UIKitApp/UIKitAppDebug.entitlements
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>com.apple.developer.associated-domains</key>
++	<array>
++		<string>applinks:acme.ciz.to</string>
++		<string>applinks:go.acme.com</string>
++		<string>applinks:acme.dev.ciz.to</string>
++	</array>
++</dict>
++</plist>

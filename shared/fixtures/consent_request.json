@@ -1,0 +1,10 @@
+{
+  "consent": {
+    "analytics": "granted",
+    "attribution": "denied",
+    "ad_user_data": "denied",
+    "ad_personalization": "denied",
+    "region": "EEA",
+    "updated_at": "2026-10-20T10:05:00Z"
+  }
+}

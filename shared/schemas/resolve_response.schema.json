@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/resolve_response.schema.json",
+  "title": "resolve_response",
+  "type": "object",
+  "properties": {
+    "matched": {
+      "type": "boolean"
+    },
+    "click_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "deep_link": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "path": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "data": {
+              "type": "object"
+            },
+            "is_deferred": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "url",
+            "path",
+            "data",
+            "is_deferred"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "link": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "kind": {
+              "enum": [
+                "standard",
+                "referral"
+              ]
+            },
+            "external_reference": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "campaign_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "metadata": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "id",
+            "kind",
+            "metadata"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "is_reengagement": {
+      "type": "boolean"
+    },
+    "referral": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "referral_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "program_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "status": {
+              "enum": [
+                "installed",
+                "signed_up",
+                "in_progress",
+                "holding",
+                "qualified",
+                "disqualified",
+                "rejected"
+              ]
+            },
+            "source": {
+              "enum": [
+                "link",
+                "code_entry",
+                "byo_code",
+                "offline_code",
+                null
+              ]
+            },
+            "referrer_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "referrer_display_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "created_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "referral_id",
+            "program_id",
+            "status",
+            "referrer_id",
+            "referrer_display_name"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "match_type": {
+      "enum": [
+        "app_link",
+        "install_referrer",
+        "pasteboard",
+        "probabilistic",
+        "apple_search_ads",
+        "code_entry",
+        null
+      ]
+    },
+    "status": {
+      "enum": [
+        "matched",
+        "no_match",
+        "password_required",
+        "blocked"
+      ]
+    },
+    "web_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "block_message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "debug_view": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "matched",
+    "click_id",
+    "deep_link",
+    "link",
+    "is_reengagement",
+    "referral",
+    "status",
+    "web_url",
+    "block_message"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "password_required"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "matched": {
+            "const": false
+          },
+          "web_url": {
+            "type": "string",
+            "minLength": 1
+          },
+          "click_id": {
+            "type": "null"
+          },
+          "deep_link": {
+            "type": "null"
+          },
+          "link": {
+            "type": "null"
+          },
+          "referral": {
+            "type": "null"
+          },
+          "match_type": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "matched": {
+            "const": false
+          },
+          "block_message": {
+            "type": "string"
+          },
+          "click_id": {
+            "type": "null"
+          },
+          "deep_link": {
+            "type": "null"
+          },
+          "link": {
+            "type": "null"
+          },
+          "referral": {
+            "type": "null"
+          },
+          "match_type": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "matched"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "matched": {
+            "const": true
+          }
+        }
+      }
+    }
+  ]
+}

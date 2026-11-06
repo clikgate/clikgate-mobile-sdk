@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/feature_disabled.schema.json",
+  "title": "feature_disabled",
+  "type": "object",
+  "properties": {
+    "accepted": {
+      "const": false
+    },
+    "reason": {
+      "const": "feature_disabled"
+    },
+    "feature": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "accepted",
+    "reason",
+    "feature"
+  ]
+}

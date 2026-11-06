@@ -1,0 +1,358 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		13DE558C30A9B672420ED298 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C475A2AF1C2D689A4A9056 /* AppDelegate.swift */; };
+		58770E9251AA7EA9AC6B8B2F /* Clikgate in Frameworks */ = {isa = PBXBuildFile; productRef = CA0F6770FD7F032A67EE9510 /* Clikgate */; };
+		8F4025EFFE7B69F3174790D1 /* ClikgateEngage in Frameworks */ = {isa = PBXBuildFile; productRef = 5581098E5C183524A13E5897 /* ClikgateEngage */; };
+		B3E3E0DC2A9E171CA2B213E2 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141549482CE3B3F05637CE22 /* MainViewController.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		03FACE40741E866E832D7480 /* ClikgateSample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClikgateSample.entitlements; sourceTree = "<group>"; };
+		141549482CE3B3F05637CE22 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
+		38C475A2AF1C2D689A4A9056 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		D5E35224109E5B603BF7827A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D97A02A2C5D27453CCF47A2C /* ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ios; path = ..; sourceTree = SOURCE_ROOT; };
+		EE185F5FCAF89BD3B9D54858 /* ClikgateSample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ClikgateSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		"TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AEBE241924DAB8E2DFDE5B03 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				58770E9251AA7EA9AC6B8B2F /* Clikgate in Frameworks */,
+				8F4025EFFE7B69F3174790D1 /* ClikgateEngage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		364F58C47ACF7DF137D96759 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EE185F5FCAF89BD3B9D54858 /* ClikgateSample.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4A406953ABEBEBFC897C1720 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				D97A02A2C5D27453CCF47A2C /* ios */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		87C991B3CBB0DC5ACA10FCA3 = {
+			isa = PBXGroup;
+			children = (
+				BDB2685706F571655392D709 /* ClikgateSample */,
+				4A406953ABEBEBFC897C1720 /* Packages */,
+				364F58C47ACF7DF137D96759 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BDB2685706F571655392D709 /* ClikgateSample */ = {
+			isa = PBXGroup;
+			children = (
+				38C475A2AF1C2D689A4A9056 /* AppDelegate.swift */,
+				03FACE40741E866E832D7480 /* ClikgateSample.entitlements */,
+				D5E35224109E5B603BF7827A /* Info.plist */,
+				141549482CE3B3F05637CE22 /* MainViewController.swift */,
+			);
+			path = ClikgateSample;
+			sourceTree = "<group>";
+		};
+		"TEMP_3EB01533-E69F-402C-8AA0-626B04595D3F" /* Sample */ = {
+			isa = PBXGroup;
+			children = (
+				"TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */,
+			);
+			path = Sample;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D4E8B43A66D3CBC823AFD907 /* ClikgateSample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 85F391511CF39AB08FFF58B3 /* Build configuration list for PBXNativeTarget "ClikgateSample" */;
+			buildPhases = (
+				DCD116833B2996333CFA9959 /* Sources */,
+				AEBE241924DAB8E2DFDE5B03 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClikgateSample;
+			packageProductDependencies = (
+				CA0F6770FD7F032A67EE9510 /* Clikgate */,
+				5581098E5C183524A13E5897 /* ClikgateEngage */,
+			);
+			productName = ClikgateSample;
+			productReference = EE185F5FCAF89BD3B9D54858 /* ClikgateSample.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E35DE98007E32FF8A1C7B598 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					D4E8B43A66D3CBC823AFD907 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D24B01C9366A46E5E00DD4C4 /* Build configuration list for PBXProject "ClikgateSample" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 87C991B3CBB0DC5ACA10FCA3;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A1392B9B42C898FFE32BA44D /* XCLocalSwiftPackageReference ".." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 364F58C47ACF7DF137D96759 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D4E8B43A66D3CBC823AFD907 /* ClikgateSample */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DCD116833B2996333CFA9959 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				13DE558C30A9B672420ED298 /* AppDelegate.swift in Sources */,
+				B3E3E0DC2A9E171CA2B213E2 /* MainViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1E5F91C02B3EDEDBE29A681F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ClikgateSample/ClikgateSample.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ClikgateSample/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.clikgate.sample;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A0B7F1717AAB6D82A9111757 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = "TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B02B158091BFB08671990430 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = "TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		CBF5B9995E8E60986A90EC1D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ClikgateSample/ClikgateSample.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ClikgateSample/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.clikgate.sample;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		85F391511CF39AB08FFF58B3 /* Build configuration list for PBXNativeTarget "ClikgateSample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBF5B9995E8E60986A90EC1D /* Debug */,
+				1E5F91C02B3EDEDBE29A681F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D24B01C9366A46E5E00DD4C4 /* Build configuration list for PBXProject "ClikgateSample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0B7F1717AAB6D82A9111757 /* Debug */,
+				B02B158091BFB08671990430 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A1392B9B42C898FFE32BA44D /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5581098E5C183524A13E5897 /* ClikgateEngage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ClikgateEngage;
+		};
+		CA0F6770FD7F032A67EE9510 /* Clikgate */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Clikgate;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E35DE98007E32FF8A1C7B598 /* Project object */;
+}

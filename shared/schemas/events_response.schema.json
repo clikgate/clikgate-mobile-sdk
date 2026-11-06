@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/events_response.schema.json",
+  "title": "events_response",
+  "type": "object",
+  "properties": {
+    "accepted": {
+      "type": "integer"
+    },
+    "duplicates": {
+      "type": "integer"
+    },
+    "rejected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true,
+        "required": [
+          "event_id",
+          "code"
+        ]
+      }
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "accepted",
+    "duplicates",
+    "rejected"
+  ]
+}

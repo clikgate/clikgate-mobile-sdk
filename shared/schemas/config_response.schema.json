@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/config_response.schema.json",
+  "title": "config_response",
+  "type": "object",
+  "properties": {
+    "app_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "environment": {
+      "enum": [
+        "production",
+        "sandbox"
+      ]
+    },
+    "server_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "link_domains": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "deferred_deep_linking": {
+          "type": "boolean"
+        },
+        "pasteboard_matching": {
+          "enum": [
+            "off",
+            "on_interstitial_tap"
+          ]
+        },
+        "probabilistic_matching": {
+          "type": "boolean"
+        },
+        "apple_search_ads": {
+          "type": "boolean"
+        },
+        "uninstall_tracking": {
+          "type": "boolean"
+        },
+        "collect_advertising_id": {
+          "type": "boolean"
+        },
+        "restricted_mode": {
+          "type": "boolean"
+        },
+        "attestation": {
+          "type": "object",
+          "properties": {
+            "ios_app_attest": {
+              "enum": [
+                "off",
+                "monitor",
+                "enforce"
+              ]
+            },
+            "android_play_integrity": {
+              "enum": [
+                "off",
+                "monitor",
+                "enforce"
+              ]
+            },
+            "android_cloud_project_number": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "ios_app_attest",
+            "android_play_integrity"
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "deferred_deep_linking",
+        "pasteboard_matching",
+        "probabilistic_matching",
+        "apple_search_ads",
+        "uninstall_tracking",
+        "collect_advertising_id",
+        "restricted_mode",
+        "attestation"
+      ]
+    },
+    "referral_programs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "paused"
+            ]
+          },
+          "client_link_creation": {
+            "type": "boolean"
+          },
+          "allow_manual_code_entry": {
+            "type": "boolean"
+          },
+          "require_identity_token": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "name",
+          "status",
+          "client_link_creation",
+          "allow_manual_code_entry"
+        ]
+      }
+    },
+    "conversion_value_schema": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "version": {
+              "type": "integer"
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fine_value": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 63
+                  },
+                  "coarse_value": {
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ]
+                  },
+                  "event": {
+                    "type": "string"
+                  },
+                  "min_revenue_minor": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "currency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lock_window": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "fine_value",
+                  "coarse_value",
+                  "event"
+                ]
+              }
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "id",
+            "version",
+            "rules"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "batching": {
+      "type": "object",
+      "properties": {
+        "max_batch_size": {
+          "type": "integer"
+        },
+        "flush_interval_seconds": {
+          "type": "integer"
+        },
+        "flush_at_count": {
+          "type": "integer"
+        },
+        "max_queue_events": {
+          "type": "integer"
+        },
+        "max_queue_bytes": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "max_batch_size",
+        "flush_interval_seconds",
+        "flush_at_count",
+        "max_queue_events",
+        "max_queue_bytes"
+      ]
+    },
+    "reattestation_interval_days": {
+      "type": "integer"
+    },
+    "session_timeout_minutes": {
+      "type": "integer"
+    },
+    "consent": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "not_required",
+            "required_in_regions",
+            "required_everywhere"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(EEA|UK|[A-Z]{2})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required_regions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(EEA|UK|[A-Z]{2})$"
+          }
+        },
+        "anonymous_counts": {
+          "type": "boolean"
+        },
+        "buffer_max_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "buffer_max_events": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "identity_checks_basis": {
+          "enum": [
+            "consent",
+            "fraud_prevention"
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "mode",
+        "required"
+      ]
+    },
+    "min_supported_version": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "latest_version": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "version_status": {
+      "enum": [
+        "current",
+        "supported",
+        "deprecated",
+        "blocked",
+        null
+      ]
+    },
+    "blocked_instructions": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "allowed_calls": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "config",
+                  "install",
+                  "install_ping",
+                  "open",
+                  "resolve",
+                  "events",
+                  "identify",
+                  "push_token",
+                  "opt_out",
+                  "consent",
+                  "attest",
+                  "apple_search_ads",
+                  "referrals",
+                  "leaderboards",
+                  "codes",
+                  "goals"
+                ]
+              }
+            },
+            "allowed_events": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "strip_event_properties": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "allowed_calls"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "firebase_forwarding": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "log_attribution_event": {
+          "type": "boolean"
+        },
+        "set_user_properties": {
+          "type": "boolean"
+        },
+        "mirror_events": {
+          "type": "boolean"
+        },
+        "report_app_instance_id": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "enabled"
+      ]
+    },
+    "private_mode": {
+      "type": "boolean",
+      "default": false
+    },
+    "allow_labels": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "app_id",
+    "environment",
+    "server_time",
+    "features",
+    "referral_programs",
+    "conversion_value_schema",
+    "batching"
+  ]
+}

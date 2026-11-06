@@ -1,0 +1,9 @@
+{
+  "error": {
+    "type": "rate_limited",
+    "code": "rate_limited",
+    "message": "Too many requests. Retry later.",
+    "param": null,
+    "request_id": "req_01JAB3C4D5E6F7G8H9JKMNPQRS"
+  }
+}

@@ -1,0 +1,20 @@
+// CI only: resolve com.clikgate artifacts from ~/.m2 (the SDKs built from source with
+// `./gradlew :clikgate:publishToMavenLocal`) before they are on Maven Central. Copied to
+// ~/.gradle/init.d/ so every Gradle build on the runner picks it up without editing the project.
+import org.gradle.api.initialization.resolve.RepositoriesMode
+
+def addMavenLocal = { repos ->
+    repos.mavenLocal {
+        content { includeGroup("com.clikgate") }
+    }
+}
+
+gradle.settingsEvaluated { settings ->
+    def drm = settings.dependencyResolutionManagement
+    if (drm.repositoriesMode.get() == RepositoriesMode.FAIL_ON_PROJECT_REPOS) {
+        addMavenLocal(drm.repositories)
+    } else {
+        addMavenLocal(drm.repositories)
+        settings.gradle.beforeProject { project -> addMavenLocal(project.repositories) }
+    }
+}

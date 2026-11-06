@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "path": "/products/42",
+      "expected": "/products/:id"
+    },
+    {
+      "path": "/products/42?ref=summer&cg_click_id=clk_1#reviews",
+      "expected": "/products/:id"
+    },
+    {
+      "path": "/menu/b#top",
+      "expected": "/menu/b"
+    },
+    {
+      "path": "/orders/8f14e45f-ceea-467f-a0e6-0d2a0f7e3b9c/receipt",
+      "expected": "/orders/:id/receipt"
+    },
+    {
+      "path": "/orders/8F14E45FCEEA467FA0E60D2A0F7E3B9C",
+      "expected": "/orders/:id"
+    },
+    {
+      "path": "/u/ada@example.com",
+      "expected": "/u/:id"
+    },
+    {
+      "path": "/u/ada%40example.com/settings",
+      "expected": "/u/:id/settings"
+    },
+    {
+      "path": "/call/+2348055550100",
+      "expected": "/call/:id"
+    },
+    {
+      "path": "/call/%2B234%20805%20555%200100",
+      "expected": "/call/:id"
+    },
+    {
+      "path": "/call/(555)%20010-0199",
+      "expected": "/call/:id"
+    },
+    {
+      "path": "/t/AbCdEfGhIjKlMnOpQrSt",
+      "expected": "/t/:id"
+    },
+    {
+      "path": "/t/eyJhbGciOiJIUzI1NiJ9",
+      "expected": "/t/:id"
+    },
+    {
+      "path": "/invite/ADA42XYZ",
+      "expected": "/invite/:id"
+    },
+    {
+      "path": "/order-1234567/track",
+      "expected": "/:id/track"
+    },
+    {
+      "path": "/blog/2026/11/04/new-menu",
+      "expected": "/blog/:id/:id/:id/new-menu"
+    },
+    {
+      "path": "/sale/summer-2026",
+      "expected": "/sale/summer-2026"
+    },
+    {
+      "path": "/products/iphone-15-pro",
+      "expected": "/products/iphone-15-pro"
+    },
+    {
+      "path": "/help/internationalization",
+      "expected": "/help/internationalization"
+    },
+    {
+      "path": "/v2/home/",
+      "expected": "/v2/home/"
+    },
+    {
+      "path": "products/42",
+      "expected": "products/:id"
+    },
+    {
+      "path": "/",
+      "expected": "/"
+    },
+    {
+      "path": "",
+      "expected": "/"
+    },
+    {
+      "path": "?tab=1",
+      "expected": "/"
+    }
+  ]
+}

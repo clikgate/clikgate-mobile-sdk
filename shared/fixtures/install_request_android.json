@@ -1,0 +1,53 @@
+{
+  "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
+  "app_version": "3.4.1",
+  "sdk_version": "1.5.0",
+  "platform": "android",
+  "os_version": "14",
+  "device_model": "Pixel 8",
+  "locale": "en-NG",
+  "timezone": "Africa/Lagos",
+  "screen": {
+    "w": 1080,
+    "h": 2400,
+    "scale": 2.625
+  },
+  "launch_url": null,
+  "install_referrer": {
+    "referrer": "cg_click_id%3Dclk_01JAB3C4D5E6F7G8H9JKMNPQRS%26cg_link%3Dlnk_01JAB3C4D5E6F7G8H9JKMNPQRS%26gclid%3DCj0KCQjw-test_gclid",
+    "referrer_click_timestamp_seconds": 1760954400,
+    "install_begin_timestamp_seconds": 1760954460,
+    "referrer_click_timestamp_server_seconds": 1760954400,
+    "install_begin_timestamp_server_seconds": 1760954460,
+    "install_version": "3.4.1",
+    "google_play_instant": false
+  },
+  "installer_package": "com.android.vending",
+  "push": {
+    "provider": "fcm",
+    "token": "fcm-token-123",
+    "apns_environment": null
+  },
+  "consent": {
+    "analytics": "granted",
+    "attribution": "granted",
+    "ad_user_data": "denied",
+    "ad_personalization": "unknown",
+    "region": null,
+    "updated_at": "2026-10-20T09:58:00.000Z"
+  },
+  "google_click_ids": {
+    "gclid": "Cj0KCQjw-test_gclid",
+    "gbraid": null,
+    "wbraid": null,
+    "source": "install_referrer"
+  },
+  "attestation": {
+    "type": "play_integrity",
+    "token": "eyJhbGciOi.test",
+    "challenge": "atc_01JAB3C4D5E6F7G8H9JKMNPQRS",
+    "request_type": "standard"
+  },
+  "is_emulator": false,
+  "is_rooted": false
+}

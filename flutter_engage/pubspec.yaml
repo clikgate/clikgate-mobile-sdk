@@ -1,0 +1,44 @@
+name: clikgate_engage
+description: "Optional Clikgate Engage add-on for Flutter apps without their own backend: referral link and stats, leaderboards, promo codes and share helpers. Dart over clikgate_flutter, plus the native Engage share menu."
+version: 1.0.0
+homepage: https://clikgate.com
+repository: https://github.com/clikgate/clikgate-mobile-sdk/tree/main/flutter_engage
+issue_tracker: https://github.com/clikgate/clikgate-mobile-sdk/issues
+topics:
+  - referral
+  - leaderboard
+  - deep-linking
+
+environment:
+  sdk: ^3.5.0
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The core plugin (request context, feature switches). In the monorepo it resolves to ../flutter
+  # through pubspec_overrides.yaml (not published).
+  clikgate_flutter: ^1.0.0
+  http: ^1.2.2
+  meta: ^1.15.0
+  # Same line as the example app's pin (contemporary with Flutter 3.35).
+  share_plus: '>=12.0.0 <13.0.0'
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  # Public-API snapshot test (syntactic parse only).
+  analyzer: '>=7.4.0 <9.0.0'
+
+flutter:
+  # share.link / share.referralLink use the native Engage add-on's share menu (Android
+  # com.clikgate:clikgate-engage, iOS Clikgate/Engage). Everything else is Dart.
+  plugin:
+    platforms:
+      android:
+        package: com.clikgate.clikgate_engage
+        pluginClass: ClikgateEngagePlugin
+      ios:
+        pluginClass: ClikgateEngagePlugin

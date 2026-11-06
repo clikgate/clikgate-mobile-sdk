@@ -1,0 +1,295 @@
+Clikgate.attribution(): func attribution() async throws -> ClikgateAttribution
+Clikgate.attribution(completion:): func attribution(completion: @escaping @MainActor (Result<ClikgateAttribution, ClikgateError>) -> Void)
+Clikgate.attributionMetadata(): func attributionMetadata() -> [String : String]
+Clikgate.browserHandoffNotification: static let browserHandoffNotification: Notification.Name
+Clikgate.configure(sdkKey:options:): static func configure(sdkKey: String, options: ClikgateOptions = ClikgateOptions())
+Clikgate.continue(userActivity:): @discardableResult @objc(continueUserActivity:) func `continue`(userActivity: NSUserActivity) -> Bool
+Clikgate.enableFirebaseForwarding(_:): func enableFirebaseForwarding(_ options: ClikgateFirebaseForwardingOptions = ClikgateFirebaseForwardingOptions())
+Clikgate.enableGoogleOnDeviceMeasurement(): func enableGoogleOnDeviceMeasurement()
+Clikgate.getConsent(): func getConsent() -> ClikgateConsent
+Clikgate.goal(_:decimalString:currency:reference:providerKey:isFirst:label:completion:): func goal(_ key: String, decimalString value: String?, currency: String? = nil, reference: String? = nil, providerKey: String? = nil, isFirst: Bool? = nil, label: String? = nil, completion: (@MainActor (ClikgateGoalResult) -> Void)? = nil)
+Clikgate.goal(_:value:currency:reference:provider:isFirst:label:completion:): func goal(_ key: String, value: Decimal? = nil, currency: String? = nil, reference: String? = nil, provider: ClikgateProvider? = nil, isFirst: Bool? = nil, label: String? = nil, completion: (@MainActor (ClikgateGoalResult) -> Void)? = nil)
+Clikgate.handle(url:): @discardableResult @objc(handleURL:) func handle(url: URL) -> Bool
+Clikgate.handleRemoteNotification(_:): @objc(handleRemoteNotification:) func handleRemoteNotification(_ userInfo: [AnyHashable : Any]) -> Bool
+Clikgate.identifyUser(label:customerId:identityToken:): func identifyUser(label: String? = nil, customerId: String? = "\u{0}", identityToken: String? = nil)
+Clikgate.isClikgateMessage(_:): @objc static func isClikgateMessage(_ userInfo: [AnyHashable : Any]) -> Bool
+Clikgate.isFeatureEnabled(_:): func isFeatureEnabled(_ key: String) -> Bool
+Clikgate.onDeepLink(_:): func onDeepLink(_ handler: @escaping @MainActor (ClikgateDeepLinkResult) -> Void)
+Clikgate.referrals: let referrals: ClikgateReferrals
+Clikgate.removeDeepLinkHandler(): func removeDeepLinkHandler()
+Clikgate.sdkVersion: static let sdkVersion: String
+Clikgate.setConsent(analytics:attribution:adUserData:adPersonalization:): func setConsent(analytics: ClikgateConsentState? = nil, attribution: ClikgateConsentState? = nil, adUserData: ClikgateConsentState? = nil, adPersonalization: ClikgateConsentState? = nil)
+Clikgate.setConsentRegion(_:): func setConsentRegion(_ region: String?)
+Clikgate.setPushToken(deviceToken:): @objc(setPushTokenWithDeviceToken:) func setPushToken(deviceToken: Data)
+Clikgate.setPushToken(fcmToken:): @objc(setPushTokenWithFcmToken:) func setPushToken(fcmToken: String)
+Clikgate.setTrackingEnabled(_:): func setTrackingEnabled(_ enabled: Bool)
+Clikgate.shared: @objc static let shared: Clikgate
+Clikgate.track(_:revenue:properties:completion:): func track(_ name: String, revenue: ClikgateMoney? = nil, properties: [String : Any]? = nil, completion: (@MainActor (ClikgateError?) -> Void)? = nil)
+Clikgate: @objc(Clikgate) final class Clikgate
+ClikgateAttribution.Status.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateAttribution.Status.attributed: case attributed
+ClikgateAttribution.Status.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateAttribution.Status.hashValue: var hashValue: Int { get }
+ClikgateAttribution.Status.init(rawValue:): init?(rawValue: String)
+ClikgateAttribution.Status.organic: case organic
+ClikgateAttribution.Status.pending: case pending
+ClikgateAttribution.Status: enum Status
+ClikgateAttribution.campaign: let campaign: String?
+ClikgateAttribution.channel: let channel: String?
+ClikgateAttribution.clickId: let clickId: String?
+ClikgateAttribution.clickedAt: var clickedAt: Date? { get }
+ClikgateAttribution.confidence: let confidence: Double?
+ClikgateAttribution.installId: var installId: String? { get }
+ClikgateAttribution.isReinstall: let isReinstall: Bool
+ClikgateAttribution.link: let link: ClikgateLink?
+ClikgateAttribution.matchType: let matchType: String?
+ClikgateAttribution.medium: let medium: String?
+ClikgateAttribution.source: let source: String?
+ClikgateAttribution.status: let status: ClikgateAttribution.Status
+ClikgateAttribution: struct ClikgateAttribution
+ClikgateConsent.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateConsent.adPersonalization: var adPersonalization: ClikgateConsentState
+ClikgateConsent.adUserData: var adUserData: ClikgateConsentState
+ClikgateConsent.analytics: var analytics: ClikgateConsentState
+ClikgateConsent.attribution: var attribution: ClikgateConsentState
+ClikgateConsent.init(analytics:attribution:adUserData:adPersonalization:region:isRequired:): init(analytics: ClikgateConsentState = .unknown, attribution: ClikgateConsentState = .unknown, adUserData: ClikgateConsentState = .unknown, adPersonalization: ClikgateConsentState = .unknown, region: String? = nil, isRequired: Bool? = nil)
+ClikgateConsent.isRequired: var isRequired: Bool?
+ClikgateConsent.region: var region: String?
+ClikgateConsent: struct ClikgateConsent
+ClikgateConsentState.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateConsentState.denied: case denied
+ClikgateConsentState.granted: case granted
+ClikgateConsentState.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateConsentState.hashValue: var hashValue: Int { get }
+ClikgateConsentState.init(rawValue:): init?(rawValue: String)
+ClikgateConsentState.unknown: case unknown
+ClikgateConsentState: enum ClikgateConsentState
+ClikgateDeepLinkResult.blockMessage: var blockMessage: String? { get }
+ClikgateDeepLinkResult.clickId: let clickId: String?
+ClikgateDeepLinkResult.data: var data: [String : Any] { get }
+ClikgateDeepLinkResult.isDeferred: let isDeferred: Bool
+ClikgateDeepLinkResult.link: let link: ClikgateLink?
+ClikgateDeepLinkResult.matchType: let matchType: String?
+ClikgateDeepLinkResult.path: let path: String?
+ClikgateDeepLinkResult.referral: let referral: ClikgateReferral?
+ClikgateDeepLinkResult.url: let url: URL?
+ClikgateDeepLinkResult: struct ClikgateDeepLinkResult
+ClikgateError.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateError.alreadyReferred: static let alreadyReferred: String
+ClikgateError.code: let code: String
+ClikgateError.codeNotFound: static let codeNotFound: String
+ClikgateError.consentRequired: static let consentRequired: String
+ClikgateError.errorCode: var errorCode: Int { get }
+ClikgateError.errorDescription: var errorDescription: String? { get }
+ClikgateError.errorDomain: static var errorDomain: String { get }
+ClikgateError.errorUserInfo: var errorUserInfo: [String : Any] { get }
+ClikgateError.failureReason: var failureReason: String? { get }
+ClikgateError.feature: let feature: String?
+ClikgateError.featureDisabled: static let featureDisabled: String
+ClikgateError.helpAnchor: var helpAnchor: String? { get }
+ClikgateError.identityInvalid: static let identityInvalid: String
+ClikgateError.identityRequired: static let identityRequired: String
+ClikgateError.init(code:message:status:param:requestId:feature:offlineTouchId:): init(code: String, message: String, status: Int? = nil, param: String? = nil, requestId: String? = nil, feature: String? = nil, offlineTouchId: String? = nil)
+ClikgateError.installInProgress: static let installInProgress: String
+ClikgateError.installPending: static let installPending: String
+ClikgateError.installationUnknown: static let installationUnknown: String
+ClikgateError.invalidArgument: static let invalidArgument: String
+ClikgateError.invalidSdkKey: static let invalidSdkKey: String
+ClikgateError.localizedDescription: var localizedDescription: String { get }
+ClikgateError.manualEntryDisabled: static let manualEntryDisabled: String
+ClikgateError.message: let message: String
+ClikgateError.networkError: static let networkError: String
+ClikgateError.notConfigured: static let notConfigured: String
+ClikgateError.notIdentified: static let notIdentified: String
+ClikgateError.offlineTouchId: let offlineTouchId: String?
+ClikgateError.optedOut: static let optedOut: String
+ClikgateError.param: let param: String?
+ClikgateError.programNotFound: static let programNotFound: String
+ClikgateError.programPaused: static let programPaused: String
+ClikgateError.rateLimited: static let rateLimited: String
+ClikgateError.recoverySuggestion: var recoverySuggestion: String? { get }
+ClikgateError.referrerBlocked: static let referrerBlocked: String
+ClikgateError.requestId: let requestId: String?
+ClikgateError.sdkDisabled: static let sdkDisabled: String
+ClikgateError.sdkVersionBlocked: static let sdkVersionBlocked: String
+ClikgateError.selfReferral: static let selfReferral: String
+ClikgateError.serverError: static let serverError: String
+ClikgateError.status: let status: Int?
+ClikgateError.timeout: static let timeout: String
+ClikgateError.validationError: static let validationError: String
+ClikgateError.windowExpired: static let windowExpired: String
+ClikgateError: struct ClikgateError
+ClikgateFeatures.appAttribution: static let appAttribution: String
+ClikgateFeatures.appleSearchAds: static let appleSearchAds: String
+ClikgateFeatures.identityChecks: static let identityChecks: String
+ClikgateFeatures.leaderboards: static let leaderboards: String
+ClikgateFeatures.offlineCodes: static let offlineCodes: String
+ClikgateFeatures.probabilisticMatching: static let probabilisticMatching: String
+ClikgateFeatures.referrals: static let referrals: String
+ClikgateFeatures.skanPostbacks: static let skanPostbacks: String
+ClikgateFeatures.uninstallTracking: static let uninstallTracking: String
+ClikgateFeatures.whatsappAttribution: static let whatsappAttribution: String
+ClikgateFeatures: enum ClikgateFeatures
+ClikgateFirebaseForwardingOptions.eventNameMap: var eventNameMap: [String : String]
+ClikgateFirebaseForwardingOptions.init(logAttributionEvent:setUserProperties:mirrorEvents:eventNameMap:): init(logAttributionEvent: Bool = true, setUserProperties: Bool = true, mirrorEvents: Bool = false, eventNameMap: [String : String] = [:])
+ClikgateFirebaseForwardingOptions.logAttributionEvent: var logAttributionEvent: Bool
+ClikgateFirebaseForwardingOptions.mirrorEvents: var mirrorEvents: Bool
+ClikgateFirebaseForwardingOptions.setUserProperties: var setUserProperties: Bool
+ClikgateFirebaseForwardingOptions: struct ClikgateFirebaseForwardingOptions
+ClikgateGoalKind.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateGoalKind.payment: case payment
+ClikgateGoalKind.standard: case standard
+ClikgateGoalKind: enum ClikgateGoalKind
+ClikgateGoalResult.goalKind: let goalKind: ClikgateGoalKind?
+ClikgateGoalResult.reason: let reason: String?
+ClikgateGoalResult.status: let status: ClikgateGoalStatus
+ClikgateGoalResult.valueIgnored: let valueIgnored: Bool
+ClikgateGoalResult: struct ClikgateGoalResult
+ClikgateGoalStatus.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateGoalStatus.counted: case counted
+ClikgateGoalStatus.refused: case refused
+ClikgateGoalStatus.waiting: case waiting
+ClikgateGoalStatus: enum ClikgateGoalStatus
+ClikgateLink.campaignId: let campaignId: String?
+ClikgateLink.externalReference: let externalReference: String?
+ClikgateLink.id: let id: String
+ClikgateLink.kind: let kind: String
+ClikgateLink.metadata: var metadata: [String : Any] { get }
+ClikgateLink: struct ClikgateLink
+ClikgateMoney.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateMoney.amountMinor: let amountMinor: Int64
+ClikgateMoney.currency: let currency: String
+ClikgateMoney.ofMinor(_:currency:): static func ofMinor(_ amountMinor: Int64, currency: String) -> ClikgateMoney
+ClikgateMoney: struct ClikgateMoney
+ClikgateOptions.Attestation.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.Attestation.appAttestIfAvailable: case appAttestIfAvailable
+ClikgateOptions.Attestation.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateOptions.Attestation.hashValue: var hashValue: Int { get }
+ClikgateOptions.Attestation.init(rawValue:): init?(rawValue: String)
+ClikgateOptions.Attestation.off: case off
+ClikgateOptions.Attestation: enum Attestation
+ClikgateOptions.Environment.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.Environment.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateOptions.Environment.hashValue: var hashValue: Int { get }
+ClikgateOptions.Environment.init(rawValue:): init?(rawValue: String)
+ClikgateOptions.Environment.production: case production
+ClikgateOptions.Environment.sandbox: case sandbox
+ClikgateOptions.Environment: enum Environment
+ClikgateOptions.LogLevel.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.LogLevel....(_:): static func ... (maximum: Self) -> PartialRangeThrough<Self>
+ClikgateOptions.LogLevel....(_:): static func ... (minimum: Self) -> PartialRangeFrom<Self>
+ClikgateOptions.LogLevel....(_:_:): static func ... (minimum: Self, maximum: Self) -> ClosedRange<Self>
+ClikgateOptions.LogLevel...<(_:): static func ..< (maximum: Self) -> PartialRangeUpTo<Self>
+ClikgateOptions.LogLevel...<(_:_:): static func ..< (minimum: Self, maximum: Self) -> Range<Self>
+ClikgateOptions.LogLevel.<(_:_:): static func < (lhs: ClikgateOptions.LogLevel, rhs: ClikgateOptions.LogLevel) -> Bool
+ClikgateOptions.LogLevel.<=(_:_:): static func <= (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.LogLevel.>(_:_:): static func > (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.LogLevel.>=(_:_:): static func >= (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.LogLevel.debug: case debug
+ClikgateOptions.LogLevel.error: case error
+ClikgateOptions.LogLevel.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateOptions.LogLevel.hashValue: var hashValue: Int { get }
+ClikgateOptions.LogLevel.info: case info
+ClikgateOptions.LogLevel.init(rawValue:): init?(rawValue: Int)
+ClikgateOptions.LogLevel.none: case none
+ClikgateOptions.LogLevel.verbose: case verbose
+ClikgateOptions.LogLevel.warning: case warning
+ClikgateOptions.LogLevel: enum LogLevel
+ClikgateOptions.PasteboardMode.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateOptions.PasteboardMode.automatic: case automatic
+ClikgateOptions.PasteboardMode.hash(into:): func hash(into hasher: inout Hasher)
+ClikgateOptions.PasteboardMode.hashValue: var hashValue: Int { get }
+ClikgateOptions.PasteboardMode.init(rawValue:): init?(rawValue: String)
+ClikgateOptions.PasteboardMode.off: case off
+ClikgateOptions.PasteboardMode.pasteControlOnly: case pasteControlOnly
+ClikgateOptions.PasteboardMode: enum PasteboardMode
+ClikgateOptions.apiBaseUrl: var apiBaseUrl: URL
+ClikgateOptions.attestation: var attestation: ClikgateOptions.Attestation
+ClikgateOptions.defaultApiBaseUrl: static let defaultApiBaseUrl: URL
+ClikgateOptions.deferredDeepLinkTimeout: var deferredDeepLinkTimeout: TimeInterval
+ClikgateOptions.environment: var environment: ClikgateOptions.Environment
+ClikgateOptions.init(apiBaseUrl:linkDomains:logLevel:environment:pasteboardMode:waitForATT:attestation:deferredDeepLinkTimeout:platformDomainBrowserFallback:): init(apiBaseUrl: URL = ClikgateOptions.defaultApiBaseUrl, linkDomains: [String] = [], logLevel: ClikgateOptions.LogLevel = .warning, environment: ClikgateOptions.Environment = .production, pasteboardMode: ClikgateOptions.PasteboardMode = .off, waitForATT: Bool = false, attestation: ClikgateOptions.Attestation = .off, deferredDeepLinkTimeout: TimeInterval = 5, platformDomainBrowserFallback: Bool = true)
+ClikgateOptions.linkDomains: var linkDomains: [String]
+ClikgateOptions.logLevel: var logLevel: ClikgateOptions.LogLevel
+ClikgateOptions.pasteboardMode: var pasteboardMode: ClikgateOptions.PasteboardMode
+ClikgateOptions.platformDomainBrowserFallback: var platformDomainBrowserFallback: Bool
+ClikgateOptions.waitForATT: var waitForATT: Bool
+ClikgateOptions: struct ClikgateOptions
+ClikgatePasteControl.canPaste(_:): @MainActor override func canPaste(_ itemProviders: [NSItemProvider]) -> Bool
+ClikgatePasteControl.init(coder:): @MainActor required init?(coder: NSCoder)
+ClikgatePasteControl.init(frame:): @MainActor override init(frame: CGRect)
+ClikgatePasteControl.init(showsLabel:): @MainActor convenience init(showsLabel: Bool)
+ClikgatePasteControl.intrinsicContentSize: @MainActor override var intrinsicContentSize: CGSize { get }
+ClikgatePasteControl.onPaste: @MainActor var onPaste: (@MainActor (Bool) -> Void)?
+ClikgatePasteControl.paste(itemProviders:): @MainActor override func paste(itemProviders: [NSItemProvider])
+ClikgatePasteControl: @MainActor final class ClikgatePasteControl
+ClikgateProvider.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateProvider.adyen: static var adyen: ClikgateProvider { get }
+ClikgateProvider.airtelMoney: static var airtelMoney: ClikgateProvider { get }
+ClikgateProvider.checkoutCom: static var checkoutCom: ClikgateProvider { get }
+ClikgateProvider.custom: static var custom: ClikgateProvider { get }
+ClikgateProvider.dpoPay: static var dpoPay: ClikgateProvider { get }
+ClikgateProvider.flutterwave: static var flutterwave: ClikgateProvider { get }
+ClikgateProvider.fromString(_:): static func fromString(_ value: String) -> ClikgateProvider?
+ClikgateProvider.hubtel: static var hubtel: ClikgateProvider { get }
+ClikgateProvider.interswitch: static var interswitch: ClikgateProvider { get }
+ClikgateProvider.korapay: static var korapay: ClikgateProvider { get }
+ClikgateProvider.moniepoint: static var moniepoint: ClikgateProvider { get }
+ClikgateProvider.monnify: static var monnify: ClikgateProvider { get }
+ClikgateProvider.mpesa: static var mpesa: ClikgateProvider { get }
+ClikgateProvider.mtnMomo: static var mtnMomo: ClikgateProvider { get }
+ClikgateProvider.opay: static var opay: ClikgateProvider { get }
+ClikgateProvider.paga: static var paga: ClikgateProvider { get }
+ClikgateProvider.payfast: static var payfast: ClikgateProvider { get }
+ClikgateProvider.paypal: static var paypal: ClikgateProvider { get }
+ClikgateProvider.paystack: static var paystack: ClikgateProvider { get }
+ClikgateProvider.peachPayments: static var peachPayments: ClikgateProvider { get }
+ClikgateProvider.pesapal: static var pesapal: ClikgateProvider { get }
+ClikgateProvider.rawValue: let rawValue: String
+ClikgateProvider.remita: static var remita: ClikgateProvider { get }
+ClikgateProvider.shopify: static var shopify: ClikgateProvider { get }
+ClikgateProvider.squad: static var squad: ClikgateProvider { get }
+ClikgateProvider.square: static var square: ClikgateProvider { get }
+ClikgateProvider.stripe: static var stripe: ClikgateProvider { get }
+ClikgateProvider.woocommerce: static var woocommerce: ClikgateProvider { get }
+ClikgateProvider.yoco: static var yoco: ClikgateProvider { get }
+ClikgateProvider: struct ClikgateProvider
+ClikgateReferral.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateReferral.createdAt: var createdAt: Date? { get }
+ClikgateReferral.programId: let programId: String
+ClikgateReferral.referralId: let referralId: String
+ClikgateReferral.referrerDisplayName: let referrerDisplayName: String?
+ClikgateReferral.referrerId: let referrerId: String
+ClikgateReferral.source: let source: String?
+ClikgateReferral.status: let status: String
+ClikgateReferral: struct ClikgateReferral
+ClikgateReferrals.applyCode(programId:code:): func applyCode(programId: String, code: String) async throws -> ClikgateReferral
+ClikgateReferrals.applyCode(programId:code:completion:): func applyCode(programId: String, code: String, completion: @escaping @MainActor (Result<ClikgateReferral, ClikgateError>) -> Void)
+ClikgateReferrals.referredBy(): func referredBy() async throws -> ClikgateReferredBy
+ClikgateReferrals.referredBy(completion:): func referredBy(completion: @escaping @MainActor (Result<ClikgateReferredBy, ClikgateError>) -> Void)
+ClikgateReferrals: final class ClikgateReferrals
+ClikgateReferredBy.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+ClikgateReferredBy.referral: let referral: ClikgateReferral?
+ClikgateReferredBy.referred: let referred: Bool
+ClikgateReferredBy: struct ClikgateReferredBy
+ClikgateRequestContext.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
+[spi] Clikgate.isConfigured: var isConfigured: Bool { get }
+[spi] Clikgate.reportServerError(code:feature:): func reportServerError(code: String, feature: String?)
+[spi] Clikgate.requestContext(): func requestContext() async throws -> ClikgateRequestContext
+[spi] Clikgate.setConsentRegionValidated(_:): @discardableResult func setConsentRegionValidated(_ region: String?) -> Bool
+[spi] Clikgate.setPushToken(_:provider:): func setPushToken(_ token: String, provider: String)
+[spi] Clikgate.setWrapper(name:version:): static func setWrapper(name: String, version: String)
+[spi] ClikgateAttribution.clickedAtRaw: var clickedAtRaw: String? { get }
+[spi] ClikgateReferral.createdAtRaw: var createdAtRaw: String? { get }
+[spi] ClikgateReferral.init(apiJSON:): init?(apiJSON: [String : Any]?)
+[spi] ClikgateRequestContext.apiBaseUrl: let apiBaseUrl: URL
+[spi] ClikgateRequestContext.customerUserId: let customerUserId: String?
+[spi] ClikgateRequestContext.environment: let environment: String
+[spi] ClikgateRequestContext.headers: var headers: [String : String] { get }
+[spi] ClikgateRequestContext.identityToken: let identityToken: String?
+[spi] ClikgateRequestContext.init(installationId:sdkKey:environment:apiBaseUrl:identityToken:customerUserId:sdkVersion:nativeSdkVersion:): init(installationId: String, sdkKey: String, environment: String, apiBaseUrl: URL, identityToken: String?, customerUserId: String?, sdkVersion: String, nativeSdkVersion: String?)
+[spi] ClikgateRequestContext.installationId: let installationId: String
+[spi] ClikgateRequestContext.nativeSdkVersion: let nativeSdkVersion: String?
+[spi] ClikgateRequestContext.sdkKey: let sdkKey: String
+[spi] ClikgateRequestContext.sdkVersion: let sdkVersion: String
+[spi] ClikgateRequestContext: struct ClikgateRequestContext

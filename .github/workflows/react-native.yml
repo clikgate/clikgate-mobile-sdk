@@ -1,0 +1,187 @@
+name: React Native package
+
+on:
+  push:
+    branches: [main]
+    paths: ["react-native/**", "react-native-engage/**", "android/**", "ios/**", "shared/**", ".github/workflows/react-native.yml"]
+    tags: ["react-native-v*", "react-native-engage-v*"]
+  pull_request:
+    paths: ["react-native/**", "react-native-engage/**", "android/**", "ios/**", "shared/**", ".github/workflows/react-native.yml"]
+
+concurrency:
+  group: react-native-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: react-native
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            react-native/package-lock.json
+            react-native/example/package-lock.json
+      - name: Install (package + example)
+        run: |
+          npm ci
+          npm ci --prefix example
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests (TS layer + Expo plugin + public-API snapshot / no-Engage boundary)
+        run: npm test -- --ci
+      - name: Build (lib + plugin) and pack dry run
+        run: |
+          npm run build
+          npm pack --dry-run
+      # Engage add-on (pure TypeScript). Reuses the core's node_modules (devlink) instead of a second install.
+      - name: "Engage: link toolchain"
+        working-directory: react-native-engage
+        run: npm run devlink
+      - name: "Engage: typecheck, lint, unit tests (incl. public-API snapshot), build, pack dry run"
+        working-directory: react-native-engage
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test -- --ci
+          npm run build
+          npm pack --dry-run
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            react-native/package-lock.json
+            react-native/example/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install
+        working-directory: react-native
+        run: |
+          npm ci
+          npm ci --prefix example
+      # The example resolves com.clikgate:clikgate-android from ~/.m2 (clikgate.useMavenLocal=true),
+      # so the native SDK is built from this commit's sources first.
+      - name: Publish native SDK to Maven local
+        working-directory: android
+        run: ./gradlew :clikgate:publishToMavenLocal :clikgate-engage:publishToMavenLocal
+      - name: Build example APK
+        working-directory: react-native/example/android
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64 -Pclikgate.linkDomain=inv.example.com
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            react-native/package-lock.json
+            react-native/example/package-lock.json
+      - name: Install
+        working-directory: react-native
+        run: |
+          npm ci
+          npm ci --prefix example
+      - name: Pod install (Clikgate pod from ../../../ios)
+        working-directory: react-native/example/ios
+        env:
+          LANG: en_US.UTF-8
+        run: pod install
+      - name: Build example for the iOS simulator
+        working-directory: react-native/example/ios
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ClikgateExample.xcworkspace -scheme ClikgateExample \
+            -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -50
+
+  # Publishes @clikgate/react-native-engage to npm on react-native-engage-v* tags (same secrets).
+  release-engage:
+    if: startsWith(github.ref, 'refs/tags/react-native-engage-v')
+    needs: [js]
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+      - name: Check tag matches package.json version
+        working-directory: react-native-engage
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "react-native-engage-v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} != react-native-engage-v$version"; exit 1; }
+      - name: Build core types, link toolchain
+        run: |
+          (cd react-native && npm ci && npm run build:lib)
+          (cd react-native-engage && npm run devlink)
+      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      - name: Scan the package
+        run: (cd react-native-engage && npm run -s build) && python3 scripts/scan_release_packages.py --npm react-native-engage
+      - name: Publish
+        working-directory: react-native-engage
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Publishes @clikgate/react-native to npm on react-native-v* tags (npm provenance via GitHub
+  # OIDC). Requires the NPM_TOKEN secret in the `npm` environment. Release
+  # com.clikgate:clikgate-android and the Clikgate pod with the matching version first.
+  release:
+    if: startsWith(github.ref, 'refs/tags/react-native-v')
+    needs: [js, android, ios]
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: react-native
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+      - name: Check tag matches package.json version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "react-native-v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} != react-native-v$version"; exit 1; }
+      - run: npm ci
+      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      - name: Scan the package
+        run: python3 ../scripts/scan_release_packages.py --npm .
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

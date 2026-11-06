@@ -1,0 +1,8 @@
+.build/
+build/
+DerivedData/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+Package.resolved
+Sample/Local.xcconfig

@@ -1,0 +1,9 @@
+{
+  "error": {
+    "type": "conflict",
+    "code": "code_expired",
+    "message": "This code has expired.",
+    "param": "code",
+    "request_id": "req_01JAB3C4D5E6F7G8H9JKMNPQRS"
+  }
+}

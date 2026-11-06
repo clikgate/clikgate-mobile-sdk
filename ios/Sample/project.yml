@@ -1,0 +1,55 @@
+# Generate the Xcode project with:  cd ios/Sample && xcodegen generate
+name: ClikgateSample
+options:
+  bundleIdPrefix: com.clikgate
+  deploymentTarget:
+    iOS: "13.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config.xcconfig
+  Release: Config.xcconfig
+packages:
+  Clikgate:
+    path: ..
+targets:
+  ClikgateSample:
+    type: application
+    platform: iOS
+    sources:
+      - ClikgateSample
+    dependencies:
+      - package: Clikgate
+        product: Clikgate
+      - package: Clikgate
+        product: ClikgateEngage
+    entitlements:
+      path: ClikgateSample/ClikgateSample.entitlements
+      properties:
+        com.apple.developer.associated-domains:
+          - applinks:$(CLIKGATE_LINK_DOMAIN)
+        aps-environment: development
+    info:
+      path: ClikgateSample/Info.plist
+      properties:
+        CFBundleDisplayName: Clikgate Sample
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UIBackgroundModes: [remote-notification]
+        LSApplicationQueriesSchemes: [whatsapp]
+        CFBundleURLTypes:
+          - CFBundleURLName: com.clikgate.sample
+            CFBundleURLSchemes: [$(CLIKGATE_URL_SCHEME)]
+        ClikgateSDKKey: $(CLIKGATE_SDK_KEY)
+        ClikgateLinkDomain: $(CLIKGATE_LINK_DOMAIN)
+        ClikgateApiBaseUrl: $(CLIKGATE_API_BASE_URL)
+        ClikgateProgramId: $(CLIKGATE_PROGRAM_ID)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.clikgate.sample
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic

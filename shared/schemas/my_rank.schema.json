@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/my_rank.schema.json",
+  "title": "my_rank",
+  "type": "object",
+  "properties": {
+    "leaderboard_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "closed_provisional",
+            "final"
+          ]
+        },
+        "starts_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ends_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "key",
+        "status"
+      ]
+    },
+    "referrer_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "rank": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "score": {
+      "type": "integer"
+    },
+    "pending": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "gap_to_next": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "best_rank": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "period_ends_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "opted_out": {
+      "type": "boolean"
+    },
+    "embed_token": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "embed_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "leaderboard_id",
+    "period",
+    "referrer_id",
+    "rank",
+    "score"
+  ]
+}

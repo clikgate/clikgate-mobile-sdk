@@ -1,0 +1,80 @@
+// Android side of @clikgate/react-native-engage: a TurboModule with one method (shareLink) over
+// the native Engage add-on (com.clikgate:clikgate-engage, which brings com.clikgate:clikgate-android).
+//
+// Native SDK dependency (com.clikgate:clikgate-engage):
+//  - Releases: resolved from Maven Central at the version below.
+//  - This monorepo: like @clikgate/react-native (mavenLocal by default, or the composite build of
+//    ../android with -Pclikgate.useLocalSdk=true, which substitutes the :clikgate-engage project).
+//  - Other apps developing against an unpublished SDK: run `./gradlew publishToMavenLocal`
+//    in android/ and set `clikgate.useMavenLocal=true` in the app's android/gradle.properties.
+//  - `clikgate.androidVersion` (gradle property) overrides the SDK version.
+
+buildscript {
+  ext.ClikgateEngageRN = [
+    kotlinVersion: "2.1.20",
+    minSdkVersion: 24,
+    compileSdkVersion: 36
+  ]
+
+  ext.clikgateEngageRnExt = { prop ->
+    return rootProject.ext.has(prop) ? rootProject.ext.get(prop) : ClikgateEngageRN[prop]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    // Only used when this project is built on its own; inside an app, the app's AGP and
+    // Kotlin Gradle plugin are used.
+    classpath "com.android.tools.build:gradle:8.12.0"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${clikgateEngageRnExt('kotlinVersion')}"
+  }
+}
+
+def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "1.5.0"
+
+apply plugin: "com.android.library"
+
+if (project.extensions.findByName("kotlin") == null) {
+  apply plugin: "kotlin-android"
+}
+
+apply plugin: "com.facebook.react"
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+if (project.findProperty("clikgate.useMavenLocal") == "true") {
+  rootProject.allprojects {
+    repositories {
+      mavenLocal {
+        content { includeGroup("com.clikgate") }
+      }
+    }
+  }
+}
+
+android {
+  namespace "com.clikgate.reactnative.engage"
+
+  compileSdkVersion clikgateEngageRnExt("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion clikgateEngageRnExt("minSdkVersion")
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation "com.clikgate:clikgate-engage:${clikgateAndroidVersion}"
+}

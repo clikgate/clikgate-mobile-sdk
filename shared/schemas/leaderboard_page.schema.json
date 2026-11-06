@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/leaderboard_page.schema.json",
+  "title": "leaderboard_page",
+  "type": "object",
+  "properties": {
+    "leaderboard_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "metric": {
+      "enum": [
+        "qualified",
+        "installs",
+        "signups",
+        "step",
+        "points"
+      ]
+    },
+    "segment": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "closed_provisional",
+            "final"
+          ]
+        },
+        "starts_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ends_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "key",
+        "status"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "referrer_id": {
+            "type": "string",
+            "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "display": {
+            "type": "string"
+          },
+          "score": {
+            "type": "integer"
+          },
+          "pending": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "is_me": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true,
+        "required": [
+          "rank",
+          "referrer_id",
+          "display",
+          "score",
+          "is_me"
+        ]
+      }
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "leaderboard_id",
+    "period",
+    "entries"
+  ]
+}

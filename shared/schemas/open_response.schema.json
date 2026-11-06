@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/open_response.schema.json",
+  "title": "open_response",
+  "type": "object",
+  "properties": {
+    "open_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "uninstall_status": {
+      "enum": [
+        "installed",
+        "uninstalled",
+        "unknown"
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "open_id"
+  ]
+}

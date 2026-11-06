@@ -1,0 +1,82 @@
+--- a/MyApp.xcodeproj/project.pbxproj
++++ b/MyApp.xcodeproj/project.pbxproj
+@@ -261,4 +261,5 @@
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
++				CODE_SIGN_ENTITLEMENTS = MyApp/MyAppDebug.entitlements;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				CURRENT_PROJECT_VERSION = 1;
+@@ -293,4 +294,5 @@
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
++				CODE_SIGN_ENTITLEMENTS = MyApp/MyApp.entitlements;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				CURRENT_PROJECT_VERSION = 1;
+
+--- /dev/null
++++ b/MyApp/MyApp.entitlements
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>com.apple.developer.associated-domains</key>
++	<array>
++		<string>applinks:acme.ciz.to</string>
++		<string>applinks:go.acme.com</string>
++	</array>
++</dict>
++</plist>
+
+--- a/MyApp/MyAppApp.swift
++++ b/MyApp/MyAppApp.swift
+@@ -5,10 +5,33 @@
+ 
+ import SwiftUI
++// clikgate-setup:start
++import Clikgate
++// clikgate-setup:end
+ 
+ @main
+ struct MyAppApp: App {
++    // clikgate-setup:start
++    init() {
++        // acme.dev.ciz.to (test links) only in Debug builds
++        #if DEBUG
++        let linkDomains = ["acme.ciz.to", "go.acme.com", "acme.dev.ciz.to"]
++        #else
++        let linkDomains = ["acme.ciz.to", "go.acme.com"]
++        #endif
++        Clikgate.configure(sdkKey: "cg_sdk_test_abc123", options: ClikgateOptions(linkDomains: linkDomains))
++        Clikgate.shared.onDeepLink { link in
++            // Open the screen for link.path (link.data has the link's data)
++            print("Clikgate deep link:", link.path ?? "/")
++        }
++    }
++    // clikgate-setup:end
++
+     var body: some Scene {
+         WindowGroup {
+             ContentView()
++                // clikgate-setup:start
++                .onOpenURL { Clikgate.shared.handle(url: $0) }
++                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { Clikgate.shared.continue(userActivity: $0) }
++                // clikgate-setup:end
+         }
+     }
+
+--- /dev/null
++++ b/MyApp/MyAppDebug.entitlements
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>com.apple.developer.associated-domains</key>
++	<array>
++		<string>applinks:acme.ciz.to</string>
++		<string>applinks:go.acme.com</string>
++		<string>applinks:acme.dev.ciz.to</string>
++	</array>
++</dict>
++</plist>

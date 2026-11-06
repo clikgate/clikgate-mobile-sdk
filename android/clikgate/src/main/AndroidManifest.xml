@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+      Android 11+ package visibility: the SDK opens shared-domain links of other organisations
+      (ciz.to, clk.ng, ...) in an explicit browser package with Custom Tabs, never through an
+      implicit intent that could loop back into the app's own App Links.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
+    <!--
+      Keeps the Clikgate installation id and event queue out of Auto Backup / device transfer
+      (a restored or transferred app is a new installation). If your app declares its own
+      android:fullBackupContent / android:dataExtractionRules, add the excludes from
+      clikgate_backup_rules.xml / clikgate_data_extraction_rules.xml to your files and use
+      tools:replace="android:fullBackupContent,android:dataExtractionRules".
+    -->
+    <application
+        android:fullBackupContent="@xml/clikgate_backup_rules"
+        android:dataExtractionRules="@xml/clikgate_data_extraction_rules"
+        tools:targetApi="31" />
+</manifest>

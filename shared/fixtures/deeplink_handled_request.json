@@ -1,0 +1,4 @@
+{
+  "path": "/products/:id",
+  "is_deferred": false
+}

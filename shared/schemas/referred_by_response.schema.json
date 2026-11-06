@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/referred_by_response.schema.json",
+  "title": "referred_by_response",
+  "type": "object",
+  "properties": {
+    "referred": {
+      "type": "boolean"
+    },
+    "referral": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "referral_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "program_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "status": {
+              "enum": [
+                "installed",
+                "signed_up",
+                "in_progress",
+                "holding",
+                "qualified",
+                "disqualified",
+                "rejected"
+              ]
+            },
+            "source": {
+              "enum": [
+                "link",
+                "code_entry",
+                "byo_code",
+                "offline_code",
+                null
+              ]
+            },
+            "referrer_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            "referrer_display_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "created_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": true,
+          "required": [
+            "referral_id",
+            "program_id",
+            "status",
+            "referrer_id",
+            "referrer_display_name"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "referred",
+    "referral"
+  ]
+}

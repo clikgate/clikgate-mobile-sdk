@@ -1,0 +1,36 @@
+{
+  "name": "clikgate-react-native-example",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Example app for @clikgate/react-native (bare React Native, New Architecture).",
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "pods": "cd ios && LANG=en_US.UTF-8 pod install",
+    "build:android": "cd android && ./gradlew assembleDebug",
+    "build:ios": "cd ios && xcodebuild -workspace ClikgateExample.xcworkspace -scheme ClikgateExample -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "^5.5.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "20.1.0",
+    "@react-native-community/cli-platform-android": "20.1.0",
+    "@react-native-community/cli-platform-ios": "20.1.0",
+    "@react-native/babel-preset": "0.86.3",
+    "@react-native/metro-config": "0.86.3",
+    "@react-native/typescript-config": "0.86.3",
+    "babel-plugin-transform-inline-environment-variables": "^0.4.4",
+    "react-native-builder-bob": "^0.43.2",
+    "react-native-monorepo-config": "^0.4.0"
+  },
+  "engines": {
+    "node": ">= 22.11.0"
+  }
+}
