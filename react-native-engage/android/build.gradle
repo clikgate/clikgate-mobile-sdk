@@ -34,7 +34,7 @@ buildscript {
   }
 }
 
-def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "1.5.0"
+def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "2.0.0"
 
 apply plugin: "com.android.library"
 

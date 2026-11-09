@@ -17,9 +17,9 @@ promo codes and share helpers are **not** in it:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.clikgate:clikgate-android:1.5.1")
+    implementation("com.clikgate:clikgate-android:2.0.0")
     // Optional Engage add-on (apps without a backend; pulls in clikgate-android):
-    // implementation("com.clikgate:clikgate-engage:1.5.1")
+    // implementation("com.clikgate:clikgate-engage:2.0.0")
     // Optional, only if you enable Play Integrity attestation:
     // implementation("com.google.android.play:integrity:1.6.0")
 }
@@ -395,7 +395,7 @@ config is re-fetched in the background.
 ## 6d. Engage add-on (optional, apps without a backend)
 
 ```kotlin
-dependencies { implementation("com.clikgate:clikgate-engage:1.1.0") }   // depends on clikgate-android
+dependencies { implementation("com.clikgate:clikgate-engage:2.0.0") }   // depends on clikgate-android
 ```
 
 `ClikgateEngage` (package `com.clikgate.engage`) calls the same `/v1/sdk/...` endpoints using the

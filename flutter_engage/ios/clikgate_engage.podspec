@@ -7,7 +7,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'clikgate_engage'
-  s.version          = '1.0.0'
+  s.version          = '2.0.0'
   s.summary          = 'Clikgate Engage share helpers for Flutter (iOS).'
   s.description      = <<-DESC
 Flutter plugin for the Clikgate Engage add-on's share menu: each app gets its own version of the
@@ -19,7 +19,7 @@ link and the share is recorded.
   s.source           = { :path => '.' }
   s.source_files     = 'clikgate_engage/Sources/clikgate_engage/**/*.swift'
   s.dependency 'Flutter'
-  s.dependency 'Clikgate/Engage', '~> 1.5.0'
+  s.dependency 'Clikgate/Engage', '~> 2.0.0'
   s.platform = :ios, '13.0'
 
   # Flutter.framework does not contain a i386 slice.

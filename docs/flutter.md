@@ -22,7 +22,7 @@ Requirements: Flutter 3.24+ (tested with 3.35.4), Android minSdk 21, iOS 13.
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^1.0.0
+  clikgate_flutter: ^2.0.0
 ```
 
 ## 2. Configure
@@ -287,8 +287,8 @@ feature: ...)` without a network call (also when the server answers with its
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^1.0.0
-  clikgate_engage: ^1.0.0
+  clikgate_flutter: ^2.0.0
+  clikgate_engage: ^2.0.0
 ```
 
 Pure Dart (package `http`; `share_plus` and `url_launcher` for the share helpers), no native

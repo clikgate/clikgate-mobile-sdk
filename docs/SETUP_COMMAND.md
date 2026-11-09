@@ -73,10 +73,10 @@ The device sign-in prints "If your account uses two-factor sign-in, the page als
 
 The command writes the dependency into the manifest itself, so the diff shows it and a re-run sees it. Then it runs the package manager to resolve it:
 
-- `pubspec.yaml`: `clikgate_flutter: ^1.5.1`, then `flutter pub get`;
-- `package.json`: `@clikgate/react-native: ^1.6.1`, in alphabetical position, then `<pm> install`. Expo uses the same path (see [cli/DECISIONS.md](../cli/DECISIONS.md): `npx expo install` adds nothing for packages outside Expo's bundled list);
-- Gradle: `implementation("com.clikgate:clikgate-android:1.5.1")` (Kotlin DSL), `implementation 'com.clikgate:clikgate-android:1.5.1'` (Groovy), or a version-catalog entry `clikgate-android` plus `implementation(libs.clikgate.android)`;
-- Podfile: `pod 'Clikgate', '~> 1.5'` in the app target.
+- `pubspec.yaml`: `clikgate_flutter: ^2.0.0`, then `flutter pub get`;
+- `package.json`: `@clikgate/react-native: ^2.0.0`, in alphabetical position, then `<pm> install`. Expo uses the same path (see [cli/DECISIONS.md](../cli/DECISIONS.md): `npx expo install` adds nothing for packages outside Expo's bundled list);
+- Gradle: `implementation("com.clikgate:clikgate-android:2.0.0")` (Kotlin DSL), `implementation 'com.clikgate:clikgate-android:2.0.0'` (Groovy), or a version-catalog entry `clikgate-android` plus `implementation(libs.clikgate.android)`;
+- Podfile: `pod 'Clikgate', '~> 2.0'` in the app target.
 - An existing, older constraint is never rewritten: setup lists it as a manual step ("Update clikgate_flutter … to ^1.5.1") and doctor warns (`sdk.version`, minimums Flutter 1.5.1, RN 1.6.1, Android 1.5.1, iOS 1.5.1).
 - The SDKs' `platformDomainBrowserFallback` option (default on) is never written.
   - Without a Podfile it prints the Xcode "Add Package Dependencies" steps for `https://github.com/clikgate/clikgate-ios-sdk` as a manual step. It doesn't edit Swift package references in `project.pbxproj`: they are several linked objects, and a partial edit breaks the project.
