@@ -25,7 +25,6 @@ final class PersistedState: @unchecked Sendable {
     var optOutPending: Bool?
     var lastOpenAt: Date?
     var lastBackgroundAt: Date?
-    var skanLastFineValue: Int?
     var firstLaunchSignalsCollected = false
     var pasteboardToken: String?
     var launchUrl: String?
@@ -85,7 +84,6 @@ final class PersistedState: @unchecked Sendable {
         optOutPending = j.bool("opt_out_pending")
         lastOpenAt = j.date("last_open_at")
         lastBackgroundAt = j.date("last_background_at")
-        skanLastFineValue = j.int("skan_last_fine_value")
         firstLaunchSignalsCollected = j.bool("first_launch_signals_collected") ?? false
         pasteboardToken = j.str("pasteboard_token")
         launchUrl = j.str("launch_url")
@@ -136,7 +134,6 @@ final class PersistedState: @unchecked Sendable {
         b.set("opt_out_pending", optOutPending)
         b.set("last_open_at", lastOpenAt)
         b.set("last_background_at", lastBackgroundAt)
-        b.set("skan_last_fine_value", skanLastFineValue)
         b.set("first_launch_signals_collected", firstLaunchSignalsCollected)
         b.set("pasteboard_token", pasteboardToken)
         b.set("launch_url", launchUrl)

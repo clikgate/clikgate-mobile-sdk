@@ -172,8 +172,6 @@ internal data class VersionPolicy(
     val latest: String?,
     val status: String?,
     val allowedCalls: Set<String>?,
-    val allowedEvents: Set<String>?,
-    val stripProperties: Boolean,
     val message: String?,
 ) {
     /** Effective status for [ownVersion]: the server's, else `deprecated` below the minimum. */
@@ -185,8 +183,9 @@ internal data class VersionPolicy(
     fun allows(call: String): Boolean = !blocked || call in (allowedCalls ?: DEFAULT_BLOCKED_CALLS)
 
     companion object {
-        val NONE = VersionPolicy(null, null, null, null, null, true, null)
-        val DEFAULT_BLOCKED_CALLS = setOf("config", "install", "open", "events", "opt_out", "consent", "install_ping")
+        val NONE = VersionPolicy(null, null, null, null, null)
+        /** Calls a blocked SDK still makes when the server lists none. Goals only when the server lists `goals`. */
+        val DEFAULT_BLOCKED_CALLS = setOf("config", "install", "open", "opt_out", "consent", "install_ping")
 
         fun parse(o: JSONObject): VersionPolicy {
             fun s(k: String) = if (o.isNull(k)) null else o.optString(k).ifEmpty { null }
@@ -197,9 +196,6 @@ internal data class VersionPolicy(
                 latest = s("latest_version"),
                 status = s("version_status"),
                 allowedCalls = set("allowed_calls"),
-                allowedEvents = set("allowed_events"),
-                // Without instructions a blocked SDK strips properties.
-                stripProperties = b?.optBoolean("strip_event_properties", true) ?: true,
                 message = b?.let { if (it.isNull("message")) null else it.optString("message").ifEmpty { null } },
             )
         }
@@ -223,30 +219,16 @@ internal data class FirebaseConfig(
     val enabled: Boolean,
     val logAttributionEvent: Boolean,
     val setUserProperties: Boolean,
-    val mirrorEvents: Boolean,
     val reportAppInstanceId: Boolean,
 ) {
     companion object {
-        val OFF = FirebaseConfig(false, true, true, false, true)
+        val OFF = FirebaseConfig(false, true, true, true)
 
         fun parse(o: JSONObject?): FirebaseConfig = if (o == null) OFF else FirebaseConfig(
             enabled = o.optBoolean("enabled", false),
             logAttributionEvent = o.optBoolean("log_attribution_event", true),
             setUserProperties = o.optBoolean("set_user_properties", true),
-            mirrorEvents = o.optBoolean("mirror_events", false),
             reportAppInstanceId = o.optBoolean("report_app_instance_id", true),
         )
-    }
-}
-
-/** Minor units per major unit for Firebase `value` (ISO 4217 exponents; 2 unless listed). */
-internal object Money {
-    private val ZERO = setOf("BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF")
-    private val THREE = setOf("BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND")
-
-    fun minorUnitsPerMajor(currency: String): Double = when (currency) {
-        in ZERO -> 1.0
-        in THREE -> 1000.0
-        else -> 100.0
     }
 }

@@ -81,6 +81,7 @@
             "enum": [
               "counted",
               "waiting",
+              "received",
               "refused"
             ]
           },

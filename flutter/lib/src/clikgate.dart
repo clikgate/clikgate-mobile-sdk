@@ -12,7 +12,7 @@ import 'referrals.dart';
 
 /// identifyUser()'s "customerId not passed" default (never a real customer ID).
 const String _keepCustomerId = '\u0000';
-/// Clikgate core: deep links, install attribution, events, identifyUser,
+/// Clikgate core: deep links, install attribution, goals, identifyUser,
 /// referee-side referral calls, uninstall tracking and feature switches. A
 /// thin bridge over the native Android and iOS SDKs.
 ///
@@ -104,22 +104,10 @@ class Clikgate {
       ClikgateAttribution.fromMap(
           await ClikgateChannels.invokeMap('getAttribution'));
 
-  /// Tracks an app event (queued and batched natively). Throws
-  /// `ClikgateException(invalid_argument)` for an invalid name, currency or
-  /// properties over 8 KB.
-  static Future<void> track(String name,
-      {ClikgateMoney? revenue, Map<String, Object?>? properties}) {
-    return ClikgateChannels.invoke<void>('track', {
-      'name': name,
-      'revenueMinor': revenue?.amountMinor,
-      'currency': revenue?.currency,
-      'properties': properties,
-    });
-  }
-
   /// Records a goal: an outcome your business chose, such as
   /// `account_opened`, `loan_disbursed` or `purchase`, attributed to the click
-  /// or install that brought this user:
+  /// or install that brought this user. `goal()` is the only method for what
+  /// happens in your app; it works on every plan:
   /// `Clikgate.goal('account_opened', value: 2000000, currency: 'NGN', reference: 'APP-55231', isFirst: true)`.
   ///
   /// For a **Payment goal** (set in the dashboard), pass the payment provider
@@ -133,12 +121,14 @@ class Clikgate {
   /// it reaches the native SDK as a decimal string, never as a double). At
   /// most 15 significant digits, zero or more. [reference] is your own unique
   /// id (1-128 characters; a UUID is generated when omitted). Queued, retried
-  /// and consent-buffered like [track], idempotent by key and reference, and
-  /// sent in private mode too. Never put customer data in a goal.
+  /// and consent-buffered, idempotent by key and reference, and sent in
+  /// private mode too. A name counts once it's ticked in the dashboard ("Count
+  /// this as a goal"). Never put customer data in a goal.
   ///
   /// Completes with a [GoalResult] once Clikgate has answered:
   /// [GoalStatus.counted], [GoalStatus.waiting] (a Payment goal waiting for
-  /// its confirmation) or [GoalStatus.refused] with a [GoalResult.reason]
+  /// its confirmation), [GoalStatus.received] (stored, not counted: the name
+  /// isn't ticked yet; not retried) or [GoalStatus.refused] with a [GoalResult.reason]
   /// (`invalid_argument` for a bad key, value, currency or reference). While
   /// the device is offline the goal stays queued and the future completes when
   /// it is sent, so don't block your UI on it.
@@ -203,6 +193,14 @@ class Clikgate {
   /// device, and the label too unless your organisation allows labels there.
   /// Don't put information in labels that your customers wouldn't expect you
   /// to keep.
+  ///
+  /// Identity Path A (the default): your server makes the token with the
+  /// server SDK's `createIdentityToken` (it reads `CLIKGATE_IDENTITY_SECRET`;
+  /// the secret never goes in the app) and returns it in the sign-in and
+  /// "current user" responses; pass the newest one here. Call after sign-in or
+  /// sign-up and at app open when already signed in; on sign-out call
+  /// `identifyUser(customerId: null)`. Path B needs no token: see
+  /// [getInstallationId]. Guide: https://clikgate.com/docs/identify-users
   static Future<void> identifyUser(
       {String? label, String? customerId = _keepCustomerId, String? identityToken}) {
     return ClikgateChannels.invoke<void>('identifyUser', {
@@ -211,6 +209,22 @@ class Clikgate {
       'identityToken': identityToken,
     });
   }
+
+  /// This installation's ID: the random UUID the native SDK created at first
+  /// launch and sends to Clikgate with every call (not personal data; allowed
+  /// in private mode). For identity Path B, include it in the sign-in request
+  /// to your own server (and at every signed-in app open); your server calls
+  /// the server SDK's `identifyUser({appId, installationId, customerId, label?})`.
+  /// No identity secret or token is needed.
+  ///
+  /// `final id = await Clikgate.getInstallationId();` Right after [configure]
+  /// it waits for the first launch's config answer (a few seconds at most;
+  /// offline it answers at once). A reinstall gets a new ID. Null when tracking
+  /// is off ([setTrackingEnabled] `false`, consent denied or not given yet
+  /// where it's required, or deep-link-only mode), so your server simply skips
+  /// `identifyUser`. Guide: https://clikgate.com/docs/identify-users
+  static Future<String?> getInstallationId() =>
+      ClikgateChannels.invoke<String>('getInstallationId');
 
   /// Opt-out switch: `false` stops all processing for this installation.
   static Future<void> setTrackingEnabled(bool enabled) =>
@@ -295,22 +309,17 @@ class Clikgate {
 
   /// Forwards Clikgate attribution to Firebase Analytics when the app
   /// includes it (e.g. via `firebase_analytics`; detected natively at
-  /// runtime): `clikgate_attribution` once per install, the
-  /// `cg_first_source` / `cg_first_campaign` user properties and, with
-  /// [mirrorEvents], every tracked event ([eventNameMap] renames them). Needs
+  /// runtime): `clikgate_attribution` once per install and the
+  /// `cg_first_source` / `cg_first_campaign` user properties. Needs
   /// `analytics` consent and GA4 forwarding enabled for the app in Clikgate.
   /// Call on every launch.
   static Future<void> enableFirebaseForwarding({
     bool logAttributionEvent = true,
     bool setUserProperties = true,
-    bool mirrorEvents = false,
-    Map<String, String> eventNameMap = const {},
   }) =>
       ClikgateChannels.invoke<void>('enableFirebaseForwarding', {
         'logAttributionEvent': logAttributionEvent,
         'setUserProperties': setUserProperties,
-        'mirrorEvents': mirrorEvents,
-        'eventNameMap': eventNameMap,
       });
 
   /// `{cg_click_id, cg_link_id}` of the click that brought this user, for

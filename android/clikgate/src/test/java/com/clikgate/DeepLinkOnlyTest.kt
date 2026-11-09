@@ -14,9 +14,9 @@ import org.robolectric.shadows.ShadowLog
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Change 10 (D.5, contract B3a.2): deep links on, attribution off (Free, Starter, or an app with
- * attribution switched off). goal() and track() warn once ("needs Growth") and do nothing; the
- * server's `feature_disabled` answer on /events and /goals is never retried; the "no deferred link"
+ * Change 10 (D.5, contract B3a.2): deep links on, attribution off (an app with
+ * attribution switched off). goal() warns once ("switched off") and does nothing; the
+ * server's `feature_disabled` answer on /goals is never retried; the "no deferred link"
  * install result at the monthly cap is a normal empty result.
  */
 @OptIn(ClikgateInternalApi::class)
@@ -31,7 +31,7 @@ class DeepLinkOnlyTest {
 
     @After fun tearDown() = env.tearDown()
 
-    private fun warnings() = ShadowLog.getLogsForTag("Clikgate").map { it.msg }.filter { "needs Growth" in it }
+    private fun warnings() = ShadowLog.getLogsForTag("Clikgate").map { it.msg }.filter { "app attribution is switched off" in it }
 
     private fun installed() {
         env.configure(env.options().copy(logLevel = LogLevel.WARN))
@@ -40,7 +40,7 @@ class DeepLinkOnlyTest {
     }
 
     @Test
-    fun configWithAttributionOffSkipsEventsAndGoalsWithOneWarning() {
+    fun configWithAttributionOffSkipsGoalsWithOneWarning() {
         env.api.on("GET /v1/sdk/config", ok(Fixtures.text("config_response_deep_link_only")))
         installed()
         eventually { !Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION) }
@@ -48,41 +48,15 @@ class DeepLinkOnlyTest {
 
         val results = java.util.concurrent.CopyOnWriteArrayList<GoalResult>()
         Clikgate.goal("account_opened", reference = "APP-1") { results.add(it) }
-        assertNull(Clikgate.trackValidated("purchase", ClikgateMoney.ofMinor(1500, "NGN"), null))
         assertNull(Clikgate.goalFromWrapper("order_paid", "1500.50", "NGN", "ORD-1", null, null, null))
-        Clikgate.track("signup")
+        Clikgate.goal("signup")
         assertTrue(env.core().flushBlocking(3_000))
 
         assertEquals(0, env.queue.count())
-        assertTrue(env.api.calls("POST /v1/sdk/events").isEmpty())
         assertTrue(env.api.calls("POST /v1/sdk/goals").isEmpty())
         assertEquals(1, warnings().size)
         eventually { results.size == 1 }
         assertEquals(GoalResult(GoalStatus.REFUSED, "feature_disabled", null, false), results.single())
-    }
-
-    @Test
-    fun featureDisabledOnEventsIsDroppedNotRetriedAndStopsLaterCalls() {
-        // The cached config still says on; the server knows better. The refresh then says off.
-        env.api.on(
-            "GET /v1/sdk/config",
-            ok(Fixtures.text("config_response")),
-            ok(Fixtures.text("config_response_deep_link_only")),
-        )
-        env.api.on("POST /v1/sdk/events", ok(Fixtures.text("events_response_feature_disabled")))
-        installed()
-        Clikgate.track("purchase")
-        assertTrue(env.core().flushBlocking(3_000))
-        assertEquals(0, env.queue.count())
-        assertEquals(1, env.api.calls("POST /v1/sdk/events").size) // no retry
-        eventually { !Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION) }
-
-        Clikgate.track("purchase")
-        Clikgate.goal("account_opened")
-        assertTrue(env.core().flushBlocking(3_000))
-        assertEquals(1, env.api.calls("POST /v1/sdk/events").size)
-        assertTrue(env.api.calls("POST /v1/sdk/goals").isEmpty())
-        assertEquals(1, warnings().size)
     }
 
     @Test
@@ -103,6 +77,12 @@ class DeepLinkOnlyTest {
         assertEquals(0, env.queue.count())
         assertEquals(1, env.api.calls("POST /v1/sdk/goals").size)
         eventually { !Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION) }
+        assertEquals(1, warnings().size)
+
+        // Later calls stop on the device: no second /goals call, no second warning.
+        Clikgate.goal("order_paid")
+        assertTrue(env.core().flushBlocking(3_000))
+        assertEquals(1, env.api.calls("POST /v1/sdk/goals").size)
         assertEquals(1, warnings().size)
     }
 

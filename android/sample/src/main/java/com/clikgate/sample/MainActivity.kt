@@ -12,7 +12,6 @@ import android.widget.TextView
 import com.clikgate.Clikgate
 import com.clikgate.ClikgateDeepLink
 import com.clikgate.ClikgateError
-import com.clikgate.ClikgateMoney
 import com.clikgate.ClikgateResult
 import com.clikgate.ConsentState
 import com.clikgate.Provider
@@ -142,9 +141,9 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(button("Track purchase ₦15,000") {
-            Clikgate.track("purchase", ClikgateMoney.ofMinor(1_500_000, "NGN"), mapOf("order_id" to "A-1001"))
-            show("purchase tracked")
+        // Identity Path B: send this to your own server with the sign-in request; your server calls identifyUser.
+        root.addView(button("Show installation ID") {
+            Clikgate.getInstallationId { id -> show(if (id == null) "Tracking is off: no installation ID" else "Installation ${id.take(8)}…") }
         })
         // A Standard goal, with the business's own reference (never customer data).
         root.addView(button("Goal: account opened ₦2,000,000") {

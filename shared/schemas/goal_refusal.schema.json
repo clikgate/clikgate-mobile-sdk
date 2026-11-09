@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdk.clikgate.com/schemas/goal_refusal.schema.json",
+  "title": "goal_refusal",
+  "type": "object",
+  "properties": {
+    "status": {
+      "const": "refused"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "counted": {
+      "const": false
+    },
+    "goal_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "standard",
+            "payment"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "status",
+    "reason"
+  ]
+}

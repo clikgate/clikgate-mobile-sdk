@@ -21,7 +21,7 @@ beforeEach(() => {
 /**
  * Change 20 (S.1, R.40): the native SDKs send `deeplink_handled` (the handled path, IDs replaced with
  * `:id`) in test mode or while the debug view is open. The JavaScript layer only passes the key and the
- * links through: it never cleans the app's link, never adds a call of its own, and nothing is tracked as
+ * links through: it never cleans the app's link, never adds a call of its own, and nothing is sent as
  * an event.
  */
 describe('deeplink_handled (sent by the native SDKs)', () => {
@@ -64,7 +64,6 @@ describe('deeplink_handled (sent by the native SDKs)', () => {
       .map(([name]) => name)
       .sort();
     expect(called).toEqual(['addListener', 'configure', 'handleUrl']); // addListener: the deep-link event subscription
-    expect(mockModule.track).not.toHaveBeenCalled();
     expect(mockModule.goal).not.toHaveBeenCalled();
     sub();
   });

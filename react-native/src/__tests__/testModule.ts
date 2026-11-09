@@ -5,7 +5,9 @@ export function createMockModule() {
     getAttribution: jest.fn((_args: object) =>
       Promise.resolve<object>({ status: 'pending', isReinstall: false })
     ),
-    track: jest.fn((_args: object) => Promise.resolve(null)),
+    getInstallationId: jest.fn((_args: object) =>
+      Promise.resolve<object>({ installationId: null })
+    ),
     identifyUser: jest.fn((_args: object) => Promise.resolve(null)),
     setTrackingEnabled: jest.fn((_args: object) => Promise.resolve(null)),
     setPushToken: jest.fn((_args: object) => Promise.resolve(null)),

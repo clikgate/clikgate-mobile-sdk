@@ -117,12 +117,13 @@ class EngageFeatures extends ReferralFeatures {
   @override
   void clearCache() => engage.clearCache();
 
-  /// Without a backend, the purchase is a client-side SDK event.
+  /// Without a backend, the purchase is a goal sent from the app (value in normal units, the order as reference).
   @override
   Future<String> recordPurchase({required String orderId, required int amountMinor, required String currency}) =>
       _wrap(() async {
-        await Clikgate.track('purchase', revenue: ClikgateMoney.ofMinor(amountMinor, currency), properties: {'order_id': orderId});
-        return 'purchase tracked (SDK event)';
+        final value = '${amountMinor ~/ 100}.${(amountMinor % 100).toString().padLeft(2, '0')}';
+        final r = await Clikgate.goal('purchase', value: value, currency: currency, reference: orderId);
+        return 'purchase goal: ${r.status.name}';
       });
 
   static BoardPeriod _period(LeaderboardPeriodInfo p) => BoardPeriod(key: p.key, status: p.status, endsAt: p.endsAt);

@@ -4,23 +4,6 @@ import type { ClikgateProvider } from './provider';
 export type JsonMap = { [key: string]: unknown };
 
 /**
- * An amount in minor units (e.g. kobo, cents) and an ISO 4217 currency code, for `track` revenue.
- * Create it with `ClikgateMoney.ofMinor(1500000, 'NGN')` (₦15,000). Goals take normal units instead.
- */
-export interface ClikgateMoney {
-  amountMinor: number;
-  currency: string;
-}
-
-/** the same helper name on every platform. */
-export const ClikgateMoney = {
-  /** `amountMinor` in minor units (kobo, cents): `ClikgateMoney.ofMinor(1500000, 'NGN')` is ₦15,000. */
-  ofMinor(amountMinor: number, currency: string): ClikgateMoney {
-    return { amountMinor, currency };
-  },
-};
-
-/**
  * Options of `Clikgate.goal`. Never put customer data in a goal: use your business's own
  * reference only.
  */
@@ -55,7 +38,16 @@ export const GoalStatus = {
   Counted: 'counted',
   /** Not counted yet: a Payment goal waiting for its confirmation, or a goal waiting for its click. */
   Waiting: 'waiting',
-  /** Not counted; `reason` says why. */
+  /**
+   * Stored, not counted: the name isn't ticked as a goal in the dashboard yet (`not_counted_yet`)
+   * or the goal is archived (`goal_archived`). A success: it isn't retried. It counts once ticked.
+   */
+  Received: 'received',
+  /**
+   * Not counted; `reason` says why. Final: never retried. When the organisation accepts only goals it has
+   * set up, a name with no goal behind it is refused with `unknown_goal` (an archived goal with
+   * `goal_archived`); debug builds log "Goal `name` isn't set up in Clikgate".
+   */
   Refused: 'refused',
 } as const;
 export type GoalStatus = (typeof GoalStatus)[keyof typeof GoalStatus];
@@ -73,8 +65,8 @@ export type GoalKind = (typeof GoalKind)[keyof typeof GoalKind];
 export interface GoalResult {
   status: GoalStatus;
   /**
-   * `null` when counted; else a reason code such as `waiting_for_confirmation`, `unattributed`,
-   * `payment_goal_needs_confirmation` or `invalid_argument`.
+   * `null` when counted; else a reason code such as `waiting_for_confirmation`, `not_counted_yet`,
+   * `goal_archived`, `unknown_goal`, `unattributed`, `payment_goal_needs_confirmation` or `invalid_argument`.
    */
   reason: string | null;
   /** The goal's kind, when Clikgate said (`null` for goals refused on the device). */
@@ -87,7 +79,9 @@ export interface GoalResult {
 export function goalResultFromMap(value: unknown): GoalResult {
   const m = (value ?? {}) as Record<string, unknown>;
   const status: GoalStatus =
-    m.status === 'counted' || m.status === 'waiting' ? m.status : 'refused';
+    m.status === 'counted' || m.status === 'waiting' || m.status === 'received'
+      ? m.status
+      : 'refused';
   const goalKind: GoalKind | null =
     m.goalKind === 'standard' || m.goalKind === 'payment' ? m.goalKind : null;
   return {
@@ -206,7 +200,7 @@ export interface ClikgateDeepLink {
   link: ClikgateLink | null;
   referral: Referral | null;
   /**
-   * Set when the link is blocked here (Change 17: allowed countries or a block rule): show this
+   * Set when the link is blocked here (allowed countries or a block rule): show this
    * text and don't route. `path`, `clickId` and `link` are null.
    */
   blockMessage: string | null;
@@ -424,10 +418,6 @@ export interface ClikgateFirebaseForwardingOptions {
   logAttributionEvent?: boolean;
   /** Set `cg_first_source` / `cg_first_campaign`. Default true. */
   setUserProperties?: boolean;
-  /** Also log every tracked event to Firebase. Default false. */
-  mirrorEvents?: boolean;
-  /** Clikgate event name → Firebase event name for mirrored events. */
-  eventNameMap?: Record<string, string>;
 }
 
 const CONSENT_STATES: readonly string[] = ['granted', 'denied', 'unknown'];

@@ -1,8 +1,8 @@
 PODS:
-  - Clikgate (1.5.0):
-    - Clikgate/Core (= 1.5.0)
-  - clikgate-react-native (1.6.0):
-    - Clikgate (~> 1.5.0)
+  - Clikgate (1.5.1):
+    - Clikgate/Core (= 1.5.1)
+  - clikgate-react-native (1.6.1):
+    - Clikgate (~> 1.5.1)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -47,8 +47,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - Clikgate/Core (1.5.0)
-  - Clikgate/Engage (1.5.0):
+  - Clikgate/Core (1.5.1)
+  - Clikgate/Engage (1.5.1):
     - Clikgate/Core
   - FBLazyVector (0.86.3)
   - hermes-engine (250829098.0.17):
@@ -2189,8 +2189,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Clikgate: 6e5940b7889d266c14a95954ff2292d6230c1a58
-  clikgate-react-native: 20cfc455190e4ddfe15a821a28199760e823b019
+  Clikgate: ca9a7a41974ed0cd4109bc700928a59c45b2ee3d
+  clikgate-react-native: 2825aaf38dc24a13a33d2994ee57a92225aedd37
   clikgate-react-native-engage: a22a7dc9cf2588d6fe58d0bba7c351429f216767
   FBLazyVector: 2138c6c2ab66c31bf5754dc18097fbc498a49c7f
   hermes-engine: 63c5db7d529c36335fada6582fd293ae2a105d77

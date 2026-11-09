@@ -42,13 +42,17 @@ void main() {
       expect(await Clikgate.nativeSdkVersion(), isNotEmpty);
     }, skip: skip != null);
 
-    testWidgets('events, identifyUser and push token are accepted', (tester) async {
-      await Clikgate.track('signup');
-      await Clikgate.track('purchase', revenue: const ClikgateMoney.ofMinor(150000, 'NGN'), properties: {'order_id': 'it-1'});
+    testWidgets('goals, identifyUser and push token are accepted', (tester) async {
+      final signup = Clikgate.goal('signup', reference: 'it-signup-1');
+      final purchase = Clikgate.goal('purchase', value: '1500', currency: 'NGN', reference: 'it-1');
+      expect(await Clikgate.getInstallationId(), isNotNull);
       await Clikgate.identifyUser(
           label: 'Integration test', customerId: userId, identityToken: identityToken.isEmpty ? null : identityToken);
       await Clikgate.setPushToken('integration-test-token', provider: PushProvider.fcm);
-      await expectLater(Clikgate.track('bad name'), throwsA(isA<ClikgateException>()));
+      expect((await Clikgate.goal('bad name')).reason, ClikgateException.invalidArgument);
+      // Don't wait for the goal results here: they complete once the batch is sent.
+      signup.ignore();
+      purchase.ignore();
       // The SDK flushes its queue every 15 s; stay alive long enough for the batch to reach the
       // backend (flutter test uninstalls the app afterwards, taking the queue with it)
       await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 17)));

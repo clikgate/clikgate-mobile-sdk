@@ -19,7 +19,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // Forward Clikgate attribution to Firebase Analytics when the app links Firebase
         // (detected at runtime; the sample doesn't), and pass Google's on-device measurement info
         // when GoogleAdsOnDeviceConversion is linked. Both may be called before configure.
-        Clikgate.shared.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(mirrorEvents: true))
+        Clikgate.shared.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions())
         Clikgate.shared.enableGoogleOnDeviceMeasurement()
         Clikgate.configure(sdkKey: sdkKey, options: options)
 

@@ -51,7 +51,7 @@ class Change03Test {
         Clikgate.setConsent(analytics = ConsentState.GRANTED, attribution = ConsentState.GRANTED)
         configure()
         eventually { env.storage.installDone }
-        Clikgate.track("purchase", ClikgateMoney.ofMinor(1500, "NGN"), mapOf("order_id" to "A-1"))
+        Clikgate.goal("purchase", reference = "A-1")
         Clikgate.identifyUser(customerId = "user_42")
         Clikgate.setPushToken("fcm-token-xyz")
         assertTrue(Clikgate.handleUrl("https://inv.myapp.com/p/dress?gclid=Cj0-abc"))
@@ -60,7 +60,7 @@ class Change03Test {
 
         for ((route, schema) in listOf(
             "POST /v1/sdk/install" to "install_request",
-            "POST /v1/sdk/events" to "events_request",
+            "POST /v1/sdk/goals" to "goals_request",
             "POST /v1/sdk/identify" to "identify_request",
             "POST /v1/sdk/push-token" to "push_token_request",
             "POST /v1/sdk/resolve" to "resolve_request",
@@ -86,15 +86,15 @@ class Change03Test {
         consentRequired()
         configure()
         eventually { env.api.calls("GET /v1/sdk/config").isNotEmpty() }
-        Clikgate.track("signup")
-        Clikgate.track("purchase")
+        Clikgate.goal("signup")
+        Clikgate.goal("purchase")
         assertTrue(Clikgate.handleUrl("https://inv.myapp.com/p/dress"))
         settle(400)
         assertTrue(installs().isEmpty())
-        assertTrue(env.api.calls("POST /v1/sdk/events").isEmpty())
+        assertTrue(env.api.calls("POST /v1/sdk/goals").isEmpty())
         assertTrue(env.api.calls("POST /v1/sdk/resolve").isEmpty())
         assertNull(env.api.calls("GET /v1/sdk/config").first().getHeader("Clikgate-Installation-Id"))
-        // The link is routed locally, the events are buffered.
+        // The link is routed locally, the goals are buffered.
         eventually { links.size == 1 }
         assertEquals("/p/dress", links[0].path)
         assertEquals(2, env.queue.count())
@@ -109,12 +109,12 @@ class Change03Test {
         configure()
         eventually { env.api.calls("GET /v1/sdk/config").isNotEmpty() }
         Clikgate.handleUrl("https://inv.myapp.com/r/ADA42?gbraid=0AAA-gb")
-        Clikgate.track("signup")
+        Clikgate.goal("signup")
         eventually { links.size == 1 && env.queue.count() == 1 }
 
         Clikgate.setConsent(attribution = ConsentState.GRANTED)
         eventually { env.storage.installDone }
-        eventually { env.api.calls("POST /v1/sdk/events").isNotEmpty() }
+        eventually { env.api.calls("POST /v1/sdk/goals").isNotEmpty() }
         val install = installs().single().let(env.api::body)
         assertEquals("https://inv.myapp.com/r/ADA42?gbraid=0AAA-gb", install.getString("launch_url"))
         assertEquals("0AAA-gb", install.getJSONObject("google_click_ids").getString("gbraid"))
@@ -132,7 +132,7 @@ class Change03Test {
         env.api.on("POST /v1/sdk/install-ping", ok(Fixtures.text("install_ping_response")))
         configure()
         eventually { env.api.calls("GET /v1/sdk/config").isNotEmpty() }
-        Clikgate.track("signup")
+        Clikgate.goal("signup")
         eventually { env.queue.count() == 1 }
         Clikgate.setConsent(attribution = ConsentState.DENIED, adUserData = ConsentState.DENIED)
         eventually { env.api.calls("POST /v1/sdk/install-ping").isNotEmpty() }
@@ -142,7 +142,7 @@ class Change03Test {
         SchemaCheck.assertValid("install_ping_request", b)
         assertEquals("denied", b.getJSONObject("consent").getString("attribution"))
         assertEquals(0, env.queue.count())
-        Clikgate.track("purchase") // never queued while denied
+        Clikgate.goal("purchase") // never queued while denied
         settle(300)
         assertEquals(0, env.queue.count())
         assertTrue(installs().isEmpty())
@@ -164,10 +164,10 @@ class Change03Test {
         val c = env.api.body(env.api.calls("POST /v1/sdk/consent").single())
         SchemaCheck.assertValid("consent_request", c)
         assertEquals("denied", c.getJSONObject("consent").getString("attribution"))
-        Clikgate.track("purchase")
+        Clikgate.goal("purchase")
         env.core().flushBlocking(500)
         settle(200)
-        assertTrue(env.api.calls("POST /v1/sdk/events").isEmpty())
+        assertTrue(env.api.calls("POST /v1/sdk/goals").isEmpty())
         eventually { !env.storage.consentSendPending }
     }
 
@@ -176,12 +176,12 @@ class Change03Test {
         consentRequired { getJSONObject("consent").put("buffer_max_events", 3) }
         configure()
         eventually { env.api.calls("GET /v1/sdk/config").isNotEmpty() }
-        repeat(5) { Clikgate.track("e$it") }
+        repeat(5) { Clikgate.goal("g$it") }
         eventually { env.queue.count() == 3 }
         now.addAndGet(8L * 24 * 3600 * 1000)
-        Clikgate.track("late")
+        Clikgate.goal("late")
         eventually { env.queue.count() == 1 }
-        assertEquals("late", env.queue.peek(10).single().payload.getString("name"))
+        assertEquals("late", env.queue.peek(10).single().payload.getString("goal"))
     }
 
     @Test
@@ -230,18 +230,19 @@ class Change03Test {
         val install = env.api.body(installs().single())
         assertEquals(setOf("installation_id", "app_version", "sdk_version", "platform", "launch_url", "install_referrer", "consent"), install.keys().asSequence().toSet())
         SchemaCheck.assertValid("install_request", install)
-        Clikgate.track("purchase", null, mapOf("order_id" to "A-1"))
-        Clikgate.track("level_up")
+        val results = CopyOnWriteArrayList<GoalResult>()
+        Clikgate.goal("purchase", reference = "A-1") { results.add(it) }
         assertTrue(Clikgate.handleUrl("https://inv.myapp.com/p/dress"))
         env.core().flushBlocking(3_000)
         eventually { links.size == 1 }
         assertNull(links[0].link) // local delivery, no /resolve
         assertTrue(env.api.calls("POST /v1/sdk/resolve").isEmpty())
         assertTrue(env.api.calls("POST /v1/sdk/push-token").isEmpty())
-        val events = body("POST /v1/sdk/events").getJSONArray("events")
-        assertEquals(1, events.length())
-        assertEquals("purchase", events.getJSONObject(0).getString("name"))
-        assertFalse(events.getJSONObject(0).has("properties"))
+        // The blocked policy doesn't list `goals`: the goal is refused on the device, never sent.
+        eventually { results.size == 1 }
+        assertEquals(GoalStatus.REFUSED, results[0].status)
+        assertEquals("sdk_version_blocked", results[0].reason)
+        assertTrue(env.api.calls("POST /v1/sdk/goals").isEmpty())
         assertEquals(0, env.queue.count())
     }
 
@@ -261,9 +262,10 @@ class Change03Test {
         assertNull(p.effectiveStatus("1.10.0"))
         assertTrue(com.clikgate.internal.VersionPolicy.compare("1.2.0-beta.1", "1.2.0") == 0)
         val blocked = com.clikgate.internal.VersionPolicy.parse(JSONObject().put("version_status", "blocked"))
-        assertTrue(blocked.allows("events"))
+        assertTrue(blocked.allows("install"))
+        assertFalse(blocked.allows("goals")) // only when the server lists it
+        assertFalse(blocked.allows("events")) // Change 22: no events call
         assertFalse(blocked.allows("resolve"))
-        assertTrue(blocked.stripProperties)
     }
 
     // ------------------------------------------------------------------ click ids
@@ -358,8 +360,8 @@ class Change03Test {
         override fun appInstanceId(cb: (String?) -> Unit) = cb(instanceId)
     }
 
-    private fun firebaseEnabled(mirror: Boolean = true) = config("config_response") {
-        put("firebase_forwarding", JSONObject().put("enabled", true).put("mirror_events", mirror))
+    private fun firebaseEnabled() = config("config_response") {
+        put("firebase_forwarding", JSONObject().put("enabled", true))
     }
 
     @Test
@@ -368,7 +370,7 @@ class Change03Test {
         env.firebase = fb
         firebaseEnabled()
         env.api.on("POST /v1/sdk/install", ok(Fixtures.text("install_response_attributed_source")))
-        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions(mirrorEvents = true, eventNameMap = mapOf("signup" to "sign_up")))
+        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions())
         configure()
         eventually { fb.events.any { it.first == "clikgate_attribution" } }
         val p = fb.events.first { it.first == "clikgate_attribution" }.second
@@ -377,14 +379,10 @@ class Change03Test {
         assertEquals(listOf("cg_first_source" to "google", "cg_first_campaign" to "lagos_launch"), fb.props.toList())
         assertEquals("aiid-1", env.api.body(installs().single()).getString("app_instance_id"))
 
-        Clikgate.track("signup", ClikgateMoney.ofMinor(150_050, "NGN"), mapOf("plan" to "pro", "trial" to true, "nested" to mapOf("a" to 1), "bad-name" to "x"))
-        Clikgate.track("\$reserved_like") // invalid locally anyway
-        Clikgate.track("1st_event") // invalid Firebase name: not mirrored
-        eventually { fb.events.any { it.first == "sign_up" } }
-        val mirrored = fb.events.first { it.first == "sign_up" }.second
-        assertEquals(mapOf("value" to 1500.5, "currency" to "NGN", "plan" to "pro", "trial" to 1L), mirrored)
+        // Change 22: no event mirroring (there are no app events); goals aren't logged to Firebase.
+        Clikgate.goal("signup")
         settle(200)
-        assertFalse(fb.events.any { it.first == "1st_event" })
+        assertEquals(listOf("clikgate_attribution"), fb.events.map { it.first })
 
         env.relaunch(env.options(), clock)
         Clikgate.enableFirebaseForwarding()
@@ -398,7 +396,7 @@ class Change03Test {
     fun changedAppInstanceIdGoesOnTheNextOpen() {
         val fb = FakeFirebase()
         env.firebase = fb
-        firebaseEnabled(mirror = false)
+        firebaseEnabled()
         Clikgate.enableFirebaseForwarding()
         configure()
         eventually { env.storage.installDone }
@@ -416,10 +414,9 @@ class Change03Test {
         val fb = FakeFirebase(available = false)
         env.firebase = fb
         firebaseEnabled()
-        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions(mirrorEvents = true))
+        Clikgate.enableFirebaseForwarding()
         configure()
         eventually { env.storage.installDone }
-        Clikgate.track("signup")
         settle(300)
         assertTrue(fb.events.isEmpty())
         assertFalse(env.api.body(installs().single()).has("app_instance_id"))
@@ -430,10 +427,9 @@ class Change03Test {
         val fb = FakeFirebase()
         env.firebase = fb
         // Server switch off (fixture default).
-        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions(mirrorEvents = true))
+        Clikgate.enableFirebaseForwarding()
         configure()
         eventually { env.storage.installDone }
-        Clikgate.track("signup")
         settle(300)
         assertTrue(fb.events.isEmpty())
         // Required region + analytics denied: nothing either.
@@ -441,9 +437,8 @@ class Change03Test {
         now.addAndGet(2L * 3600 * 1000) // cached config expires
         env.relaunch(env.options(), clock)
         Clikgate.setConsent(analytics = ConsentState.DENIED, attribution = ConsentState.GRANTED)
-        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions(mirrorEvents = true))
+        Clikgate.enableFirebaseForwarding()
         env.core().onForeground()
-        Clikgate.track("signup")
         settle(400)
         assertTrue(fb.events.isEmpty())
     }

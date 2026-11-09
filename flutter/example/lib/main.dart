@@ -28,12 +28,12 @@ Future<void> main() async {
     apiBaseUrl: ExampleConfig.apiBaseUrl.isEmpty ? null : ExampleConfig.apiBaseUrl,
     logLevel: ClikgateLogLevel.debug,
   );
-  // Clikgate attribution (and tracked events) also go to Firebase Analytics when the app
+  // Clikgate attribution also goes to Firebase Analytics when the app
   // includes it and GA4 forwarding is on for the app in Clikgate. The native SDKs detect Firebase
   // Analytics at runtime; this example ships only firebase_messaging, so add firebase_analytics to
-  // see the events. Consent: until the user answers (Privacy & sales screen), apps in consent
+  // see it. Consent: until the user answers (Privacy & sales screen), apps in consent
   // regions send nothing identifying.
-  await Clikgate.enableFirebaseForwarding(mirrorEvents: true);
+  await Clikgate.enableFirebaseForwarding();
   runApp(ExampleApp(features: createFeatures()));
 }
 

@@ -6,8 +6,8 @@ are thin bridges over them and contain no attribution or referral logic.
 ## Core SDK vs Engage add-on (spec v3 new edition, 0.4 / 17A)
 
 The **core SDK** only does what must happen on the device: installation id, first launch /
-reinstall / opens, Play Install Referrer, pasteboard token, deep link delivery, events with the
-offline queue, `identify`, push token + silent-push filtering, attestation, SKAN conversion values,
+reinstall / opens, Play Install Referrer, pasteboard token, deep link delivery, goals with the
+offline queue, `identifyUser` and the installation ID, push token + silent-push filtering, attestation,
 Apple Search Ads token, opt-out, feature switches (`isFeatureEnabled`), and the referee-side
 referral calls tied to this installation: `referrals.applyCode` and `referrals.referredBy`.
 
@@ -20,7 +20,7 @@ the native Engage add-on), and `@clikgate/react-native-engage` (TypeScript, plus
 TurboModule over the native Engage add-on).
 
 The recommended path for apps **with** a backend is core SDK + the app's backend calling the
-control-plane API (referrers, referral stats, leaderboards, identity signals, server events) and
+control-plane API (referrers, referral stats, leaderboards, identity signals, goals from the server) and
 rendering its own screens (`docs/engage.md`).
 
 Rules (checked in CI by `scripts/check_sdk_boundaries.sh`):
@@ -85,8 +85,7 @@ keeps no attribution state and persists nothing.
 | tracking enabled flag | prefs | state.json |
 | last open / last background time | prefs | state.json |
 | pending deep link (not yet delivered) | memory | memory |
-| event queue | SQLite `clikgate_events.db` | `Application Support/Clikgate/events.json` |
-| SKAN last conversion value | — | state.json |
+| goal queue | SQLite `clikgate_events.db` (name kept) | `Application Support/Clikgate/events.json` (name kept) |
 
 iOS reinstall detection: on first launch, if state.json has no installation id but the
 Keychain has one, generate a **new** installation id, store it in both places, and send
@@ -120,7 +119,7 @@ work runs on a background executor / actor.
 4. **Later launches**: `POST /open` with `is_cold_start: true`.
 5. Foreground after ≥ `session_timeout_minutes` (default 30) in background:
    `POST /open` with `is_cold_start: false`.
-6. Flush the event queue on start.
+6. Flush the goal queue on start.
 
 ## Deep link delivery
 
@@ -146,23 +145,23 @@ Deep link result fields (every SDK):
 (`id`, `kind`, `externalReference`, `campaignId`, `metadata`), `referral`
 (`referralId`, `programId`, `status`, `referrerId`, `referrerDisplayName`) or null.
 
-## Events
+## Goal queue
 
-- `track(name, revenue?, properties?)` validates locally (name pattern, properties
-  ≤ 8 KB, currency 3 uppercase letters), assigns `event_id = UUIDv4` and
-  `occurred_at = now` immediately, and enqueues.
-- Queue limit: `max_queue_events` (1000) and `max_queue_bytes` (1 MB); when full, drop
-  the oldest.
-- Flush when: 20 events queued, every 15 s while in foreground, when the app goes to
-  background, and on start. Batches ≤ 100. Android uses WorkManager for an offline retry
-  (network-connected constraint); iOS uses a `beginBackgroundTask` window on background.
-- Events tracked before `/install` succeeds wait in the queue.
+- `goal()` is the only method for what happens in the app (Change 22). Goals are validated locally and queued
+  (section "Change 06 / Change 12" below).
+- Queue limit: `max_queue_events` (1000) and `max_queue_bytes` (1 MB); when full, drop the oldest.
+- Flush when: 20 goals queued, every 15 s while in foreground, when the app goes to background, and on start.
+  Batches ≤ 100. Android uses WorkManager for an offline retry (network-connected constraint); iOS uses a
+  `beginBackgroundTask` window on background.
+- Goals sent before `/install` succeeds wait in the queue.
 
 ## Identify
 
 `identifyUser(label?, customerId?, identityToken?)` stores the customer ID and token and calls `/identify` (with the label once)
-(queued + retried like events). `customerId: null` clears them; leaving it out keeps them. Referral calls send
-`Clikgate-Identity-Token` when a token is stored.
+(retried until sent). `customerId: null` clears them; leaving it out keeps them. Referral calls send
+`Clikgate-Identity-Token` when a token is stored. Identity tokens are made on the business's server only (server
+SDK `createIdentityToken`); identity Path B uses the installation ID instead ("Change 22"). Guide:
+https://clikgate.com/docs/identify-users
 
 ## Push tokens and uninstall checks
 
@@ -174,7 +173,7 @@ Deep link result fields (every SDK):
 
 ## Opt-out
 
-`setTrackingEnabled(false)`: clear the event queue, call `/opt-out {"opt_out": true}`
+`setTrackingEnabled(false)`: clear the goal queue, call `/opt-out {"opt_out": true}`
 (retried until it succeeds, persisted), and stop all other calls. `true`: call
 `/opt-out {"opt_out": false}` and resume. If opted out before the first launch's
 `/install`, send `/install` with every consent purpose `denied` first (so the installation
@@ -240,7 +239,7 @@ Every SDK exposes `Clikgate.sdkVersion`. Wrappers call the native SDK's internal
 | Set consent | `setConsent(analytics, attribution, adUserData, adPersonalization)` (each `ConsentState?`, null = unchanged) | `setConsent(analytics:attribution:adUserData:adPersonalization:)` (`ClikgateConsentState?`) | `setConsent({analytics, attribution, adUserData, adPersonalization})` (`ConsentState` / `'granted' \| 'denied' \| 'unknown'`, omitted = unchanged) |
 | Read consent | `getConsent(): ClikgateConsent` | `getConsent() -> ClikgateConsent` | `getConsent()` (async) |
 | Region hint | `setConsentRegion(region: String?)` | `setConsentRegion(_:)` | `setConsentRegion(region)` |
-| Firebase forwarding | `enableFirebaseForwarding(FirebaseForwardingOptions)` | `enableFirebaseForwarding(_ options: ClikgateFirebaseForwardingOptions)` | `enableFirebaseForwarding({mirrorEvents, eventNameMap, setUserProperties, logAttributionEvent})` |
+| Firebase forwarding | `enableFirebaseForwarding(FirebaseForwardingOptions)` | `enableFirebaseForwarding(_ options: ClikgateFirebaseForwardingOptions)` | `enableFirebaseForwarding({setUserProperties, logAttributionEvent})` |
 | Sales metadata | `attributionMetadata(): Map<String, String>` | `attributionMetadata() -> [String: String]` | `attributionMetadata()` (async) |
 | Google on-device measurement | — (iOS only) | `enableGoogleOnDeviceMeasurement()` | `enableGoogleOnDeviceMeasurement()` (no-op on Android) |
 
@@ -277,9 +276,9 @@ A purpose is **allowed** when it is `granted`, or when consent isn't required an
 | `attribution` | What the SDK does |
 |---|---|
 | `granted` | Normal operation. |
-| `unknown` | **Buffering.** Referral calls and the Engage request context fail with `consent_required` (API_CONTRACT "SDK-side error codes"). No identifying call: no `/install`, `/open`, `/resolve`, `/events`, `/identify`, `/push-token`, `/attest`, `/consent`; `GET /config` only, without `Clikgate-Installation-Id`. Events are queued (oldest dropped above `buffer_max_events`, default 1000; events older than `buffer_max_days`, default 7, are dropped — "expiry"). Clikgate URLs are delivered to the app locally (URL, path, query parameters as `data`, `isDeferred: false`) and kept (latest 10) for a silent `/resolve` after grant. First-launch signals (install referrer, pasteboard token) are collected and kept on the device. |
-| `granted` after `unknown` | **Flush**: `/install` (with the kept launch URL / tokens), then the kept URLs (resolved without delivering them again), identify, push token, and the buffered events. `consent_pending_since` is cleared. |
-| `denied` | **Drop**: the event queue, kept URLs and kept first-launch tokens are cleared. Before the first `/install`: if `consent.anonymous_counts`, send one `/install-ping` (no installation id header), else nothing. After it: send `/consent` (records the withdrawal) and nothing else. URLs are still delivered locally. Granting later resumes normal operation (with a fresh `/install` if none succeeded). |
+| `unknown` | **Buffering.** Referral calls and the Engage request context fail with `consent_required` (API_CONTRACT "SDK-side error codes"). No identifying call: no `/install`, `/open`, `/resolve`, `/goals`, `/identify`, `/push-token`, `/attest`, `/consent`; `GET /config` only, without `Clikgate-Installation-Id`. Goals are queued (oldest dropped above `buffer_max_events`, default 1000; goals older than `buffer_max_days`, default 7, are dropped — "expiry"). Clikgate URLs are delivered to the app locally (URL, path, query parameters as `data`, `isDeferred: false`) and kept (latest 10) for a silent `/resolve` after grant. First-launch signals (install referrer, pasteboard token) are collected and kept on the device. |
+| `granted` after `unknown` | **Flush**: `/install` (with the kept launch URL / tokens), then the kept URLs (resolved without delivering them again), identify, push token, and the buffered goals. `consent_pending_since` is cleared. |
+| `denied` | **Drop**: the goal queue, kept URLs and kept first-launch tokens are cleared. Before the first `/install`: if `consent.anonymous_counts`, send one `/install-ping` (no installation id header), else nothing. After it: send `/consent` (records the withdrawal) and nothing else. URLs are still delivered locally. Granting later resumes normal operation (with a fresh `/install` if none succeeded). |
 
 `setTrackingEnabled(false)` (opt-out) stays the master switch and wins over consent.
 
@@ -341,8 +340,7 @@ Per purpose, on top of the gate:
 
 - `enableFirebaseForwarding(options)` turns it on for this process (call it on every launch, e.g.
   next to `configure`). Options: `logAttributionEvent` (default true), `setUserProperties`
-  (default true), `mirrorEvents` (default false), `eventNameMap` (Clikgate event name → Firebase
-  event name, default empty).
+  (default true). (Change 22: no event mirroring.)
 - Active only when also `config.firebase_forwarding.enabled`, Firebase Analytics is present at
   runtime, tracking is enabled and `analytics` is allowed. Each server switch is ANDed with the
   option of the same name.
@@ -358,16 +356,8 @@ Per purpose, on top of the gate:
   `cg_match_type`; null values are left out. If forwarding is enabled only later, it is logged
   then.
 - **User properties** `cg_first_source`, `cg_first_campaign`, set once with that event.
-- **Mirroring** (`mirrorEvents`): each `track()` event is also logged to Firebase under the mapped
-  name (or its own name when it is a valid Firebase name), with its scalar properties (strings,
-  numbers, booleans as 0/1; maps and lists dropped), plus `value` (major units) and `currency` for
-  revenue events. Events are mirrored when tracked (not when sent to Clikgate).
-- **Firebase limits** (Google Analytics, checked 2026-10-22): event and parameter names 1–40
-  characters, `[A-Za-z][A-Za-z0-9_]*`, prefixes `firebase_`, `google_`, `ga_` reserved; at most 25
-  parameters; string values ≤ 100 characters; user property names ≤ 24, values ≤ 36. The SDK
-  drops invalid names, sends at most 25 parameters (`value` / `currency` first; Android then keeps
-  the app's property order, iOS dictionaries have none, so which extra properties are cut there is
-  unspecified) and truncates values.
+- **Firebase limits** (Google Analytics, checked 2026-10-22): string parameter values ≤ 100 characters; user
+  property values ≤ 36. The SDK truncates longer values.
 - **`app_instance_id`**: when `report_app_instance_id`, read from Firebase (Android
   `getAppInstanceId()` task, iOS `appInstanceID`; nil when Firebase's analytics storage consent is
   denied) and sent with `/install` (waiting at most 2 s for it) and with the next `/open` whenever
@@ -424,7 +414,7 @@ longer tracked in the Clikgate dashboard.
 |---|---|---|---|
 | Record a goal | `goal(key: String, options: GoalOptions = GoalOptions())`; `GoalOptions(value: BigDecimal?, currency: String?, reference: String?, isFirst: Boolean?)` | `goal(_ key: String, value: Decimal? = nil, currency: String? = nil, reference: String? = nil, isFirst: Bool? = nil)` | `goal(key, {value, currency, reference, isFirst})`; `value` is a `num`/`number` or a numeric `String` (`"1500.50"`) |
 
-Before `configure`, as with `track`: Android validates the goal and queues it until `configure`; iOS
+Before `configure`: Android validates the goal and queues it until `configure`; iOS
 (and the bridges on iOS) fail with `not_configured`. Android and iOS take decimal
 types only (`BigDecimal` / `Decimal`); Flutter and React Native pass the value to the native SDK as
 a **string**, never as a double. Dart and TypeScript numbers are converted with their shortest
@@ -451,33 +441,32 @@ same decimal.
 
 - `goal()` assigns `occurred_at = now`, the reference (the app's, else a new UUIDv4) and `click_id`
   (latest matched deep link, else the install's click; the `attributionMetadata()` value) at call
-  time, and appends the item to the **event queue** (same store, limits, flush triggers, background
-  flush and retry policy as `track()` events).
-- Flush sends the queue in order: a run of consecutive events goes to `/events`, a run of
-  consecutive goals to `/goals` (each ≤ `max_batch_size`), one request at a time.
+  time, and appends the item to the persisted **goal queue** (limits, flush triggers, background flush and
+  retry policy above).
+- Flush sends the queue in order to `/goals` (each batch ≤ `max_batch_size`), one request at a time.
 - **Idempotent by reference:** a `goal()` whose `(key, reference)` is already in the queue is
   ignored (debug log); the server dedupes everything else by `(goal, reference)` (`duplicates`).
   Retries resend the same item.
-- **`Idempotency-Key`** (change 09, X.E15): one random UUIDv4 per `/goals` (and `/events`) request,
+- **`Idempotency-Key`** (change 09, X.E15): one random UUIDv4 per `/goals` request,
   reused by that request's retries; a later flush is a new request with a new key. Never a hash
   of the reference.
 - Success: `accepted + duplicates` and `rejected` items leave the queue (rejections are logged as
   a count with their codes). `422` for the whole batch, a `404` that isn't `installation_unknown`
   (a server without `/goals`) or a `feature_disabled` body: the batch is dropped with a warning.
-  Network errors / 408 / 429 / 5xx: kept and retried like events.
-- Version policy `blocked` without `goals` in `allowed_calls`: queued goals are dropped (as events
-  outside `allowed_events`).
+  Network errors / 408 / 429 / 5xx: kept and retried.
+- Version policy `blocked` without `goals` in `allowed_calls`: queued goals are dropped and refused on the
+  device (`sdk_version_blocked`).
 - Never logged: references, values, or the content of rejected fields.
 
 ### Consent (change 03)
 
-Goals are events for the consent gate, exactly like `track()`:
+The consent gate for goals:
 - consent not required, or `attribution` granted: sent normally;
-- required and `attribution` `unknown`: buffered in the queue with the events (counted in
+- required and `attribution` `unknown`: buffered in the queue (counted in
   `buffer_max_events`, expired after `buffer_max_days`), sent after grant (once `/install`
   succeeded), with the `occurred_at` of the `goal()` call;
 - required and `denied`: dropped with the rest of the buffer; later `goal()` calls are dropped;
-- opt-out (`setTrackingEnabled(false)`) clears them like events;
+- opt-out (`setTrackingEnabled(false)`) clears them;
 - `consent` travels in the `/goals` body.
 
 ### Private mode
@@ -485,14 +474,12 @@ Goals are events for the consent gate, exactly like `track()`:
 - Read from `/config` `private_mode` (cached with the config; absent ⇒ off). The cached value
   applies offline and from the start of the next launch.
 - On: `identifyUser()`'s customer ID is dropped on the device (not stored, not sent; a pending identify is
-  discarded); `/events` items are sent without `properties`, `revenue_minor` and `currency`
-  (stripped at send time); one warning per launch **in debug builds only** (Android:
+  discarded); one warning per launch **in debug builds only** (Android:
   `ApplicationInfo.FLAG_DEBUGGABLE`; iOS: the SDK compiled in the Debug configuration,
   `#if DEBUG`; Flutter / React Native: the native SDK's check). Release builds log nothing about it.
 - `goal()` is unchanged (its fields are all on the private-mode allow-list).
 - Unchanged in private mode: installs, opens, deep links, consent, push token / uninstall checks,
-  `attributionMetadata()`, and Firebase forwarding (local to the app's own Firebase; events are
-  mirrored as tracked).
+  `attributionMetadata()`, and Firebase forwarding (local to the app's own Firebase).
 - There is no user-properties API in the core SDKs, so nothing else is dropped.
 
 ## Change 06 (SDK 1.4.0): shared-domain browser fallback
@@ -535,10 +522,7 @@ platform domains"; one constant per native SDK, checked against `fixtures/shared
   `denied` (API_CONTRACT.md "Change 09 additions").
 - **Goal idempotency (X.E15):** one random `Idempotency-Key` per request, reused by its retries
   (see "Queueing, delivery and idempotency" above). The backend now honours it on `/goals`.
-- **Money helper (X.E10):** `ClikgateMoney.ofMinor(amountMinor, currency)` on every platform for
-  `track()` revenue in minor units. The old constructors stay as deprecated aliases (Android, iOS,
-  Flutter). React Native adds the `ClikgateMoney.ofMinor` value next to the `ClikgateMoney` type
-  (a plain `{amountMinor, currency}` object still works).
+- **Money helper (X.E10):** removed in Change 22 with the app-event method it served.
 - **iOS `Clikgate.shared.goal(...)` (X.E17):** the documented iOS call (it is the API since 1.3.0).
 - **Pasteboard (X.E13):** off by default on iOS and in both wrappers (`pasteboardMode` `off`).
 - **No trophy, challenge or progress data (D8)** in any SDK, core or Engage.
@@ -550,11 +534,11 @@ platform domains"; one constant per native SDK, checked against `fixtures/shared
 
 - **Deep-link-only mode** (`/config` `features.app_attribution: false`, `features.deep_linking: true`; Free,
   Starter, or attribution switched off): deep links work exactly as before, direct and deferred.
-- `track()` and `goal()` validate as usual (invalid input still errors), then, when `app_attribution` is off
-  (cached config, or a `feature_disabled` answer since the last config fetch), log one warning per launch
-  ("needs Growth") and return without queueing. No error reaches the app.
+- `goal()` validates as usual (invalid input still errors), then, when `app_attribution` is off
+  (cached config, or a `feature_disabled` answer since the last config fetch), logs one warning per launch
+  ("app attribution is switched off") and returns without queueing (refused `feature_disabled`). No error reaches the app.
 - Flush: while `app_attribution` is off, the queue is dropped without a network call. A
-  `200 {"accepted": false, "reason": "feature_disabled"}` body on `/events` or `/goals` drops that batch (never
+  `200 {"accepted": false, "reason": "feature_disabled"}` body on `/goals` drops that batch (never
   retried), marks `app_attribution` off and refreshes the config in the background (a fresh config is
   authoritative again, so an upgrade to Growth switches it back on without a relaunch).
 - `/install` at the monthly deferred deep link cap answers `deep_link: null`: the normal "no deferred link"
@@ -710,3 +694,53 @@ Wire format: API_CONTRACT.md "Change 20 additions".
 - **X `twclid` (R.25).** No new field: it travels in the URLs and the Play referrer like `li_fat_id` and `ScCid`,
   never stripped or rewritten, also while consent is buffering.
 - **No public API change.**
+
+## Change 22: one `goal()` method, `received`, the installation ID
+
+Spec: `docs/spec/clikgate-change-22-goals-identity-uninstalls-banners-reports.md` S, I.7, R.5, R.9, R.26.
+Contract: API_CONTRACT.md "Change 22 additions".
+
+- **One method.** The app-event method, its validation, its money helper, Firebase event mirroring
+  (`mirrorEvents` / `eventNameMap`) and the iOS SKAdNetwork / AdAttributionKit conversion-value updates (R.5) are
+  removed on every platform. `goal()` is the only method; its names appear in the dashboard's "Seen from your app
+  and website" and count once ticked. The app-event endpoint, schemas and fixtures are gone.
+- **Persisted queue on upgrade.** An app-event item a development build left in the queue (no `goal`) is dropped on
+  the next flush without a network call (debug log); the goals around it are sent.
+- **`received` (R.9).** A `results[]` item with `status: "received"` (reason `not_counted_yet`: the name isn't
+  ticked yet; or `goal_archived`) is a success: the item leaves the queue, is never retried, and the app gets
+  `GoalStatus.RECEIVED` (Android), `.received` (iOS), `GoalStatus.received` (Flutter), `GoalStatus.Received`
+  (React Native). Unknown statuses stay refusals.
+- **Version policy.** The default calls of a blocked SDK no longer include `events`; goals go only when
+  `allowed_calls` lists `goals` (otherwise refused on the device with `sdk_version_blocked`).
+- **Installation ID (I.7, R.26).** Async everywhere, never blocking the main thread:
+
+| Android | iOS | Flutter | React Native |
+|---|---|---|---|
+| `suspend fun getInstallationId(): String?`; `getInstallationId(InstallationIdListener)` (main thread) | `func installationId() async throws -> String?`; `installationId(completion:)` (main queue) | `Future<String?> getInstallationId()` | `getInstallationId(): Promise<string \| null>` |
+
+  - The value is the installation's random UUID, the one sent as `Clikgate-Installation-Id`; new after a reinstall
+    (iOS keeps reporting the previous one as `keychain_previous_installation_id` on `/install`).
+  - `null` when tracking is off: opted out, consent denied or not given yet where it's required, or deep-link-only
+    mode (`app_attribution` off, cached config or a `feature_disabled` answer).
+  - On a first launch it waits for the first config answer (one attempt; at most about 5 s) so the consent and
+    attribution switches are known; offline it answers at once. Android waits for `configure` when called before
+    it; iOS throws `not_configured` (the Flutter and React Native bridges pass that through on iOS).
+  - Not personal data; allowed in private mode. Never logged in full.
+  - Identity Path B: the app sends it to its own server at sign-in and at every signed-in app open; the server calls
+    `identifyUser({appId, installationId, customerId, label?})` (`POST /v1/people/identify`). Path A (the default)
+    stays `identifyUser(customerId, identityToken)` with a token from the server SDK's `createIdentityToken`. Guide:
+    https://clikgate.com/docs/identify-users
+
+## Change 23: "Allow unknown goal names" off (`unknown_goal`)
+
+Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` S, R.1, R.9. Contract: API_CONTRACT.md "Change 23
+additions".
+
+- `refused` with `unknown_goal` or `goal_archived` (a `results[]` item, or a whole-request `422` whose body is the
+  result `{status: "refused", reason}`) is final: removed from the queue, never retried, delivered once as
+  `refused` with the reason.
+- No name checks and no cached setting on the device: a name refused once is sent again the next time it is used.
+- Debug builds only: ``Goal `{name}` isn't set up in Clikgate`` (warning level, so it shows with the default log
+  level). The goal name only. Release builds stay silent.
+- Tests per platform: Android `StrictGoalNamesTest`, iOS `StrictGoalNamesTests`, Flutter
+  `strict_goal_names_test.dart`, React Native `strictGoalNames.test.ts`.

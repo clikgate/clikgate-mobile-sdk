@@ -100,25 +100,14 @@ public final class ClikgateRNImpl: NSObject {
         }
     }
 
-    @objc public func track(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
+    /// Identity Path B. Resolves `{installationId}`; null when tracking is off.
+    @objc public func getInstallationId(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
         guard Self.requireConfigured(reject) else { return }
-        guard let name = args["name"] as? String else { Self.invalid(reject, "name is required", param: "name"); return }
-        let amount = args["revenueMinor"] as? NSNumber
-        let currency = args["currency"] as? String
-        let revenue: ClikgateMoney?
-        switch (amount, currency) {
-        case let (a?, c?):
-            guard a.doubleValue.rounded() == a.doubleValue else {
-                Self.invalid(reject, "revenueMinor must be an integer", param: "revenueMinor"); return
+        Clikgate.shared.installationId { r in
+            switch r {
+            case .success(let id): resolve(["installationId": (id as Any?) ?? NSNull()])
+            case .failure(let e): Self.reject(reject, e)
             }
-            revenue = ClikgateMoney.ofMinor(a.int64Value, currency: c)
-        case (nil, nil): revenue = nil
-        default:
-            Self.invalid(reject, "revenueMinor and currency go together", param: amount == nil ? "revenueMinor" : "currency"); return
-        }
-        let properties = args["properties"] as? [String: Any]
-        Clikgate.shared.track(name, revenue: revenue, properties: properties) { error in
-            if let e = error { Self.reject(reject, e) } else { resolve(nil) }
         }
     }
 
@@ -246,13 +235,9 @@ public final class ClikgateRNImpl: NSObject {
     }
 
     @objc public func enableFirebaseForwarding(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
-        var names: [String: String] = [:]
-        for (k, v) in (args["eventNameMap"] as? [String: Any]) ?? [:] { if let s = v as? String { names[k] = s } }
         Clikgate.shared.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(
             logAttributionEvent: (args["logAttributionEvent"] as? Bool) ?? true,
-            setUserProperties: (args["setUserProperties"] as? Bool) ?? true,
-            mirrorEvents: (args["mirrorEvents"] as? Bool) ?? false,
-            eventNameMap: names))
+            setUserProperties: (args["setUserProperties"] as? Bool) ?? true))
         resolve(nil)
     }
 

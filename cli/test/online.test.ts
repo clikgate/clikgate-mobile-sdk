@@ -161,6 +161,12 @@ describe('signed-in setup (Flutter fixture)', () => {
     // Next steps: one goal() method with the Provider enum (never payment()).
     expect(ui.text).toContain("3. Send goals with one call: Clikgate.goal('purchase', reference: 'T123456', provider: ClikgateProvider.paystack)");
     expect(ui.text).not.toContain('payment(');
+    // Change 22 (I.2): identity Path A by default, Path B mentioned, the guide linked; never track().
+    expect(ui.text).toContain("4. Identify signed-in users (optional): return a token from your server's createIdentityToken(user.id)");
+    expect(ui.text).toContain('Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateToken)');
+    expect(ui.text).toContain('await Clikgate.getInstallationId()');
+    expect(ui.text).toContain('https://clikgate.com/docs/identify-users');
+    expect(ui.text).not.toMatch(/\.track\(/);
     expect(ui.text).toContain('authenticator code');
     expect(ui.text).toMatch(/Clikgate is receiving events from (Android|iOS) ✓/);
     expect(ui.text.trim().endsWith('Clikgate sees every click. Setup complete.')).toBe(true);

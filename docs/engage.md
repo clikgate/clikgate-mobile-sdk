@@ -22,7 +22,8 @@ Neither layer decides anything the backend decides (qualification, ranking, rewa
      your user id, its code, URL and counts);
    - leaderboards: `/v1/leaderboards/{id}/entries` and `/v1/leaderboards/{id}/referrers/{id}`;
    - identity checks: `POST /v1/identity-signals` (server-to-server only, see below);
-   - confirmed purchases and other server events: `POST /v1/apps/{app_id}/events`;
+   - confirmed purchases and other goals from your server: `POST /v1/goals/events` (with the app's
+     `installation_id` from `getInstallationId()`, or the customer ID);
    - offline / USSD / agent codes: `POST /v1/codes/redeem`.
 3. The app renders its own screens from your backend's responses.
 

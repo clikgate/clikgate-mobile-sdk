@@ -76,6 +76,27 @@ export const GOAL_SNIPPET: Record<Platform, string> = {
   expo: "Clikgate.goal('purchase', { reference: 'T123456', provider: ClikgateProvider.Paystack })",
 };
 
+/**
+ * Change 22 (I.2, I.8): identifying signed-in users. Path A (the default): the business's server returns an identity
+ * token made with the server SDK's createIdentityToken (secret in CLIKGATE_IDENTITY_SECRET, server only) and the app
+ * passes it to identifyUser(). Path B: the app sends getInstallationId() to its own server, which calls identifyUser.
+ */
+export const IDENTIFY_GUIDE_URL = 'https://clikgate.com/docs/identify-users';
+export const IDENTIFY_SNIPPET: Record<Platform, string> = {
+  android: 'Clikgate.identifyUser(customerId = user.id, identityToken = response.clikgateToken)',
+  ios: 'Clikgate.shared.identifyUser(customerId: user.id, identityToken: response.clikgateToken)',
+  flutter: 'Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateToken)',
+  'react-native': 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateToken })',
+  expo: 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateToken })',
+};
+export const INSTALLATION_ID_SNIPPET: Record<Platform, string> = {
+  android: 'Clikgate.getInstallationId()',
+  ios: 'try await Clikgate.shared.installationId()',
+  flutter: 'await Clikgate.getInstallationId()',
+  'react-native': 'await Clikgate.getInstallationId()',
+  expo: 'await Clikgate.getInstallationId()',
+};
+
 // ------------------------------------------------------------------- websites (change 16 S, R.1–R.2)
 
 /** The web script's URL, as in the dashboard's snippet. */

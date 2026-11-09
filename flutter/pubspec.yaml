@@ -1,5 +1,5 @@
 name: clikgate_flutter
-description: "Clikgate deep linking, install attribution, referrals and uninstall tracking for Flutter apps (Android and iOS)."
+description: "Clikgate SDK for Flutter: deep links that open the right screen (even after install), install attribution, goals, referrals and identity for Android and iOS apps."
 version: 1.5.1
 homepage: https://clikgate.com
 repository: https://github.com/clikgate/clikgate-mobile-sdk/tree/main/flutter
@@ -7,8 +7,9 @@ issue_tracker: https://github.com/clikgate/clikgate-mobile-sdk/issues
 topics:
   - deep-linking
   - attribution
-  - referral
   - analytics
+  - referral
+  - marketing
 
 environment:
   sdk: ^3.5.0

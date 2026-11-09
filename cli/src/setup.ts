@@ -9,6 +9,9 @@ import {
   DEFAULT_API_URL,
   EXIT,
   GOAL_SNIPPET,
+  IDENTIFY_GUIDE_URL,
+  IDENTIFY_SNIPPET,
+  INSTALLATION_ID_SNIPPET,
   SDK_KEY_LIVE,
   SDK_KEY_TEST,
   SHARED_DOMAIN_FIX,
@@ -614,6 +617,9 @@ function printSummary(
     `  2. Go live: for release builds, replace the test key (cg_sdk_test_…)${loc ? ` at ${loc}` : ''} with your live SDK key from ${DASHBOARD_URL}/apps (SDK keys). The setup command never handles live keys.`
   );
   ui.out(`  3. Send goals with one call: ${GOAL_SNIPPET[ctx.platform]} (a Payment goal waits until your payment provider or server confirms it).`);
+  ui.out(
+    `  4. Identify signed-in users (optional): return a token from your server's createIdentityToken(user.id) in the sign-in response (secret in CLIKGATE_IDENTITY_SECRET, server only), then ${IDENTIFY_SNIPPET[ctx.platform]}. No token? Send ${INSTALLATION_ID_SNIPPET[ctx.platform]} to your server and call identifyUser there. ${IDENTIFY_GUIDE_URL}`
+  );
   for (const n of next) ui.out(`  • ${n.message}${n.doc_url ? ` (${n.doc_url})` : ''}`);
 }
 

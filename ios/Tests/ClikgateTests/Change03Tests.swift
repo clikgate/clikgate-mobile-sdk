@@ -95,12 +95,12 @@ final class Change03Tests: XCTestCase {
         await core.start(startTimers: false)
         await core.identifyUser(label: nil, customerId: "user_42", identityToken: nil)
         await core.setPushToken("ffff", provider: "apns")
-        await core.track(name: "purchase", revenue: nil, properties: nil)
+        await core.goal("purchase", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.flush()
         await core.resolve(url: URL(string: "https://inv.myapp.com/p/dress")!)
         await core.sendOpen(coldStart: true)
 
-        for key in ["POST /v1/sdk/install", "POST /v1/sdk/events", "POST /v1/sdk/identify", "POST /v1/sdk/push-token",
+        for key in ["POST /v1/sdk/install", "POST /v1/sdk/goals", "POST /v1/sdk/identify", "POST /v1/sdk/push-token",
                     "POST /v1/sdk/resolve", "POST /v1/sdk/open", "POST /v1/sdk/consent"] {
             assertConsent(server.requests(key).first, attribution: "granted")
         }
@@ -120,8 +120,8 @@ final class Change03Tests: XCTestCase {
         let core = h.makeCore()
         let box = collect(h.dispatcher)
         await core.start(startTimers: false)
-        await core.track(name: "signup", revenue: nil, properties: nil)
-        await core.track(name: "purchase", revenue: ClikgateMoney.ofMinor(500, currency: "NGN"), properties: nil)
+        await core.goal("signup", value: nil, currency: nil, reference: nil, isFirst: nil)
+        await core.goal("purchase", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.resolve(url: URL(string: "https://inv.myapp.com/p/dress?cg_click_id=clk_1")!)
         await core.resolve(url: URL(string: "https://inv.myapp.com/p/shoes")!)
         await drainMain()
@@ -148,8 +148,8 @@ final class Change03Tests: XCTestCase {
         let install = try XCTUnwrap(server.requests("POST /v1/sdk/install").first)
         XCTAssertEqual(install.json["launch_url"] as? String, "https://inv.myapp.com/p/dress?cg_click_id=clk_1")
         assertConsent(install, attribution: "granted")
-        let sentEvents = server.requests("POST /v1/sdk/events").flatMap { ($0.json["events"] as? [[String: Any]]) ?? [] }
-        XCTAssertEqual(sentEvents.count, 2)
+        let sentGoals = server.requests("POST /v1/sdk/goals").flatMap { ($0.json["goals"] as? [[String: Any]]) ?? [] }
+        XCTAssertEqual(sentGoals.count, 2)
         XCTAssertEqual(server.requests("POST /v1/sdk/resolve").first?.json["url"] as? String, "https://inv.myapp.com/p/shoes")
         XCTAssertEqual(server.requests("POST /v1/sdk/consent").count, 1)
         XCTAssertEqual(box.items.count, 2, "kept links are resolved silently, not delivered again")
@@ -166,14 +166,14 @@ final class Change03Tests: XCTestCase {
         }
         let core = h.makeCore()
         await core.start(startTimers: false)
-        for i in 0..<5 { await core.track(name: "e\(i)", revenue: nil, properties: nil) }
+        for i in 0..<5 { await core.goal("e\(i)", value: nil, currency: nil, reference: nil, isFirst: nil) }
         var names = await core.queuedEvents.map { $0.name }
         XCTAssertEqual(names, ["e2", "e3", "e4"], "oldest dropped above buffer_max_events")
 
         h.clock.advance(8 * 86_400)
-        await core.track(name: "fresh", revenue: nil, properties: nil)
+        await core.goal("fresh", value: nil, currency: nil, reference: nil, isFirst: nil)
         names = await core.queuedEvents.map { $0.name }
-        XCTAssertEqual(names, ["fresh"], "events older than buffer_max_days (7) expire")
+        XCTAssertEqual(names, ["fresh"], "goals older than buffer_max_days (7) expire")
         XCTAssertTrue(identifying().isEmpty)
     }
 
@@ -183,7 +183,7 @@ final class Change03Tests: XCTestCase {
         h.pasteboard.detect = true
         h.pasteboard.text = "https://inv.myapp.com/_cg/p/\(token)"
         await core.start(startTimers: false)
-        await core.track(name: "signup", revenue: nil, properties: nil)
+        await core.goal("signup", value: nil, currency: nil, reference: nil, isFirst: nil)
         var st = await core.currentState()
         XCTAssertEqual(st.pasteboardToken, token, "clipboard token read and kept on the device while buffering")
 
@@ -199,7 +199,7 @@ final class Change03Tests: XCTestCase {
         XCTAssertTrue(server.requests("POST /v1/sdk/install").isEmpty)
         XCTAssertTrue(server.requests("POST /v1/sdk/consent").isEmpty, "no record without an installation")
 
-        await core.track(name: "after", revenue: nil, properties: nil)
+        await core.goal("after", value: nil, currency: nil, reference: nil, isFirst: nil)
         let after = await core.queuedEventCount
         XCTAssertEqual(after, 0, "nothing kept while denied")
 
@@ -230,7 +230,7 @@ final class Change03Tests: XCTestCase {
         server.reset(); stubHappyPath(); server.on("POST /v1/sdk/consent", .ok)
 
         await core.setConsent(analytics: nil, attribution: .denied, adUserData: nil, adPersonalization: nil)
-        await core.track(name: "purchase", revenue: nil, properties: nil)
+        await core.goal("purchase", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.flush()
         await core.sendOpen(coldStart: false)
         XCTAssertEqual(server.requests.map { $0.key }, ["POST /v1/sdk/consent"])
@@ -304,7 +304,7 @@ final class Change03Tests: XCTestCase {
         stubConfig("config_response_blocked")
         h.firebase = FakeFirebase(available: true, instanceId: "abc")
         let core = h.makeCore()
-        await core.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(mirrorEvents: true))
+        await core.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions())
         await core.setPushToken("a1b2c3d4", provider: "apns")
         let box = collect(h.dispatcher)
         await core.start(startTimers: false)
@@ -312,12 +312,13 @@ final class Change03Tests: XCTestCase {
         XCTAssertEqual(Set(install.keys), ["installation_id", "app_version", "sdk_version", "platform", "consent"])
 
         await core.identifyUser(label: nil, customerId: "u1", identityToken: nil)
-        await core.track(name: "purchase", revenue: nil, properties: ["order_id": .string("A-1")])
-        await core.track(name: "level_up", revenue: nil, properties: nil)
+        await core.goal("purchase", value: nil, currency: nil, reference: nil, isFirst: nil)
+        await core.goal("level_up", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.flush()
-        let events = server.requests("POST /v1/sdk/events").flatMap { ($0.json["events"] as? [[String: Any]]) ?? [] }
-        XCTAssertEqual(events.map { $0["name"] as? String }, ["purchase"])
-        XCTAssertNil(events.first?["properties"])
+        // The blocked policy doesn't list `goals`: refused on the device, never sent.
+        XCTAssertTrue(server.requests("POST /v1/sdk/goals").isEmpty)
+        let left = await core.queuedEventCount
+        XCTAssertEqual(left, 0)
         XCTAssertTrue(server.requests("POST /v1/sdk/identify").isEmpty)
         XCTAssertTrue(server.requests("POST /v1/sdk/push-token").isEmpty)
 
@@ -340,7 +341,7 @@ final class Change03Tests: XCTestCase {
         h.firebase = FakeFirebase(available: true, instanceId: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d")
         let core = h.makeCore()
         await core.setConsent(analytics: .granted, attribution: .granted, adUserData: nil, adPersonalization: nil)
-        await core.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(mirrorEvents: true, eventNameMap: ["purchase": "cg_purchase"]))
+        await core.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions())
         await core.start(startTimers: false)
 
         let install = try XCTUnwrap(server.requests("POST /v1/sdk/install").first).json
@@ -355,14 +356,9 @@ final class Change03Tests: XCTestCase {
         XCTAssertEqual(h.firebase.userProperties["cg_first_source"] ?? nil, "google")
         XCTAssertEqual(h.firebase.userProperties["cg_first_campaign"] ?? nil, "lagos_launch")
 
-        await core.track(name: "purchase", revenue: ClikgateMoney.ofMinor(150_000, currency: "NGN"),
-                         properties: ["order_id": .string("A-1"), "nested": .object([:]), "vip": .bool(true)])
-        let mirrored = try XCTUnwrap(h.firebase.events.first { $0.0 == "cg_purchase" })
-        XCTAssertEqual(mirrored.1["value"] as? Double, 1500)
-        XCTAssertEqual(mirrored.1["currency"] as? String, "NGN")
-        XCTAssertEqual(mirrored.1["order_id"] as? String, "A-1")
-        XCTAssertEqual(mirrored.1["vip"] as? Int, 1)
-        XCTAssertNil(mirrored.1["nested"])
+        // Change 22: no event mirroring (there are no app events); goals aren't logged to Firebase.
+        await core.goal("purchase", value: "1500", currency: "NGN", reference: "A-1", isFirst: nil)
+        XCTAssertEqual(h.firebase.events.map { $0.0 }, ["clikgate_attribution"])
 
         // Once per installation.
         let next = h.makeCore()
@@ -407,20 +403,8 @@ final class Change03Tests: XCTestCase {
     }
 
     func testFirebaseLimits() {
-        XCTAssertTrue(FirebaseLimits.isValidName("purchase_done"))
-        XCTAssertFalse(FirebaseLimits.isValidName("1purchase"))
-        XCTAssertFalse(FirebaseLimits.isValidName("firebase_x"))
-        XCTAssertFalse(FirebaseLimits.isValidName("ga_x"))
-        XCTAssertFalse(FirebaseLimits.isValidName("has-dash"))
-        XCTAssertFalse(FirebaseLimits.isValidName(String(repeating: "a", count: 41)))
-        var props: [String: JSONValue] = ["long": .string(String(repeating: "x", count: 150))]
-        for i in 0..<40 { props["p\(i)"] = .int(Int64(i)) }
-        let p = FirebaseLimits.parameters(from: props, revenue: ClikgateMoney.ofMinor(1000, currency: "JPY"))
-        XCTAssertEqual(p.count, 25)
-        XCTAssertEqual(p["value"] as? Double, 1000, "zero-decimal currency")
-        XCTAssertTrue(p.values.compactMap { $0 as? String }.allSatisfy { $0.count <= 100 })
-        let one = FirebaseLimits.parameters(from: ["long": .string(String(repeating: "x", count: 150))], revenue: nil)
-        XCTAssertEqual((one["long"] as? String)?.count, 100)
+        XCTAssertEqual(FirebaseLimits.truncate(String(repeating: "x", count: 150), FirebaseLimits.maxStringValue).count, 100)
+        XCTAssertEqual(FirebaseLimits.truncate("short", FirebaseLimits.maxUserPropertyValue), "short")
     }
 
     // MARK: - attributionMetadata
@@ -558,12 +542,12 @@ final class Change03Tests: XCTestCase {
     func testConfigParsing() {
         let c = RemoteConfig(json: Fixtures.json("config_response_blocked"))
         XCTAssertEqual(c.versionStatus, "blocked")
-        XCTAssertEqual(c.blocked?.allowedEvents, ["purchase", "sign_up"])
+        XCTAssertEqual(c.blocked?.allowedCalls.contains("goals"), false)
         XCTAssertEqual(c.latestVersion, "1.4.0")
         let r = RemoteConfig(json: Fixtures.json("config_response_consent_required"))
         XCTAssertEqual(r.consent?.mode, "required_in_regions")
         XCTAssertEqual(r.consent?.anonymousCounts, true)
-        XCTAssertEqual(r.firebase?.mirrorEvents, true)
+        XCTAssertEqual(r.firebase?.enabled, true)
         var old = Fixtures.json("config_response_legacy")
         for k in ["consent", "blocked_instructions", "firebase_forwarding", "version_status", "min_supported_version", "latest_version"] {
             old.removeValue(forKey: k)

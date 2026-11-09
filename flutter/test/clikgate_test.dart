@@ -105,40 +105,7 @@ void main() {
     });
   });
 
-  group('events and identity', () {
-    test('track with revenue and properties', () async {
-      await Clikgate.track('purchase',
-          revenue: const ClikgateMoney.ofMinor(1500000, 'NGN'),
-          properties: {'order_id': 'A-1001'});
-      expect(calls.single.method, 'track');
-      expect(calls.single.arguments, {
-        'name': 'purchase',
-        'revenueMinor': 1500000,
-        'currency': 'NGN',
-        'properties': {'order_id': 'A-1001'},
-      });
-    });
-
-    test('track without revenue', () async {
-      await Clikgate.track('signup');
-      expect(calls.single.arguments,
-          {'name': 'signup', 'revenueMinor': null, 'currency': null, 'properties': null});
-    });
-
-    test('invalid event is reported as ClikgateException', () async {
-      handlers['track'] = (_) => throw PlatformException(
-          code: 'invalid_argument',
-          message: 'Event name must match',
-          details: {'status': null, 'param': 'name'});
-      await expectLater(
-        Clikgate.track('bad name'),
-        throwsA(isA<ClikgateException>()
-            .having((e) => e.code, 'code', 'invalid_argument')
-            .having((e) => e.param, 'param', 'name')
-            .having((e) => e.status, 'status', isNull)),
-      );
-    });
-
+  group('goals and identity', () {
     test('identifyUser, clear, label only, opt-out', () async {
       await Clikgate.identifyUser(customerId: 'user_42', identityToken: 'sig.1760954400');
       await Clikgate.identifyUser(customerId: null);
@@ -175,7 +142,7 @@ void main() {
     test('missing plugin maps to unsupported_platform', () async {
       messenger.setMockMethodCallHandler(methods, null);
       await expectLater(
-        Clikgate.track('signup'),
+        Clikgate.getInstallationId(),
         throwsA(isA<ClikgateException>()
             .having((e) => e.code, 'code', 'unsupported_platform')),
       );
@@ -386,16 +353,6 @@ void main() {
   });
 
   group('models', () {
-    test('ClikgateMoney equality', () {
-      expect(const ClikgateMoney.ofMinor(100, 'NGN'), const ClikgateMoney.ofMinor(100, 'NGN'));
-      expect(const ClikgateMoney.ofMinor(100, 'NGN') == const ClikgateMoney.ofMinor(100, 'USD'), isFalse);
-    });
-
-    test('ClikgateMoney.ofMinor is the name; the old constructor stays as an alias (X.E10)', () {
-      // ignore: deprecated_member_use_from_same_package
-      expect(const ClikgateMoney(100, 'NGN'), const ClikgateMoney.ofMinor(100, 'NGN'));
-    });
-
     test('tolerates missing optional fields', () {
       final d = ClikgateDeepLink.fromMap({'isDeferred': true});
       expect(d.data, isEmpty);

@@ -106,22 +106,14 @@ describe('enableFirebaseForwarding', () => {
     expect(mockModule.enableFirebaseForwarding).toHaveBeenCalledWith({
       logAttributionEvent: true,
       setUserProperties: true,
-      mirrorEvents: false,
-      eventNameMap: {},
     });
   });
 
-  it('passes options and drops non-string map values', async () => {
-    await Clikgate.enableFirebaseForwarding({
-      mirrorEvents: true,
-      setUserProperties: false,
-      eventNameMap: { signup: 'sign_up', bad: 3 as never },
-    });
+  it('passes options', async () => {
+    await Clikgate.enableFirebaseForwarding({ setUserProperties: false });
     expect(mockModule.enableFirebaseForwarding).toHaveBeenCalledWith({
       logAttributionEvent: true,
       setUserProperties: false,
-      mirrorEvents: true,
-      eventNameMap: { signup: 'sign_up' },
     });
   });
 });

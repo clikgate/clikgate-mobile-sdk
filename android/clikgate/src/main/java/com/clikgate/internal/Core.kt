@@ -9,7 +9,6 @@ import com.clikgate.ClikgateBrowserHandoff
 import com.clikgate.ClikgateDeepLink
 import com.clikgate.ClikgateError
 import com.clikgate.ClikgateFeatures
-import com.clikgate.ClikgateMoney
 import com.clikgate.ClikgateOptions
 import com.clikgate.ClikgateInternalApi
 import com.clikgate.ClikgateConsent
@@ -81,7 +80,7 @@ internal class WrapperInfo(val name: String, val version: String)
 /**
  * The SDK engine. All mutable state is confined to the single [serial] thread; network I/O runs
  * on [network] and continues on [serial]. [pump] looks at the persisted + in-memory state and
- * starts whatever work is due, so every trigger (launch, foreground, track, identify, ...) just
+ * starts whatever work is due, so every trigger (launch, foreground, goal, identify, ...) just
  * updates state and calls [pump].
  */
 internal class Core(
@@ -200,6 +199,7 @@ internal class Core(
     private val attributionWaiters = ArrayList<Waiter<ClikgateAttribution>>()
     private val installWaiters = ArrayList<Waiter<Boolean>>()
     private val identifyWaiters = ArrayList<() -> Unit>()
+    private val installationIdWaiters = ArrayList<Waiter<Unit>>()
 
     private class Waiter<T>(val callback: (T) -> Unit) {
         var timeout: ScheduledFuture<*>? = null
@@ -320,6 +320,11 @@ internal class Core(
     // ------------------------------------------------------------------ the pump
 
     private fun pump() {
+        if (configReady && installationIdWaiters.isNotEmpty()) {
+            val ws = ArrayList(installationIdWaiters)
+            installationIdWaiters.clear()
+            ws.forEach { it.complete(Unit) }
+        }
         if (invalidKey || serial.isShutdown) return
         if (deps.clock() < disabledUntil) return
         val tracking = storage.trackingEnabled
@@ -381,7 +386,7 @@ internal class Core(
         if (allows("attest")) maybeReattest()
         maybeFetchAppInstanceId()
         maybeLogFirebaseAttribution()
-        if (flushRequested && !flushInFlight && allows("events")) flush()
+        if (flushRequested && !flushInFlight) flush()
     }
 
     // ------------------------------------------------------------------ consent, version policy
@@ -414,7 +419,7 @@ internal class Core(
             }
             "blocked" -> {
                 versionWarned = true
-                Log.e(p.message ?: "Clikgate SDK ${ownVersion()} is blocked; only basic events are sent. Update the SDK.")
+                Log.e(p.message ?: "Clikgate SDK ${ownVersion()} is blocked; only basic calls are made. Update the SDK.")
             }
         }
     }
@@ -588,25 +593,6 @@ internal class Core(
             a.str("campaign")?.let { f.setUserProperty("cg_first_campaign", it.take(FirebaseLimits.MAX_USER_PROPERTY_VALUE)) }
         }
         storage.firebaseAttributionLogged = true
-    }
-
-    /** Mirrors a tracked event to Firebase (serial thread). */
-    private fun mirrorToFirebase(name: String, revenue: ClikgateMoney?, properties: Map<String, Any?>?) {
-        val opts = firebaseOptions ?: return
-        if (!opts.mirrorEvents || !config.firebase.mirrorEvents) return
-        val f = firebase() ?: return
-        val target = opts.eventNameMap[name] ?: name
-        if (!FirebaseLimits.isValidName(target)) {
-            Log.d("Event '$name' not mirrored to Firebase: invalid Firebase event name")
-            return
-        }
-        val p = LinkedHashMap<String, Any?>()
-        if (revenue != null) {
-            p["value"] = revenue.amountMinor / Money.minorUnitsPerMajor(revenue.currency)
-            p["currency"] = revenue.currency
-        }
-        properties?.forEach { (k, v) -> if (k !in p) p[k] = v }
-        f.logEvent(target, FirebaseLimits.params(p))
     }
 
     private fun appInstanceIdWanted(): Boolean =
@@ -1088,13 +1074,17 @@ internal class Core(
 
     /**
      * `deeplink_handled` (the live check) with the delivered link's path (IDs → `:id`), only with a test
-     * key or while [response] says the dashboard's debug view is open. Never queued or counted; one retry, then
-     * dropped.
+     * key, while [response] says the dashboard's debug view is open, or (Change 22 R.6, live mode too) when
+     * [response] says the opening click is an App banner tap measuring the right screen (`measure_right_screen`;
+     * the click is sent as `click_id`). Never queued, counted or a goal; one retry, then dropped.
      */
     private fun reportHandled(link: ClikgateDeepLink, response: JSONObject) {
-        if (!testMode && !response.optBoolean("debug_view") || gate() != Gate.ALLOWED || !allows("deeplink_handled")) return
+        val bannerClick = if (response.optBoolean("measure_right_screen")) response.str("click_id") else null
+        if (!testMode && !response.optBoolean("debug_view") && bannerClick == null) return
+        if (gate() != Gate.ALLOWED || !allows("deeplink_handled")) return
         val path = link.path ?: link.url?.let { Uri.parse(it).encodedPath } ?: ""
         val body = JSONObject().put("path", DeepLinkPath.clean(path)).put("is_deferred", link.isDeferred)
+        if (bannerClick != null) body.put("click_id", bannerClick)
         send(ApiRequest("POST", "/v1/sdk/deeplink-handled", body), maxAttempts = 2) {
             if (it is ApiResult.Failure) Log.d("deeplink_handled not sent: ${it.error.code}")
         }
@@ -1203,38 +1193,9 @@ internal class Core(
         }
     }
 
-    // ------------------------------------------------------------------ events
-
-    /** Validates and enqueues an event. Returns an error for invalid input. */
-    fun track(name: String, revenue: ClikgateMoney?, properties: Map<String, Any?>?, allowReserved: Boolean = false): ClikgateError? {
-        val payload = try {
-            buildEvent(name, revenue, properties, allowReserved, deps.clock())
-        } catch (e: ClikgateError) {
-            Log.e("track(\"$name\") rejected: ${e.message}")
-            return e
-        }
-        if (attributionOff()) return null // deep-link-only mode: nothing is queued or sent
-        runSerial {
-            if (!storage.trackingEnabled) return@runSerial
-            val gate = gate()
-            if (gate == Gate.DENIED) return@runSerial // consent denied in a required region: never sent
-            if (!allowReserved) mirrorToFirebase(name, revenue, properties)
-            val pending = gate == Gate.PENDING
-            val max = if (pending) minOf(config.maxQueueEvents, featureConfig.consent?.bufferMaxEvents ?: 1000) else config.maxQueueEvents
-            val count = queue.add(payload, max, config.maxQueueBytes)
-            if (pending) {
-                bufferForConsent()
-            } else if (count >= config.flushAtCount) {
-                flushRequested = true
-                pump()
-            }
-        }
-        return null
-    }
-
     // ------------------------------------------------------------------ goals
 
-    /** Validates and enqueues a goal (shares the event queue). Returns an error for invalid input. */
+    /** Validates and enqueues a goal. Returns an error for invalid input. */
     fun goal(
         key: String,
         value: java.math.BigDecimal?,
@@ -1259,7 +1220,7 @@ internal class Core(
         return null
     }
 
-    /** Goals: queued like events (consent gate, opt-out, deep-link-only mode), deduped by (key, reference). */
+    /** Goals: queued (consent gate, opt-out, deep-link-only mode), deduped by (key, reference). */
     private fun enqueueGoal(payload: JSONObject, dedupe: String, label: String, onResult: GoalResultListener?) {
         if (attributionOff()) return deliver(onResult, Goals.refused("feature_disabled"))
         runSerial {
@@ -1302,6 +1263,10 @@ internal class Core(
             if (result.status == GoalStatus.WAITING) Log.w("$key is a Payment goal: waiting for confirmation")
             if (result.valueIgnored) Log.w("$key is a Payment goal: the value was ignored (the amount comes from the confirmation)")
         }
+        // The organisation accepts only goals it has set up: final, never retried. The goal name only, debug builds only.
+        if (result.status == GoalStatus.REFUSED && result.reason == Goals.UNKNOWN_GOAL && deps.device.isDebuggableApp) {
+            Log.w("Goal `$key` isn't set up in Clikgate")
+        }
         goalListeners.remove(Goals.dedupeKey(key, item.optString("reference")))?.toList()?.forEach { deliver(it, result) }
     }
 
@@ -1311,9 +1276,9 @@ internal class Core(
     }
 
     /**
-     * Deep-link-only mode (Free, Starter, or an app with attribution switched off):
+     * Deep-link-only mode (an app with attribution switched off):
      * `app_attribution` is off in the cached config or the server answered `feature_disabled` for
-     * `/events` or `/goals`. Logs the one-time "needs Growth" warning. Any thread.
+     * `/goals`. Logs the one-time "attribution is switched off" warning. Any thread.
      */
     private fun attributionOff(): Boolean {
         if (isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION)) return false
@@ -1327,11 +1292,11 @@ internal class Core(
     private fun warnNeedsGrowth() {
         if (needsGrowthWarned) return
         needsGrowthWarned = true
-        Log.w("goal() and track() need install attribution, which needs Growth: this app's plan includes deep links only, " +
-            "so events and goals are not sent. Deep links keep working.")
+        Log.w("goal() is off for this app: app attribution is switched off, " +
+            "so goals are not sent. Deep links keep working.")
     }
 
-    /** `/events` or `/goals` answered the `feature_disabled` body: mark attribution off, never retry. Serial thread. */
+    /** `/goals` answered the `feature_disabled` body: mark attribution off, never retry. Serial thread. */
     private fun attributionDisabledByServer(body: JSONObject) {
         disabledByServer.add(body.str("feature") ?: ClikgateFeatures.APP_ATTRIBUTION)
         disabledByServer.add(ClikgateFeatures.APP_ATTRIBUTION)
@@ -1431,73 +1396,27 @@ internal class Core(
             refuseAllGoals("feature_disabled")
             return notifyFlushWaiters(true)
         }
-        // Events and goals share the queue; send the leading run of one kind.
-        if (batch.isNotEmpty()) {
-            val first = Goals.isGoal(batch[0].payload)
-            batch = batch.takeWhile { Goals.isGoal(it.payload) == first }
-            if (first) {
-                if (!allows("goals")) {
-                    Log.w("This Clikgate SDK version is blocked for goals; dropping ${batch.size} goal(s)")
-                    queue.remove(batch.map { it.rowId })
-                    batch.forEach { resolveGoal(it.payload, Goals.refused("sdk_version_blocked")) }
-                    flushRequested = queue.count() > 0
-                    return if (flushRequested) pump() else notifyFlushWaiters(true)
-                }
-                return flushGoals(batch)
+        // Change 22: goal() is the only method. App events queued by an earlier development build (the queue is
+        // persisted) are dropped without a network call: there is no events endpoint any more.
+        val legacy = batch.filterNot { Goals.isGoal(it.payload) }
+        if (legacy.isNotEmpty()) {
+            Log.d("Dropping ${legacy.size} queued app event(s) from an earlier SDK build: goal() is the only method")
+            queue.remove(legacy.map { it.rowId })
+            batch = batch.filter { Goals.isGoal(it.payload) }
+            if (batch.isEmpty()) {
+                flushRequested = queue.count() > 0
+                return if (flushRequested) pump() else notifyFlushWaiters(true)
             }
         }
-        if (config.privateMode) {
-            // Private mode: events go without properties or revenue (value only through goal()).
-            batch.forEach { e -> listOf("properties", "revenue_minor", "currency").forEach { e.payload.remove(it) } }
+        if (batch.isEmpty()) return notifyFlushWaiters(true)
+        if (!allows("goals")) {
+            Log.w("This Clikgate SDK version is blocked for goals; dropping ${batch.size} goal(s)")
+            queue.remove(batch.map { it.rowId })
+            batch.forEach { resolveGoal(it.payload, Goals.refused("sdk_version_blocked")) }
+            flushRequested = queue.count() > 0
+            return if (flushRequested) pump() else notifyFlushWaiters(true)
         }
-        val policy = config.versionPolicy
-        if (policy.blocked && batch.isNotEmpty()) {
-            // Version policy: only the allowed event names, optionally without properties.
-            val allowed = policy.allowedEvents
-            val (keep, drop) = batch.partition { allowed == null || it.payload.optString("name") in allowed }
-            queue.remove(drop.map { it.rowId })
-            if (policy.stripProperties) keep.forEach { it.payload.remove("properties") }
-            batch = keep
-            if (batch.isEmpty() && queue.count() > 0) {
-                flushRequested = true
-                return pump()
-            }
-        }
-        if (batch.isEmpty()) {
-            notifyFlushWaiters(true)
-            return
-        }
-        flushInFlight = true
-        val body = JSONObject().put("events", JSONArray().also { a -> batch.forEach { a.put(it.payload) } })
-            .put("consent", consentBody())
-        val req = ApiRequest("POST", "/v1/sdk/events", body, mapOf("Idempotency-Key" to UUID.randomUUID().toString()))
-        send(req, maxAttempts = 5) { r ->
-            flushInFlight = false
-            when {
-                r is ApiResult.Success && Json.isFeatureDisabled(r.body) -> {
-                    attributionDisabledByServer(r.body)
-                    queue.remove(batch.map { it.rowId })
-                    if (queue.count() > 0) flushRequested = true else notifyFlushWaiters(true)
-                }
-                r is ApiResult.Success -> {
-                    r.body.optJSONArray("rejected")?.let { rej ->
-                        if (rej.length() > 0) Log.w("${rej.length()} event(s) rejected by the server and dropped")
-                    }
-                    queue.remove(batch.map { it.rowId })
-                    if (queue.count() > 0) flushRequested = true else notifyFlushWaiters(true)
-                }
-                r is ApiResult.Failure && r.error.code == "validation_error" -> {
-                    Log.e("Event batch rejected as invalid; dropping ${batch.size} event(s)")
-                    queue.remove(batch.map { it.rowId })
-                    if (queue.count() > 0) flushRequested = true else notifyFlushWaiters(true)
-                }
-                else -> {
-                    if (storage.trackingEnabled) deps.background.scheduleFlush()
-                    notifyFlushWaiters(false)
-                }
-            }
-            pump()
-        }
+        flushGoals(batch)
     }
 
     private fun notifyFlushWaiters(ok: Boolean) {
@@ -1522,6 +1441,33 @@ internal class Core(
         }
         latch.await(timeoutMs, TimeUnit.MILLISECONDS)
         return ok
+    }
+
+    // ------------------------------------------------------------------ installation ID
+
+    /**
+     * Change 22 (I.7, R.26): this installation's ID for the app's own server (identity Path B), on the main thread.
+     * Null when tracking is off: opted out, consent denied (or not given yet) where it's required, or deep-link-only
+     * mode. On a first launch it waits for the first config answer (one attempt, so offline it answers at once;
+     * at most [INSTALLATION_ID_WAIT_MS]) so the consent and attribution switches are known. Never logged in full.
+     */
+    fun installationIdForApp(cb: (String?) -> Unit) = runSerial {
+        fun answer() {
+            val id = if (!storage.trackingEnabled || !isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION) || gate() != Gate.ALLOWED) {
+                null
+            } else {
+                installationId
+            }
+            main.post { cb(id) }
+        }
+        if (configReady || !storage.trackingEnabled) return@runSerial answer()
+        val w = Waiter<Unit> { answer() }
+        w.timeout = serial.schedule({
+            installationIdWaiters.remove(w)
+            w.complete(Unit)
+        }, INSTALLATION_ID_WAIT_MS, TimeUnit.MILLISECONDS)
+        installationIdWaiters.add(w)
+        pump()
     }
 
     // ------------------------------------------------------------------ identify
@@ -1596,6 +1542,7 @@ internal class Core(
         storage.identityToken?.let { body.put("identity_token", it) }
         label?.let { body.put("label", it) }
         body.put("consent", consentBody())
+        val tokenSent = body.has("identity_token")
         send(ApiRequest("POST", "/v1/sdk/identify", body), maxAttempts = 5) { r ->
             identifyInFlight = false
             val done = when (r) {
@@ -1603,11 +1550,17 @@ internal class Core(
                     if (r.body.optString("label_ignored") == "plan" && deps.device.isDebuggableApp) {
                         Log.w("identifyUser: labels need the Growth plan; the label was not stored")
                     }
+                    // Change 22 (R.22): a bad token answers 200 with `verified: false` and a `reason`.
+                    // Absent `verified` = an older server (which answers 422 identity_invalid instead).
+                    if (tokenSent && r.body.has("verified") && !r.body.optBoolean("verified", true)) {
+                        val reason = if (r.body.isNull("reason")) null else r.body.optString("reason").ifEmpty { null }
+                        Log.w(identityTokenNotVerifiedMessage(reason))
+                    }
                     true
                 }
                 is ApiResult.Failure -> {
-                    if (r.error.code == "identity_invalid") {
-                        Log.w("identifyUser: the identity token did not verify (identity_invalid); customer ID kept")
+                    if (r.error.code == "identity_invalid") {   // servers before Change 22
+                        Log.w("identifyUser: the identity token did not verify (identity_invalid); the customer ID is kept but not verified")
                         true
                     } else if (r.retryable) {
                         identifyFailedSeq = seq // retried on next launch
@@ -1779,11 +1732,25 @@ internal class Core(
                                     },
                                 )
                             }
-                            is ApiResult.Failure -> finish(ClikgateResult.Failure(r.error))
+                            is ApiResult.Failure -> {
+                                logIdentityRefusal(r.error.code, path)
+                                finish(ClikgateResult.Failure(r.error))
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Change 22 (R.22): a developer warning when a call is refused for the identity token
+     * (`403 identity_expired`, `422 identity_invalid`). Never logs the token, the secret or the customer ID.
+     */
+    private fun logIdentityRefusal(code: String, path: String) {
+        when (code) {
+            "identity_expired" -> Log.w("$path: the identity token has expired (identity_expired); get a new token from your server and call identifyUser() again")
+            "identity_invalid" -> Log.w("$path: the identity token did not verify (identity_invalid); get a new token from your server and call identifyUser() again")
         }
     }
 
@@ -1905,9 +1872,7 @@ internal class Core(
     companion object {
         private const val CONFIG_TTL_MS = 60 * 60 * 1000L
         private const val MAX_INSTALL_POLLS = 3
-        private val EVENT_NAME = Regex("^[A-Za-z0-9_.$:-]{1,64}$")
-        private val CURRENCY = Regex("^[A-Z]{3}$")
-        private const val MAX_PROPERTIES_BYTES = 8 * 1024
+        private const val INSTALLATION_ID_WAIT_MS = 5_000L
 
         fun hash(s: String): String =
             MessageDigest.getInstance("SHA-256").digest(s.toByteArray(Charsets.UTF_8))
@@ -1918,41 +1883,21 @@ internal class Core(
                 timeZone = TimeZone.getTimeZone("UTC")
             }.format(Date(millis))
 
-        /** Builds an `/events` item, validating locally. Throws [ClikgateError] (invalid_argument). */
-        fun buildEvent(
-            name: String,
-            revenue: ClikgateMoney?,
-            properties: Map<String, Any?>?,
-            allowReserved: Boolean,
-            now: Long,
-        ): JSONObject {
-            fun invalid(msg: String, param: String) = ClikgateError(ClikgateError.INVALID_ARGUMENT, msg, param = param)
-            if (!EVENT_NAME.matches(name)) throw invalid("Event name must match ^[A-Za-z0-9_.\$:-]{1,64}\$", "name")
-            if (name.startsWith("$") && !allowReserved) throw invalid("Event names starting with '\$' are reserved", "name")
-            val o = JSONObject()
-                .put("event_id", UUID.randomUUID().toString())
-                .put("name", name)
-                .put("occurred_at", isoTimestamp(now))
-            if (revenue != null) {
-                if (!CURRENCY.matches(revenue.currency)) throw invalid("Currency must be 3 uppercase letters (ISO 4217)", "currency")
-                o.put("revenue_minor", revenue.amountMinor)
-                o.put("currency", revenue.currency)
-            }
-            if (properties != null) {
-                val json = try {
-                    Json.toJson(properties) as JSONObject
-                } catch (e: IllegalArgumentException) {
-                    throw invalid(e.message ?: "Unsupported property value", "properties")
-                }
-                if (json.toString().toByteArray(Charsets.UTF_8).size > MAX_PROPERTIES_BYTES) {
-                    throw invalid("Event properties exceed 8 KB", "properties")
-                }
-                o.put("properties", json)
-            }
-            return o
-        }
-
         fun urlEncode(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+        /** Change 22 (R.22): the identify warning for `verified: false`; names the reason, never the token or customer ID. */
+        fun identityTokenNotVerifiedMessage(reason: String?): String {
+            val why = when (reason) {
+                "expired" -> "expired"
+                "bad_signature" -> "the signature doesn't match"
+                "secret_rotated" -> "it was signed with a secret that has since been rotated"
+                "no_secret_set" -> "no identity secret is set for this app"
+                "not_yet_valid" -> "its issue time is in the future; check the server clock"
+                null -> "no reason given"
+                else -> reason.filter { it.isLetterOrDigit() || it == '_' }.take(40)   // a newer reason code
+            }
+            return "identifyUser: the identity token did not verify ($why); the customer ID is kept but not verified"
+        }
 
         private fun namedThreads(prefix: String): ThreadFactory {
             val n = AtomicInteger()

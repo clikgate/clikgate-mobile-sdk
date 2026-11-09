@@ -178,10 +178,13 @@ final class MainViewController: UIViewController {
             }
         }
 
-        section("Events & privacy")
-        button("Track purchase (₦15,000)") {
-            Clikgate.shared.track("purchase", revenue: ClikgateMoney.ofMinor(1_500_000, currency: "NGN"),
-                                  properties: ["order_id": "A-1001"])
+        section("Identity & privacy")
+        // Identity Path B: send this to your own server with the sign-in request; your server calls identifyUser.
+        button("Show installation ID") { [weak self] in
+            Task { @MainActor in
+                let id = try? await Clikgate.shared.installationId()
+                self?.metadataLabel.text = id.map { "Installation \($0.prefix(8))…" } ?? "Tracking is off: no installation ID"
+            }
         }
         let toggle = UISwitch()
         toggle.isOn = true

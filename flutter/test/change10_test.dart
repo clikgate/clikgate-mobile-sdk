@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Change 10 (D.5): deep-link-only mode (Free, Starter, or an app with
-/// attribution switched off). The native SDKs warn once ("needs Growth") and
-/// answer goal / track with success, so the Dart calls complete without an
+/// attribution switched off). The native SDKs warn once ("switched off") and
+/// answer goal with success, so the Dart calls complete without an
 /// error; the install result has organic attribution and, at the deferred deep
 /// link cap, no deep link.
 Map<String, dynamic> fixture(String name) =>
@@ -57,13 +57,10 @@ void main() {
     expect(await Clikgate.isFeatureEnabled('deep_linking'), isTrue);
   });
 
-  test('goal and track complete without an error', () async {
+  test('goal completes without an error', () async {
     await expectLater(
         Clikgate.goal('account_opened', reference: 'APP-1'), completes);
-    await expectLater(
-        Clikgate.track('purchase', revenue: ClikgateMoney.ofMinor(1500, 'NGN')),
-        completes);
-    expect(calls.map((c) => c.method), containsAll(['goal', 'track']));
+    expect(calls.map((c) => c.method), contains('goal'));
   });
 
   test('install attribution is organic, with or without a deferred link',
@@ -84,12 +81,8 @@ void main() {
     }
   });
 
-  test('the feature_disabled bodies of /events and /goals name app_attribution',
-      () {
-    for (final name in [
-      'events_response_feature_disabled',
-      'goals_response_feature_disabled'
-    ]) {
+  test('the feature_disabled body of /goals names app_attribution', () {
+    for (final name in ['goals_response_feature_disabled']) {
       expect(fixture(name), {
         'accepted': false,
         'reason': 'feature_disabled',

@@ -25,6 +25,19 @@
         "lower_rank",
         null
       ]
+    },
+    "verified": {
+      "type": "boolean"
+    },
+    "reason": {
+      "enum": [
+        "expired",
+        "bad_signature",
+        "secret_rotated",
+        "no_secret_set",
+        "not_yet_valid",
+        null
+      ]
     }
   },
   "additionalProperties": true,

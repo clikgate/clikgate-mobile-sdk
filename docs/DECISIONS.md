@@ -3,6 +3,101 @@
 Platform-specific decisions stay in each platform's `DECISIONS.md` (`android/`, `ios/`, `flutter/`, `react-native/`,
 `cli/`). This file holds the ones that span the SDKs.
 
+## Change 23 — "Allow unknown goal names" off: `unknown_goal` (C23 S, 2026-11-08)
+
+Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` U, S, R.1, R.2, R.9 (R wins). Versions stay
+(native 1.5.1, Flutter 1.5.1, React Native 1.6.1, setup command 1.1.1): nothing is published and no public API
+changed, so `cli/src/constants.ts` is untouched.
+
+- **Already final.** Every platform already treated `refused` as final (change 12): a `results[]` refusal leaves the
+  queue and is never retried, and a whole-request `422` drops the batch. So per S only the debug message and tests
+  were added, plus one parsing fix below.
+- **Whole-request `422` with a result body.** R.1 describes the refusal as `422 {status: "refused", reason:
+  "unknown_goal", counted: false, goal_kind: null}`. `/v1/sdk/goals` is a batch, so the backend is expected to answer
+  per item in `results[]` (with a matching `rejected[]` code, like `payment_goal_needs_confirmation`). In case it
+  answers the whole request with that body (no `error` envelope), Android `HttpClient.failure` and iOS
+  `APIClient.decodeError` now take `reason` as the error code when the body has `status: "refused"`; before, the code
+  was `http_422` / `validation_error`. Still dropped, never retried. Fixtures for both shapes.
+- **Debug builds only, warning level.** Android gates on `FLAG_DEBUGGABLE` (`DeviceInfo.isDebuggableApp`, same as the
+  private-mode warning); iOS on `#if DEBUG` (compiled out of release, so `-Osize` core is unchanged at 385.4 KB).
+  Warning level so it shows with the default log level (`WARN`). Text: ``Goal `{name}` isn't set up in Clikgate``,
+  the goal name only.
+- **Only `unknown_goal` gets the line.** `goal_archived` refusals are final too but log nothing new (the spec names
+  one message; the reason reaches the app's result).
+- **No name checks or cached setting on the device** (R.9): nothing stores refused names; a refused name is sent
+  again next time. Tested on Android and iOS.
+- **Flutter / React Native:** reason strings already pass through; only doc comments and pass-through tests. No
+  channel or bridge change (the logic and the log line stay native).
+- **No public API change.** `GoalResult.reason` is already a string on every platform; only doc comments list
+  `unknown_goal`. Android `apiCheck`, iOS `check_api.sh`, Flutter `api_snapshot.txt` and the RN public API test
+  are unchanged and pass.
+
+## Change 22 — one method `goal()`, installation ID, `received` (C22-S, 2026-11-08)
+
+Spec: `docs/spec/clikgate-change-22-goals-identity-uninstalls-banners-reports.md` S, I.6–I.8, R.5, R.9, R.26, R.44 (R
+wins). Nothing is published (releases paused behind `vars.PUBLIC_SDK_RELEASES_ENABLED == 'true'`), so the removals
+need no deprecation step and versions stay (native 1.5.1, Flutter 1.5.1, React Native 1.6.1, setup command 1.1.1).
+
+- **`track()` removed with everything that only served it.** Android `track`/`trackValidated`, iOS
+  `track(_:revenue:properties:completion:)`, Flutter/RN `track` and the bridges' `track` methods, and `ClikgateMoney`
+  (its only use was `track()` revenue; goals take normal units). Contract: `events_request`/`events_response` schemas
+  and the four events fixtures deleted; `events` removed from the `SDK_CALL` enum.
+- **Firebase `mirrorEvents` / `eventNameMap` removed** (Android, iOS, Flutter, RN) and `mirror_events` dropped from
+  the config schema: they mirrored app events, which no longer exist. Goals are not logged to Firebase (the spec
+  asks for no new behaviour here). Attribution forwarding and the app instance id are unchanged. Owner question
+  below.
+- **Old queued app events on upgrade.** The queue is persisted (Android SQLite `clikgate_events.db`, iOS
+  `events.json`); development builds may hold app events. Per G.3.4 (no compatibility concerns) they are dropped on
+  the next flush, silently (one debug log line), without a network call. The queue file names are kept.
+- **Version policy.** `allowed_events` and `strip_event_properties` are no longer read. A blocked SDK's default
+  allowed calls drop `events`; goals are not added to the default (goals were never in it), so a blocked SDK sends
+  goals only when the server lists `goals` in `allowed_calls`. The pump no longer gates flushing on `events`.
+- **R.5 on iOS.** On-device SKAdNetwork / AdAttributionKit conversion-value updates removed (ConversionValueMapper,
+  SystemConversionValues, `conversion_value_schema` parsing, `skan_last_fine_value` state); StoreKit and
+  AdAttributionKit are no longer imported. `conversion_value_schema` removed from the contract's config schema
+  (servers that still send it are ignored; tested). Android never had this code.
+- **R.9 `received`.** New status on every platform (`GoalStatus.RECEIVED`, `.received`, `GoalStatus.received`,
+  `GoalStatus.Received`), parsed from `results[].status == "received"`. It is a success: the item leaves the queue and
+  is never retried; the reason (`not_counted_yet`, `goal_archived`) is passed through. Fixture
+  `goals_response_received`.
+- **`getInstallationId()` (I.7, R.26).** No public getter existed (only the internal Engage request context), so one
+  was added per platform: Android `suspend fun getInstallationId(): String?` plus `getInstallationId(listener)` for
+  Java and the wrappers (`InstallationIdListener`, main thread); iOS `installationId() async throws -> String?`
+  (throws `not_configured` before `configure`, like `attribution()`) plus a completion form for the wrappers;
+  Flutter/RN `await Clikgate.getInstallationId()` (RN native returns `{installationId}` because codegen promises
+  carry objects in this bridge). Logic stays native; the wrappers only pass the value.
+  - **Null rules:** opted out; consent required and attribution not granted (**pending as well as denied**: while
+    pending the SDK sends nothing identifying and the server doesn't know the installation yet, so a Path B
+    `identifyUser` would fail R.25's "active in the last 7 days" check anyway); deep-link-only mode
+    (`app_attribution` off). Private mode: allowed.
+  - **"Waits for the first launch":** with no config yet, it waits for the first config answer (one attempt, so
+    offline it answers at once), at most 5 s, then answers from what is known. On iOS it also creates the Keychain
+    installation ID if `start()` hasn't run yet (same ID the install then sends). Android: before `configure()` the
+    call is queued like other pre-configure calls.
+  - Never logged in full (the samples show the first 8 characters only).
+- **Identity docs.** Every README and platform guide documents `identifyUser()` (Path A default with the server SDK
+  function names) and the installation ID (Path B) and links https://clikgate.com/docs/identify-users; the guard
+  checks those links. Doc comments on `identifyUser` and the getter carry the same link.
+- **Setup command.** It never generated `track()`. Next steps gain step 4 "Identify signed-in users" (Path A first,
+  Path B mentioned, guide link). It still doesn't edit sign-in code (it can't know the app's auth flow).
+- **CI guard (R.44).** `scripts/check_no_track.mjs` + `.github/workflows/no-track-guard.yml`, same patterns and
+  exemptions as `clikgate_sdks` (docs/spec/, third-party/build output, CHANGELOG `- **Removed` lines, the
+  `no-track-guard: 404 test` marker; here it marks the two tests asserting the removed route is never called), plus
+  the identify-users link check on the 8 mobile SDK pages.
+- **Plan wording.** Doc comments that said goals/events "need Growth" were already fixed earlier on 2026-11-08; the
+  rest of the docs now say goals work on every plan. Labels stay "Growth and up" (I.8.7).
+- **Fixture versions.** `install_request_android` / `_ios` / `_opted_out` said `sdk_version` 1.5.0 while the SDKs are
+  1.5.1 (Change 21), which failed two Android contract tests; set to 1.5.1.
+- **R.6 `deeplink_handled` in live mode (App banners, B.10.4).** Wire shape taken from `clikgate_api` (C22 backend,
+  2026-11-08): `/v1/sdk/resolve` answers `measure_right_screen: true` when the opening click is an App banner tap with
+  "measure right screen" on; the SDK then sends `deeplink_handled` in live mode too, with that click as `click_id`
+  (Android, iOS; Flutter and React Native through the native SDKs). Test mode and the debug view work as before.
+  Still never queued, metered or a goal. Contract: `click_id` on `deeplink_handled_request`, `measure_right_screen` on
+  `resolve_response`, fixtures `resolve_response_banner_right_screen` and `deeplink_handled_request_banner`. Only
+  `/resolve` carries the flag (banner taps open the installed app); a deferred `/install` answer doesn't.
+- **Read and decided, no SDK work:** U/V (uninstall add-on and data: the SDK keeps sending the push token; checks
+  are server-side silent pushes, add-on billing is backend), A, N, M, P (dashboard/backend reports), the rest of B.
+
 ## Change 20 — `deeplink_handled` for the live check (C20-S1, 2026-11-04)
 
 Spec: `clikgate_api/docs/spec/clikgate-change-20-activity-offers-billing-dashboards.md` S.1, S.2, F and R.40 (R
@@ -239,6 +334,6 @@ Spec: `clikgate_api/docs/spec/clikgate-change-17-ab-password-rewards.md` R.2 (wi
   paragraph was stale after Change 20 (basic attribution on every plan): rewritten, and "unlimited" became "no monthly
   cap". `shared/API_CONTRACT.md` "Change 21 additions" covers basic attribution (the Change 20 open item), the open
   payloads and `twclid`.
-- **Open item.** The deep-link-only warning text in the SDKs still says "needs Growth" (`warnNeedsGrowth`); since
-  Change 20 that mode means attribution switched off. Changing the text means touching the iOS core (size budget)
-  and the tests that match it, so it is left for a later release.
+- **Resolved (2026-11-08).** The deep-link-only warning text no longer says "needs Growth": it says app attribution
+  is switched off (Android and iOS; the new iOS text is shorter than the old one, so the core size does not grow).
+  The identifier `warnNeedsGrowth` is unchanged.

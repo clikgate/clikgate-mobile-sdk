@@ -84,7 +84,8 @@ enum SemVer {
 
 /// SDK call names of `blocked_instructions.allowed_calls` for a request path.
 enum SDKCall {
-    static let blockedDefault = ["config", "install", "open", "events", "opt_out", "consent", "install_ping"]
+    /// Goals only when the server lists `goals` (no `events` call).
+    static let blockedDefault = ["config", "install", "open", "opt_out", "consent", "install_ping"]
 
     static func name(path: String) -> String {
         var p = path
@@ -104,47 +105,10 @@ enum SDKCall {
 
 /// Google Analytics / Firebase limits (checked 2026-10-22, FIRAnalytics.h 13.0.1 and GA4 docs).
 enum FirebaseLimits {
-    static let maxNameLength = 40
-    static let maxParams = 25
     static let maxStringValue = 100
-    static let maxUserPropertyName = 24
     static let maxUserPropertyValue = 36
-    static let reservedPrefixes = ["firebase_", "google_", "ga_"]
-
-    static func isValidName(_ name: String, maxLength: Int = maxNameLength) -> Bool {
-        guard (1...maxLength).contains(name.count), let first = name.unicodeScalars.first,
-              ("a"..."z").contains(first) || ("A"..."Z").contains(first) else { return false }
-        guard name.unicodeScalars.allSatisfy({ ("a"..."z").contains($0) || ("A"..."Z").contains($0) || ("0"..."9").contains($0) || $0 == "_" })
-        else { return false }
-        let lower = name.lowercased()
-        return !reservedPrefixes.contains { lower.hasPrefix($0) }
-    }
 
     static func truncate(_ s: String, _ n: Int) -> String { s.count <= n ? s : String(s.prefix(n)) }
-
-    /// Currencies without minor units (ISO 4217 exponent 0) that Clikgate customers are likely to use.
-    static let zeroDecimal = ["JPY", "KRW", "UGX", "RWF", "XAF", "XOF", "VND", "CLP", "ISK", "PYG", "GNF", "KMF", "BIF", "DJF", "VUV", "XPF"]
-
-    static func majorUnits(_ money: ClikgateMoney) -> Double {
-        zeroDecimal.contains(money.currency) ? Double(money.amountMinor) : Double(money.amountMinor) / 100
-    }
-
-    /// Scalar properties as Firebase parameters (strings truncated, booleans as 0/1, maps/lists dropped).
-    static func parameters(from props: [String: JSONValue]?, revenue: ClikgateMoney?) -> [String: Any] {
-        var out: [String: Any] = [:]
-        if let r = revenue { out["value"] = majorUnits(r); out["currency"] = r.currency }
-        for (key, v) in props ?? [:] {
-            guard out.count < maxParams, out[key] == nil, isValidName(key) else { continue }
-            switch v {
-            case .string(let s): out[key] = truncate(s, maxStringValue)
-            case .int(let i): out[key] = NSNumber(value: i)
-            case .double(let d): out[key] = d
-            case .bool(let b): out[key] = b ? 1 : 0
-            default: continue
-            }
-        }
-        return out
-    }
 }
 
 // MARK: - Synchronous snapshot (facade reads without awaiting the actor)

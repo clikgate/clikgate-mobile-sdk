@@ -1,3 +1,52 @@
+# Progress: Change 23 S (unknown goal names refused), 2026-11-08
+
+Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` S, R.1, R.9. Decisions: [DECISIONS.md](DECISIONS.md)
+"Change 23". Versions: no bump.
+
+| Item | Status | Where |
+|---|---|---|
+| `refused` / `unknown_goal` and `goal_archived` final | already final; whole-request `422` result body now keeps the reason | `Http.kt` `failure`, `APIClient.swift` `decodeError` |
+| Debug-build message | ``Goal `{name}` isn't set up in Clikgate``, name only | `Core.kt` `resolveGoal`, `Core.swift` `noteUnsetGoal` |
+| Docs | reason lists on every platform, CHANGELOGs, contract | `Models.kt`, `ClikgateModels.swift`, `models.dart`, `models.ts` |
+| Contract | `goals_response_refused_unknown_goal`, `goal_refusal` schema + 2 fixtures; 37 schemas, 74 fixtures valid | `shared/generate.py`, `API_CONTRACT.md`, `SDK_BEHAVIOUR.md` |
+| Tests | Android `StrictGoalNamesTest` (5), iOS `StrictGoalNamesTests` (4), Flutter `strict_goal_names_test.dart` (3), RN `strictGoalNames.test.ts` (3) | |
+
+# Progress: Change 22 C22-S (one method `goal()`, installation ID, `received`), 2026-11-08
+
+Spec: `docs/spec/clikgate-change-22-goals-identity-uninstalls-banners-reports.md` S, I.6–I.8, R.5, R.6, R.9, R.26, R.44.
+Decisions: [DECISIONS.md](DECISIONS.md) "Change 22". **Versions: no bump** (nothing is published; native 1.5.1,
+Flutter 1.5.1, React Native 1.6.1, setup command 1.1.1; `check_cli_sdk_versions.mjs` passes). Public release jobs
+stay behind `vars.PUBLIC_SDK_RELEASES_ENABLED == 'true'`.
+
+| Item | Status | Where |
+|---|---|---|
+| S: `track()` removed | done on Android, iOS, Flutter, React Native (API, bridges, queue, samples, tests, docs); `ClikgateMoney`, Firebase `mirrorEvents`/`eventNameMap`, version-policy `allowed_events`/`strip_event_properties` removed with it | `Clikgate.kt`, `Core.kt`, `Clikgate.swift`, `Core.swift`, `clikgate.dart`, `Clikgate.ts`, plugins |
+| Old queued app events | dropped on the next flush, no network call (tests on Android and iOS) | `Core.kt` `flush`, `Core.swift` `nextBatch` |
+| R.5 no conversion values | iOS on-device SKAdNetwork / AdAttributionKit updates and `conversion_value_schema` removed | `Rules.swift`, `Platform.swift`, `Wire.swift` |
+| R.9 `received` | new status on every platform, a success, never retried | `Models.kt`, `ClikgateModels.swift`, `models.dart`, `models.ts` |
+| I.7 / R.26 installation ID | `Clikgate.getInstallationId()` (Android suspend + listener), `try await Clikgate.shared.installationId()` (iOS), `await Clikgate.getInstallationId()` (Flutter, RN); null when tracking is off | facades, `Core.installationIdForApp` |
+| I.8 identity docs | `identifyUser()` Path A and Path B on every README and platform guide, link to https://clikgate.com/docs/identify-users | `README.md`, `docs/*.md`, platform READMEs |
+| R.6 banner right screen | `deeplink_handled` in live mode when `/resolve` says `measure_right_screen` (with `click_id`) | `Core.kt` / `Core.swift` `reportHandled` |
+| Setup command | step 4 "Identify signed-in users" (Path A, Path B, guide link); never generated `track()` | `cli/src/setup.ts`, `constants.ts`, `dist/cli.cjs` rebuilt |
+| Contract | events schemas/fixtures removed; `received`, R.6 fields, `goals_response_received`, banner fixtures; install fixtures at 1.5.1; 36 schemas, 70 fixtures valid | `shared/generate.py`, `API_CONTRACT.md`, `SDK_BEHAVIOUR.md`, `PLATFORM_CHANNEL.md` |
+| R.44 CI guard | `scripts/check_no_track.mjs` (+ `--self-test`) and `.github/workflows/no-track-guard.yml`: clean | |
+| Sample backend | `POST /orders` sends the `purchase` goal through `POST /v1/goals/events` | `samples/backend` |
+| iOS core ceiling | **385.3 KB** after the R.22 follow-up (382.9 KB before it; was 407.6 KB; budget 410 KB), Engage 92.4 KB | `check_size.sh` |
+| R.22 identify `verified` / `reason` (follow-up, 2026-11-08) | Android and iOS: identify 200 with a token sent and `verified: false` logs a warning naming the reason in plain words (customer ID kept, unverified); absent fields = older server, its `422 identity_invalid` still handled; referral / feature calls refused with `403 identity_expired` or `422 identity_invalid` log a warning. Never the token, secret or customer ID. No public API change (identify returns nothing, so Flutter / RN bridges unchanged). Tests use `identify_response_token_expired` | `Core.kt` `sendIdentify` / `featureCall`, `Core.swift` `sendIdentify` / `featureCall`, `IdentityVerifyTest.kt` (6), `IdentityVerifyTests.swift` (5); iOS `Logger.testSink` is `#if DEBUG` only |
+| AI guides API surface | regenerated in `clikgate_sdks` (`generate-api-surface.mjs --mobile`); `--check` up to date | `clikgate_sdks/ai-guides/clikgate-setup/references/api-surface.md` |
+
+## Test runs (2026-11-08, one heavy build at a time)
+
+- Android `:clikgate:testDebugUnitTest :clikgate-engage:testDebugUnitTest :clikgate:apiCheck :sample:compileDebugKotlin`: 236 + 39 tests, 0 failures; `:clikgate:lintDebug` passes.
+- iOS `xcodebuild test -scheme Clikgate-Package` (iPhone 15 simulator): 201 tests (ClikgateTests 177, ClikgateEngageTests 24), 0 failures; `check_api.sh` and `check_size.sh` pass.
+- Flutter (fvm 3.35.4) `flutter test`: 79 passed; `flutter analyze` clean (plugin and example).
+- React Native `npx jest`: 129 passed (17 suites); typecheck and lint clean.
+- Setup command `vitest`: 142 passed; typecheck clean; `check_cli_sdk_versions.mjs` passes.
+- Sample backend: 15 passed.
+- `node scripts/check_no_track.mjs --self-test` and the repository scan: pass.
+- R.22 follow-up: Android `:clikgate:testDebugUnitTest` 242 tests, 0 failures; iOS `xcodebuild test -scheme Clikgate-Package` (iPhone 15 Pro simulator) 230 tests (ClikgateTests 206, ClikgateEngageTests 24), 0 failures; `check_api.sh` passes (290 + 141 declarations), `check_size.sh` core 385.3 KB / Engage 92.4 KB; `check_no_track.mjs` clean; `check_cli_sdk_versions.mjs` passes.
+- Not run: Gradle / Xcode builds of the Flutter and React Native wrappers' native code (the bridges changed: `track` removed, `getInstallationId` added), Flutter Engage and React Native Engage tests (unchanged), emulators, device tests.
+
 # Progress: Change 21 C21-S (opens by existing users, one tap one click, X `twclid`)
 
 Spec: `docs/spec/clikgate-change-21-opens-deeplinks-ai-site-ads-chat-staff.md` S, R.2-R.4, R.25, K.3. Decisions:
@@ -269,7 +318,7 @@ unreleased work, and the CLI constants stay equal to the SDKs.
 
 | Item | Status | Where |
 |---|---|---|
-| `goal()` / `track()` in deep-link-only mode | done (Android, iOS; Flutter and React Native through the native SDKs): when `app_attribution` is off (cached config, or a `feature_disabled` answer since the last config fetch) they log one "needs Growth" warning per launch and return without queueing; no error | `Core.kt`, `Core.swift` |
+| `goal()` / `track()` in deep-link-only mode | done (Android, iOS; Flutter and React Native through the native SDKs): when `app_attribution` is off (cached config, or a `feature_disabled` answer since the last config fetch) they log one "attribution is switched off" warning per launch and return without queueing; no error | `Core.kt`, `Core.swift` |
 | `feature_disabled` on `/events` and `/goals` | done: the batch is dropped, never retried, `app_attribution` is marked off, the config is refreshed, and the rest of the queue is dropped without a call. Before: both were dropped without retry already, but with no warning (iOS, Android events) or a warning on every batch (Android goals), and later calls kept going to the network | `Core.kt` `flush` / `flushGoals`, `Core.swift` `flush` |
 | "No deferred link" at the cap | **already done**: `deep_link: null` with organic attribution is the normal empty install result (no callback, no error, no retry). Now covered by tests | `DeepLinkOnlyTest`, `DeepLinkOnlyTests` |
 | `deep_linking` feature key | added to the catalogue defaults (on before the first config fetch and on older servers). No new public constant or method | `SdkConfig.kt`, `FeatureSwitches.swift` |

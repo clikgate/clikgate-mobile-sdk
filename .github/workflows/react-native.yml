@@ -121,8 +121,10 @@ jobs:
             CODE_SIGNING_ALLOWED=NO build | tail -50
 
   # Publishes @clikgate/react-native-engage to npm on react-native-engage-v* tags (same secrets).
+  # Public releases are PAUSED (owner 2026-11-08): track() is being removed and no published version may include it.
+  # This job runs only when the repository variable PUBLIC_SDK_RELEASES_ENABLED is set to 'true' (unset = paused).
   release-engage:
-    if: startsWith(github.ref, 'refs/tags/react-native-engage-v')
+    if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/react-native-engage-v')
     needs: [js]
     runs-on: ubuntu-latest
     environment: npm
@@ -157,7 +159,7 @@ jobs:
   # OIDC). Requires the NPM_TOKEN secret in the `npm` environment. Release
   # com.clikgate:clikgate-android and the Clikgate pod with the matching version first.
   release:
-    if: startsWith(github.ref, 'refs/tags/react-native-v')
+    if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/react-native-v')
     needs: [js, android, ios]
     runs-on: ubuntu-latest
     environment: npm

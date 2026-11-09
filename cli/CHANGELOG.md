@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (Change 22)
+
+- Next steps add "Identify signed-in users": Path A by default (a token from the server's `createIdentityToken`, then `identifyUser`), Path B mentioned (`getInstallationId()` sent to the business's server), with the guide link https://clikgate.com/docs/identify-users. The generated code never had `track()`; tests now assert it stays out.
+
 ## 1.1.1 (unreleased)
 
 - Installs the SDK patch releases: Android, iOS and Flutter 1.5.1, React Native 1.6.1 (Change 21: one tap is one

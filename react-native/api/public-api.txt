@@ -1,7 +1,6 @@
 export CLIKGATE_PROVIDERS
 export Clikgate
 export ClikgateError
-export ClikgateMoney
 export ClikgateProvider
 export GoalKind
 export GoalStatus
@@ -16,6 +15,7 @@ Clikgate.enableFirebaseForwarding
 Clikgate.enableGoogleOnDeviceMeasurement
 Clikgate.getAttribution
 Clikgate.getConsent
+Clikgate.getInstallationId
 Clikgate.getRequestContext
 Clikgate.goal
 Clikgate.handleUrl
@@ -32,7 +32,6 @@ Clikgate.setConsent
 Clikgate.setConsentRegion
 Clikgate.setPushToken
 Clikgate.setTrackingEnabled
-Clikgate.track
 Clikgate.referrals.applyCode
 Clikgate.referrals.referredBy
 ClikgateError.codeNotFound

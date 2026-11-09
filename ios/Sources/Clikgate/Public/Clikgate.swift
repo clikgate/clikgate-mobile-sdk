@@ -232,53 +232,11 @@ public final class Clikgate: NSObject, @unchecked Sendable {
         }
     }
 
-    // MARK: - Events
-
-    /// Tracks an in-app event. Validation errors (name pattern, currency, properties > 8 KB)
-    /// are reported to `completion` and the log; the event is dropped. Needs install attribution
-    /// (Growth and up): on a deep-link-only plan it logs one "needs Growth" warning and does nothing
-    /// (no error).
-    public func track(_ name: String, revenue: ClikgateMoney? = nil, properties: [String: Any]? = nil,
-                      completion: (@MainActor @Sendable (ClikgateError?) -> Void)? = nil) {
-        let finish = reporter("track(\(name))", completion)
-        guard let c = currentCore else { finish(.notConfiguredError()); return }
-        if let e = Self.validate(name: name, revenue: revenue) { finish(e); return }
-        let props: [String: JSONValue]?
-        switch EventValidation.properties(properties) {
-        case .success(let p): props = p
-        case .failure(let e): finish(e); return
-        }
-        Task {
-            await c.track(name: name, revenue: revenue, properties: props)
-            finish(nil)
-        }
-    }
-
-    /// Logs an error (never goal references or values) and delivers it to `completion` on the main queue.
-    private func reporter(_ label: String, _ completion: (@MainActor @Sendable (ClikgateError?) -> Void)?) -> @Sendable (ClikgateError?) -> Void {
-        { [logger] error in
-            if let e = error { logger.error("\(label): \(e.message)") }
-            if let completion = completion { DispatchQueue.main.async { completion(error) } }
-        }
-    }
-
-    static func validate(name: String, revenue: ClikgateMoney?) -> ClikgateError? {
-        guard EventValidation.isValidName(name) else {
-            return ClikgateError(code: ClikgateError.invalidArgument, message: "Event names must match ^[A-Za-z0-9_.$:-]{1,64}$")
-        }
-        if name.hasPrefix("$") {
-            return ClikgateError(code: ClikgateError.invalidArgument, message: "Event names starting with $ are reserved")
-        }
-        if let r = revenue, !EventValidation.isValidCurrency(r.currency) {
-            return ClikgateError(code: ClikgateError.invalidArgument, message: "Currency must be 3 uppercase letters (ISO 4217)")
-        }
-        return nil
-    }
-
     // MARK: - Goals
 
     /// Sends a goal: an outcome your business chose (`account_opened`, `loan_disbursed`, `purchase`), attributed
-    /// to the click or install that brought this user. It is the one method for every goal, Standard or Payment:
+    /// to the click or install that brought this user. It is the one method for what happens in your app, Standard
+    /// or Payment:
     /// `Clikgate.shared.goal("account_opened", value: 2_000_000, currency: "NGN", reference: "APP-55231")` or, for a
     /// Payment goal, `Clikgate.shared.goal("purchase", reference: "T123456", provider: .paystack)`.
     ///
@@ -289,11 +247,12 @@ public final class Clikgate: NSObject, @unchecked Sendable {
     /// `value` is in normal units (never kobo or cents), ≥ 0, at most 15 significant digits, sent as a decimal
     /// string. `reference` is your own unique id (1–128 characters; a UUID is generated when nil). Validated
     /// locally (key `^[a-z][a-z0-9_]*$`, 2–40 characters; currency ISO 4217). Queued, retried and
-    /// consent-buffered like `track`, idempotent by `(key, reference)`, and sent in private mode too. Never put
-    /// customer data in a goal.
+    /// consent-buffered, idempotent by `(key, reference)`, and sent in private mode too. Works on every plan. A name
+    /// counts once it's ticked in the dashboard ("Count this as a goal"). Never put customer data in a goal.
     ///
     /// `completion` gets the result on the main queue once Clikgate answers: `status` `.counted`, `.waiting` (a
-    /// Payment goal waiting for its confirmation) or `.refused`, with a `reason`. Invalid input is refused at once
+    /// Payment goal waiting for its confirmation), `.received` (stored, not counted: the name isn't ticked yet; not
+    /// retried) or `.refused`, with a `reason`. Invalid input is refused at once
     /// (`invalid_argument`). While offline the goal stays queued and `completion` waits; it isn't called if the
     /// app quits first (the goal is still sent on the next launch).
     public func goal(_ key: String, value: Decimal? = nil, currency: String? = nil, reference: String? = nil,
@@ -326,14 +285,44 @@ public final class Clikgate: NSObject, @unchecked Sendable {
     /// `identityToken` from your backend (for referral programs with `require_identity_token`). With nothing to
     /// send it's a no-op. In private mode the customer ID and token are dropped on the device, and the label too
     /// unless your organisation allows labels in private mode.
+    ///
+    /// Identity Path A (the default): your server makes the token with the server SDK's `createIdentityToken` (it
+    /// reads `CLIKGATE_IDENTITY_SECRET`; the secret never goes in the app) and returns it in the sign-in and "current
+    /// user" responses; pass the newest one here. Call after sign-in or sign-up and at app open when already signed
+    /// in; on sign-out call `identifyUser(customerId: nil)`. Path B needs no token: see ``installationId()``.
+    /// Guide: https://clikgate.com/docs/identify-users
     public func identifyUser(label: String? = nil, customerId: String? = "\u{0}", identityToken: String? = nil) {
         guard let c = currentCore else { logger.warning("identifyUser called before configure"); return }
         Task { await c.identifyUser(label: label, customerId: customerId, identityToken: identityToken) }
     }
 
+    /// This installation's ID: the random UUID the SDK created at first launch and sends to Clikgate with every call
+    /// (not personal data; allowed in private mode). For identity Path B, include it in the sign-in request to your
+    /// own server (and at every signed-in app open); your server calls the server SDK's
+    /// `identifyUser({appId, installationId, customerId, label?})`. No identity secret or token is needed.
+    ///
+    /// `try await Clikgate.shared.installationId()`. Right after `configure` it waits for the first launch's config
+    /// answer (a few seconds at most; offline it answers at once). A reinstall gets a new ID. Returns nil when
+    /// tracking is off (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or
+    /// deep-link-only mode), so your server simply skips `identifyUser`. Throws `not_configured` before `configure`.
+    /// Guide: https://clikgate.com/docs/identify-users
+    public func installationId() async throws -> String? {
+        guard let c = currentCore else { throw ClikgateError.notConfiguredError() }
+        return await c.installationIdForApp()
+    }
+
+    /// Completion form of ``installationId()`` (main queue), for the Flutter and React Native wrappers.
+    public func installationId(completion: @escaping @MainActor @Sendable (Result<String?, ClikgateError>) -> Void) {
+        Task {
+            let result: Result<String?, ClikgateError>
+            if let c = currentCore { result = .success(await c.installationIdForApp()) } else { result = .failure(.notConfiguredError()) }
+            await MainActor.run { completion(result) }
+        }
+    }
+
     // MARK: - Opt-out
 
-    /// `false` stops all processing (clears the event queue, tells the server to erase device fields).
+    /// `false` stops all processing (clears the goal queue, tells the server to erase device fields).
     public func setTrackingEnabled(_ enabled: Bool) {
         guard let c = currentCore else { logger.warning("setTrackingEnabled called before configure"); return }
         Task { await c.setTrackingEnabled(enabled) }
@@ -377,7 +366,7 @@ public final class Clikgate: NSObject, @unchecked Sendable {
     /// Sets consent purposes; nil leaves a purpose unchanged. Consent is stored on the device and
     /// sent with every request. When consent is required for this device (EEA, UK and Switzerland by
     /// default, configured in the dashboard) and `attribution` is `unknown`, the SDK buffers on the
-    /// device (up to 7 days or 1,000 events) and sends nothing identifying; `granted` flushes the
+    /// device (up to 7 days or 1,000 goals) and sends nothing identifying; `granted` flushes the
     /// buffer, `denied` drops it. May be called before `configure`.
     public func setConsent(analytics: ClikgateConsentState? = nil, attribution: ClikgateConsentState? = nil,
                            adUserData: ClikgateConsentState? = nil, adPersonalization: ClikgateConsentState? = nil) {

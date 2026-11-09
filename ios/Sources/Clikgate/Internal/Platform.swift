@@ -1,13 +1,9 @@
 import Foundation
 import Security
 import UIKit
-import StoreKit
 import SafariServices
 #if canImport(AdServices)
 import AdServices
-#endif
-#if canImport(AdAttributionKit)
-import AdAttributionKit
 #endif
 #if canImport(AppTrackingTransparency)
 import AppTrackingTransparency
@@ -222,48 +218,6 @@ struct SystemSearchAds: SearchAdsTokenProviding {
     }
 }
 
-/// Conversion value updates: AdAttributionKit on iOS 17.4+, SKAdNetwork 4 (fine + coarse + lock)
-/// on 16.1+, fine-only SKAdNetwork on 15.4–16.0. Apple's interoperability guide says to call both
-/// APIs when an app may have impressions from either framework, so on 17.4+ both are called
-/// (SKAdNetwork first, then AdAttributionKit with the coarse value).
-struct SystemConversionValues: ConversionValueUpdating {
-    func update(fineValue: Int, coarseValue: String?, lockWindow: Bool) async -> Bool {
-        var ok = false
-        if #available(iOS 16.1, *) {
-            let coarse: SKAdNetwork.CoarseConversionValue
-            switch coarseValue {
-            case "high": coarse = .high
-            case "medium": coarse = .medium
-            default: coarse = .low
-            }
-            ok = await withCheckedContinuation { (c: CheckedContinuation<Bool, Never>) in
-                SKAdNetwork.updatePostbackConversionValue(fineValue, coarseValue: coarse, lockWindow: lockWindow) { error in
-                    c.resume(returning: error == nil)
-                }
-            } || ok
-        } else if #available(iOS 15.4, *) {
-            ok = await withCheckedContinuation { (c: CheckedContinuation<Bool, Never>) in
-                SKAdNetwork.updatePostbackConversionValue(fineValue) { error in c.resume(returning: error == nil) }
-            } || ok
-        }
-        #if canImport(AdAttributionKit)
-        if #available(iOS 17.4, *) {
-            do {
-                if let raw = coarseValue, let coarse = AdAttributionKit.CoarseConversionValue(rawValue: raw) {
-                    try await Postback.updateConversionValue(fineValue, coarseConversionValue: coarse, lockPostback: lockWindow)
-                } else {
-                    try await Postback.updateConversionValue(fineValue, lockPostback: lockWindow)
-                }
-                ok = true
-            } catch {
-                // No pending postback (no ad impression) is not an error worth surfacing.
-            }
-        }
-        #endif
-        return ok
-    }
-}
-
 struct SystemAppAttest: AppAttesting {
     var isSupported: Bool {
         #if canImport(DeviceCheck)
@@ -332,7 +286,7 @@ struct SystemBrowser: BrowserPresenting {
         return true
     }
 
-    /// Change 17 R.2: a password link's page in the system browser (Safari keeps the password cookie for the redirect
+    /// A password link's page in the system browser (Safari keeps the password cookie for the redirect
     /// that follows). Whether iOS opens Safari or hands the app's own Universal Link straight back is not documented,
     /// so `DeepLinkDispatcher.handOff` opens one URL at most once per 30 s: no loop either way. Check on a device
     /// (TESTING_DEEP_LINKS.md).

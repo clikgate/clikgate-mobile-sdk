@@ -44,9 +44,9 @@ class SampleApp : Application() {
 
         initFirebase()
         registerFcmToken()
-        // Change 03: mirror Clikgate attribution (and tracked events) into Firebase Analytics when the
-        // app's Clikgate settings enable GA4 forwarding. Needs analytics consent where required.
-        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions(mirrorEvents = true, eventNameMap = mapOf("purchase" to "purchase")))
+        // Change 03: forward Clikgate attribution into Firebase Analytics when the app's Clikgate settings
+        // enable GA4 forwarding. Needs analytics consent where required.
+        Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions())
     }
 
     /**

@@ -17,7 +17,7 @@ the same change.
   Field names are `snake_case`. Unknown response fields must be ignored by SDKs (the
   server adds fields without bumping the version).
 - Timestamps are UTC ISO 8601 with `Z` (`2026-10-20T10:02:41Z`; fractional seconds allowed).
-- Money is `revenue_minor` (integer, minor units) plus `currency` (ISO 4217, uppercase).
+- Goal values are decimal strings in normal units (`value`) plus `currency` (ISO 4217, uppercase).
 - Timeouts: SDKs use 10 s connect + 10 s read.
 
 ### Headers (sent by SDKs)
@@ -29,7 +29,7 @@ the same change.
 | `Clikgate-SDK-Native-Version` | when wrapped | the native SDK underneath a wrapper: `android/1.0.0` or `ios/1.0.0` |
 | `Clikgate-Installation-Id` | every call after the installation id exists (i.e. always, including `/install`) | UUIDv4, lowercase |
 | `Clikgate-Identity-Token` | referral calls, when the app supplied one | see "Identity tokens" |
-| `Idempotency-Key` | `/events` and `/goals` (batch UUID) | one random UUIDv4 per request, reused by that request's retries, never derived from the content (change 09, X.E15); the server dedupes events by `event_id` and goals by `(goal, reference)` anyway |
+| `Idempotency-Key` | `/goals` (batch UUID) | one random UUIDv4 per request, reused by that request's retries, never derived from the content (change 09, X.E15); the server dedupes goals by `(goal, reference)` anyway |
 
 ### Errors
 
@@ -96,15 +96,14 @@ Response `200` — `schemas/config_response.schema.json`:
   "referral_programs": [
     {"id": "rpg_01J...", "name": "Invite friends", "status": "active", "client_link_creation": true, "allow_manual_code_entry": true, "require_identity_token": true}
   ],
-  "conversion_value_schema": null,
   "batching": {"max_batch_size": 100, "flush_interval_seconds": 15, "flush_at_count": 20, "max_queue_events": 1000, "max_queue_bytes": 1048576},
   "reattestation_interval_days": 7,
   "session_timeout_minutes": 30
 }
 ```
 
-`pasteboard_matching` is `off` or `on_interstitial_tap`. `conversion_value_schema` is
-documented under "SKAN / AdAttributionKit".
+`pasteboard_matching` is `off` or `on_interstitial_tap`. (Change 22, R.5: there is no `conversion_value_schema`;
+the SDKs never set SKAdNetwork / AdAttributionKit conversion values.)
 
 `link_domains` (connected domains, backend Part 3 §31.3): every **active** link domain in the
 organisation's domain groups, as host names (`["ybr.ng", "go.yourbrand.com"]`). Domains in a group are
@@ -279,28 +278,10 @@ Custom domains and `matched: true` responses behave as before. The list is fixed
 `SHARED_LINK_DOMAINS` in `generate.py`; each SDK's tests compare the two). A future shared domain
 needs an SDK release; until then its unmatched links are dropped as before.
 
-### POST `/v1/sdk/events`
+### App events (removed in Change 22)
 
-Batch of app events (≤ 100). Events are deduped by `event_id` (UUIDv4 created at
-`track()` time and kept across retries, together with `occurred_at`).
-
-Request — `schemas/events_request.schema.json`:
-
-```json
-{"events": [
-  {"event_id": "4f1c...", "name": "purchase", "occurred_at": "2026-10-20T10:02:41.123Z",
-   "revenue_minor": 1500000, "currency": "NGN", "properties": {"order_id": "A-1001"}}
-]}
-```
-
-- `name`: `^[A-Za-z0-9_.$:-]{1,64}$`. Names starting with `$` are reserved for the SDK
-  (`$identify`).
-- `properties`: flat or nested JSON object, ≤ 8 KB serialised.
-- `revenue_minor` and `currency` go together (both or neither).
-
-Response `200`: `{"accepted": 1, "duplicates": 0, "rejected": [{"event_id": "...", "code": "validation_error", "message": "..."}]}`.
-Rejected events are dropped by the SDK (never retried). `accepted + duplicates` are
-removed from the queue.
+There is no app-event call. `goal()` is the only method for what happens in an app; goals go to
+`POST /v1/sdk/goals` ("Change 06 additions"). See "Change 22 additions".
 
 ### POST `/v1/sdk/identify`
 
@@ -434,21 +415,8 @@ Clikgate's silent pushes carry:
 
 ## SKAN / AdAttributionKit
 
-`config.conversion_value_schema` (or `null`):
-
-```json
-{"id": "cvs_01J...", "version": 3,
- "rules": [
-   {"fine_value": 1, "coarse_value": "low", "event": "signup", "lock_window": false},
-   {"fine_value": 20, "coarse_value": "medium", "event": "purchase", "min_revenue_minor": 500000, "currency": "NGN", "lock_window": false},
-   {"fine_value": 63, "coarse_value": "high", "event": "purchase", "min_revenue_minor": 5000000, "currency": "NGN", "lock_window": true}
- ]}
-```
-
-On every tracked event the iOS SDK finds the rules whose `event` matches (and revenue ≥
-`min_revenue_minor` when set) and picks the highest `fine_value`. If that is higher than
-the last value it set, it updates the postback conversion value (fine + coarse,
-`lock_window`). Conversion values only ever go up.
+Removed in Change 22 (R.5): `/config` has no `conversion_value_schema` and the iOS SDK never updates postback
+conversion values from `goal()`. Postback copies still reach Clikgate through the app's `Info.plist` endpoints.
 
 ## v3 additions (spec v3: feature switches, leaderboards, identity checks, offline codes, WhatsApp)
 
@@ -569,7 +537,7 @@ a missing `consent` as `unknown` purposes in a required region, see B.3). Schema
 ### Consent object (requests)
 
 Sent as `consent` in the body of **every** SDK `POST` from 1.2.0: `/install`, `/open`,
-`/resolve`, `/events` (top level of the batch), `/identify`, `/push-token`, `/attest`, `/consent`,
+`/resolve`, `/goals` (top level of the batch), `/identify`, `/push-token`, `/attest`, `/consent`,
 `/install-ping`. (`/opt-out` and `/attest/challenge` carry none; `GET /config` carries only the
 region hint, below.)
 
@@ -623,7 +591,7 @@ Response additions (all optional; `fixtures/config_response*.json`):
   "latest_version": "1.2.0",
   "version_status": "current",
   "blocked_instructions": null,
-  "firebase_forwarding": {"enabled": true, "log_attribution_event": true, "set_user_properties": true, "mirror_events": false, "report_app_instance_id": true},
+  "firebase_forwarding": {"enabled": true, "log_attribution_event": true, "set_user_properties": true, "report_app_instance_id": true},
   "features": {"attestation": {"ios_app_attest": "monitor", "android_play_integrity": "monitor", "android_cloud_project_number": 123456789012}}
 }
 ```
@@ -641,9 +609,9 @@ Response additions (all optional; `fixtures/config_response*.json`):
 | `min_supported_version` | semver \| null | Lowest version still `supported` for the platform of `Clikgate-SDK-Version`. |
 | `latest_version` | semver \| null | Newest released version for that platform. |
 | `version_status` | `current` \| `supported` \| `deprecated` \| `blocked` \| null | From `sdk_versions` for the SDK making the call (`Clikgate-SDK-Version`; when wrapped, the worse of it and `Clikgate-SDK-Native-Version`). Null/absent ⇒ the SDK compares itself with `min_supported_version` (lower ⇒ treated as `deprecated`). |
-| `blocked_instructions` | object \| null | Only with `version_status: "blocked"`. `allowed_calls`: SDK calls still allowed (`config`, `install`, `install_ping`, `open`, `resolve`, `events`, `identify`, `push_token`, `opt_out`, `consent`, `attest`, `apple_search_ads`, `referrals`, `leaderboards`, `codes`); `allowed_events`: event names still sent (null = any); `strip_event_properties`: send events without `properties`; `message`: logged as an error once per launch. Absent with `blocked` ⇒ the SDK uses `["config", "install", "open", "events", "opt_out", "consent", "install_ping"]`, any event name, properties stripped. |
+| `blocked_instructions` | object \| null | Only with `version_status: "blocked"`. `allowed_calls`: SDK calls still allowed (`config`, `install`, `install_ping`, `open`, `resolve`, `goals`, `identify`, `push_token`, `opt_out`, `consent`, `attest`, `apple_search_ads`, `referrals`, `leaderboards`, `codes`); `message`: logged as an error once per launch. Absent with `blocked` ⇒ the SDK uses `["config", "install", "open", "events", "opt_out", "consent", "install_ping"]`, any event name, properties stripped. |
 | `firebase_forwarding.enabled` | bool | Plan feature `ga4_forwarding` + the app's GA4 setting. The SDK forwards to Firebase only when this is true **and** the app called `enableFirebaseForwarding`. Absent ⇒ off. |
-| `firebase_forwarding.log_attribution_event` / `set_user_properties` / `mirror_events` / `report_app_instance_id` | bool | Server-side switches ANDed with the app's options. Defaults: `true`, `true`, `false`, `true`. |
+| `firebase_forwarding.log_attribution_event` / `set_user_properties` / `report_app_instance_id` | bool | Server-side switches ANDed with the app's options. Defaults: `true`, `true`, `true`. |
 | `features.attestation.android_cloud_project_number` | int \| null | The customer's Google Cloud project number. When set (or `ClikgateOptions.cloudProjectNumber`), Android uses Play Integrity **standard** requests. |
 
 Backend: `version_status` / `blocked_instructions` must come from the `sdk_versions` table (B.4).
@@ -698,7 +666,7 @@ fields on later `/install` polls.
   stored as `li_fat_id` / `sccid`). `/install` and `/open` bodies are `extra="forbid"` on the
   backend, so no `ad_click_ids` object is sent until the backend adds one.
 
-### POST `/v1/sdk/open`, `/resolve`, `/events`, `/identify`, `/push-token`, `/attest` additions
+### POST `/v1/sdk/open`, `/resolve`, `/goals`, `/identify`, `/push-token`, `/attest` additions
 
 - All: `consent` (above).
 - `/open`: `google_click_ids` (`source: "deep_link"`) when the app was opened by a Clikgate link
@@ -735,7 +703,7 @@ don't keep the request IP beyond rate limiting.
 |---|---|
 | `current`, `supported` | normal |
 | `deprecated` (or no status and the SDK's version < `min_supported_version`) | normal, plus one warning per launch naming `latest_version` |
-| `blocked` | one error per launch (`blocked_instructions.message`); only the `allowed_calls`; `/install` with the required fields + `consent` + `install_referrer` / `launch_url` only (no device details, attestation, pasteboard, click ids, Firebase or ODM data); events filtered by `allowed_events`, properties stripped if asked; `/resolve` not allowed ⇒ deep links are delivered locally (URL, path, query parameters) without a server call |
+| `blocked` | one error per launch (`blocked_instructions.message`); only the `allowed_calls`; `/install` with the required fields + `consent` + `install_referrer` / `launch_url` only (no device details, attestation, pasteboard, click ids, Firebase or ODM data); goals only when `allowed_calls` lists `goals` (otherwise refused on the device with `sdk_version_blocked`); `/resolve` not allowed ⇒ deep links are delivered locally (URL, path, query parameters) without a server call |
 
 ### SDK-side error codes (Change 03)
 
@@ -767,13 +735,12 @@ mode on its side anyway). Schemas and fixtures: `schemas/goals_request.schema.js
 
 ### POST `/v1/sdk/goals` (new)
 
-The app SDKs' source for goal events (backend spec B.2 / B.4). A **batch**, like `/events`, so goals
-share the event queue. Same transport and headers as every SDK call: `Clikgate-SDK-Key`,
+The app SDKs' source for goal events (backend spec B.2 / B.4). A **batch** from the SDK's persisted queue. Same transport and headers as every SDK call: `Clikgate-SDK-Key`,
 `Clikgate-SDK-Version` (+ `Clikgate-SDK-Native-Version` when wrapped), `Clikgate-Installation-Id`
 (the backend attributes through the installation's install / opens when `click_id` is absent), and
 `Idempotency-Key` (one random UUIDv4 per request, reused by its retries; honoured by the backend
 from change 09, see "Change 09 additions"; the server also dedupes by `(goal, reference)`). Needs a
-completed `/install` (`404 installation_unknown` otherwise, as for `/events`). Version-policy call
+completed `/install` (`404 installation_unknown` otherwise). Version-policy call
 name: `goals` (added to the `allowed_calls` vocabulary).
 
 Request — `schemas/goals_request.schema.json`:
@@ -799,7 +766,7 @@ Request — `schemas/goals_request.schema.json`:
 | `goals[].is_first` | bool \| null, optional | The business's statement that this is the customer's first such event (`is_first_customer`). Absent/null = not stated. |
 | `goals[].occurred_at` | ISO 8601 UTC, required | Set at `goal()` time and kept across retries. Backend B.2 rule: rejected when more than 5 minutes in the future (`occurred_at_in_future`). Old queued goals (up to the consent buffer's 7 days) are accepted. |
 | `goals[].click_id` | string \| null, optional | The click of the most recent Clikgate deep link that opened the app (`/resolve` match), else the install's attributed click — the value `attributionMetadata()` returns as `cg_click_id`, captured at `goal()` time. Null/absent: the backend attributes through the installation (`Clikgate-Installation-Id` → install / re-engagement opens), using the goal's `window_days`. |
-| `consent` | object \| null, optional | The change 03 consent object (as on `/events`). Backend B.3 enforcement applies to goals as to events. |
+| `consent` | object \| null, optional | The change 03 consent object. Backend B.3 enforcement applies to goals. |
 
 Private mode (B.5) allow-list for this endpoint: exactly the item fields above plus the top-level
 `consent`. They are all goal / click / reference / value fields or the device's own consent record,
@@ -825,7 +792,8 @@ Response `200` — `schemas/goals_response.schema.json`:
 |---|---|
 | `invalid_goal_key` | Key doesn't match the B.1 format (the SDK already checks it). |
 | `goal_not_found` | No goal with this key in the organisation / environment. |
-| `goal_archived` | The goal is archived (`410 goal_archived` on the server API). |
+| `goal_archived` | The goal is archived. Since change 22 R.10 an archived goal answers `received` / `goal_archived`; with "Allow unknown goal names" off it is `refused` / `goal_archived` (change 23 R.1). |
+| `unknown_goal` | No goal behind this name and the organisation's "Allow unknown goal names" is off (change 23). |
 | `invalid_value` | Negative, more than 15 significant digits, or more decimal places than the currency allows. |
 | `value_not_allowed` | The goal's `value_mode` is `none` and a value was sent. |
 | `value_required` | The goal's `value_mode` is `required` and no value was sent. |
@@ -865,14 +833,10 @@ installation's install / latest re-engagement click, within the goal's `window_d
 When `true` the SDKs (1.3.0+), from the cached config:
 - don't send `/identify` (an `identifyUser()` customer ID is dropped on the device and not stored; a pending
   identify is discarded);
-- send `/events` items without `properties`, `revenue_minor` and `currency` (stripped at send time,
-  so events queued before the config arrived are covered; value comes only through `goal()`);
 - log one warning per launch in debug builds;
 - send goals normally.
 
-The backend still enforces private mode for old SDKs: on `/v1/sdk/events` reject an item carrying
-`properties` / `revenue_minor` / `currency` with the per-item code `private_mode_field_rejected`
-(`rejected[].message` names the field only), and refuse `/v1/sdk/identify` with
+The backend still enforces private mode: it refuses `/v1/sdk/identify` with
 `422 private_mode_field_rejected` (`param: "customer_user_id"`). (There is no SDK user-properties
 call; the Firebase `cg_first_*` user properties are written to the app's own Firebase, never to
 Clikgate.)
@@ -911,12 +875,7 @@ items as `duplicates`). Android and iOS did this already; change 09 makes it the
 
 ### Money helper name (X.E10)
 
-Not a wire change. `track()` revenue in minor units is built with `ClikgateMoney.ofMinor(...)` on
-every platform: Android `ClikgateMoney.ofMinor(1_500_000, "NGN")`, iOS
-`ClikgateMoney.ofMinor(1_500_000, currency: "NGN")`, Flutter `ClikgateMoney.ofMinor(1500000, 'NGN')`,
-React Native `ClikgateMoney.ofMinor(1500000, 'NGN')`. The old constructors (Android, iOS, Flutter)
-stay as deprecated aliases. Goals keep normal units (`value`). The wire still sends `revenue_minor`
-plus `currency` on `/events`.
+Removed in Change 22 with the app-event method (it only built event revenue). Goals keep normal units (`value`).
 
 ### App link subdomains (N.1)
 
@@ -948,10 +907,10 @@ app with attribution switched off. The SDK key works on every plan (`403 sdk_dis
 | `POST /v1/sdk/install` | Normal shape; `attribution` is always the organic shape (`channel: "organic"`, no link, click or source); `deep_link` is the deferred link when one matched (fixture `install_response_deep_link_only`) | Deliver `deep_link` as today; attribution reads organic |
 | `POST /v1/sdk/install` at the monthly deferred deep link cap (Free 1,000, Starter 10,000) | The same with `deep_link: null` (fixture `install_response_deferred_cap`) | The normal "no deferred link" result: the app opens its home screen. Never an error, never retried |
 | `POST /v1/sdk/resolve` and the other calls | Normal; `is_reengagement` is always `false` | Unchanged |
-| `POST /v1/sdk/events`, `POST /v1/sdk/goals` | `200 {"accepted": false, "reason": "feature_disabled", "feature": "app_attribution"}` (fixtures `events_response_feature_disabled`, `goals_response_feature_disabled`) | Not called while the cached config says `app_attribution` is off. If the body comes back anyway: drop the batch, mark `app_attribution` off until the next config fetch, refresh the config, never retry |
+| `POST /v1/sdk/goals` | `200 {"accepted": false, "reason": "feature_disabled", "feature": "app_attribution"}` (fixture `goals_response_feature_disabled`) | Not called while the cached config says `app_attribution` is off. If the body comes back anyway: drop the batch, mark `app_attribution` off until the next config fetch, refresh the config, never retry |
 
-`goal()` and `track()` in deep-link-only mode log **one** warning per launch ("… need install attribution,
-which needs Growth …") and do nothing: nothing is queued or sent and no error is returned. Free app
+`goal()` in deep-link-only mode logs **one** warning per launch ("app attribution is switched off") and does
+nothing: nothing is queued or sent and no error is returned. Free app
 subdomains are under `clk.ng` (`yourapp.clk.ng`); like `yourapp.ciz.to` they are app subdomains, **not** shared
 platform domains (the shared-domain check stays an exact host match), so the browser fallback never applies to them.
 
@@ -1053,7 +1012,10 @@ The website share buttons (web script `share.mount`) call the same route with th
 - `POST /v1/sdk/identify` (schema `identify_request`): `customer_user_id` optional (absent keeps, `null` clears; never
   sent in private mode), `identity_token`, `consent`, `label` (1–80 characters, `""` clears). Response
   (`identify_response`): `customer_user_id`, `identity_verified`, `person_id`, `label_ignored` (`plan` | `lower_rank` |
-  null). Fixtures `identify_request_label`, `identify_request_user`, `identify_response_plan`.
+  null), and since Change 22 `verified` (the token check on this call; `false` when no token was sent) and `reason`
+  (`expired` | `bad_signature` | `secret_rotated` | `no_secret_set` | `not_yet_valid` | null). A bad token answers
+  `200` with the customer ID kept unverified; it no longer answers `422 identity_invalid`. Fixtures
+  `identify_request_label`, `identify_request_user`, `identify_response_plan`, `identify_response_token_expired`.
 - `POST /v1/sdk/goals` items: optional `label` (same rules).
 - `GET /v1/sdk/config`: `allow_labels` (absent = true; false only in private mode without "Allow labels in private
   mode"). Fixture `config_response_private_mode` now carries `allow_labels: false`; `config_response_private_mode_labels`
@@ -1112,7 +1074,7 @@ section is updated to what the backend ships.**
 
 Sent by the native SDKs (Flutter and React Native through them) right after a matched Clikgate deep link is
 handed to the app: a direct link from `/resolve` or the deferred link from `/install`. It feeds the "See it live"
-checklist item "Deep link opened the right screen" and the debug view's event stream; it is not an app event.
+checklist item "Deep link opened the right screen" and the debug view's event stream; it is not a goal.
 
 Request — `schemas/deeplink_handled_request.schema.json` (no unknown keys):
 
@@ -1142,13 +1104,13 @@ Response `200` — `schemas/deeplink_handled_response.schema.json`: `{"ok": true
 3. the link was matched and delivered: not for `password_required` / `blocked` answers, unmatched links, browser
    handoffs, or links delivered locally without a server answer (consent buffering, opt-out).
 
-**Delivery:** a call of its own, never put in the event queue, never sent to `/events` or `/goals`, so it never
+**Delivery:** a call of its own, never put in the goal queue, never sent to `/goals`, so it never
 counts as an attributed event and is never metered; it is sent in deep-link-only mode and private mode too (the
 path is already cleaned). One retry on network errors / 408 / 429 / 5xx, then dropped. A 404 from an older server
 is dropped silently.
 
 **Backend expectations (for C20-B5):** test mode → the live check's item 4 and the live event stream (filtered to
-the app and test mode); live mode only while the debug view is open; never written as an app event, never on a
+the app and test mode); live mode only while the debug view is open; never written as a goal, never on a
 meter or an invoice, no personal data stored (the path is already cleaned; the backend may clean it again).
 
 ### `debug_view` on `/resolve` and `/install` answers (new, optional)
@@ -1168,14 +1130,14 @@ No new endpoint, field or SDK method. SDK patch release: Android, iOS and Flutte
 
 - `GET /v1/sdk/config` `features.app_attribution` now reports the organisation's **basic** app attribution
   (`app_attribution_basic`), which is on for every plan. `features.app_attribution_basic` may be listed too; the SDKs
-  read only `app_attribution`, unchanged. So on every plan the SDKs send `/install`, `/events` and `/goals` as usual.
+  read only `app_attribution`, unchanged. So on every plan the SDKs send `/install` and `/goals` as usual.
 - **Deep-link-only mode** (Change 10 above) now means only an app whose attribution is switched off
   (`app_attribution: false`), no longer "the Free and Starter plans". The SDK behaviour in that mode is unchanged.
 - **Full** attribution (`app_attribution`, Growth and up) is server-side only: `is_reengagement` on `/resolve` is
   `false` without it. Nothing changes in the SDKs.
 - **Free limit (Change 20 R.11):** at the Free `attributed_events` limit the server keeps matching installs (deferred
   deep links still arrive) but credits them later; `/install` answers the organic attribution shape and
-  `/events` / `/goals` answer as usual. Never an error, never retried differently.
+  `/goals` answers as usual. Never an error, never retried differently.
 
 ### What an app open sends (S.1, R.1–R.4)
 
@@ -1215,3 +1177,57 @@ unknown keys).
 Tests: `android/clikgate/src/test/java/com/clikgate/Change21Test.kt`, `ios/Tests/ClikgateTests/Change21Tests.swift`,
 `flutter/test/change21_test.dart`, `react-native/src/__tests__/change21.test.ts`, and the web script's
 `clikgate_api/tests/js/clikgate_snippet.test.mjs` (Change 21 block).
+
+## Change 22 additions (one `goal()` method, `received`, the installation ID)
+
+Spec: `docs/spec/clikgate-change-22-goals-identity-uninstalls-banners-reports.md` S, I.7, R.5, R.9, R.26 (R wins).
+
+- **Removed (app events):** the app-event endpoint, its request / response schemas and fixtures (`events_request`,
+  `events_request_consent`, `events_response`, `events_response_feature_disabled`), the SDK method that fed it and
+  its money helper. `goal()` is the only method for what happens in an app; goals go to `POST /v1/sdk/goals`. No
+  public SDK version ever had the old method (nothing was published before this change).
+- **`received` goal status (R.9).** `GoalStatus` gains `received` = stored, not counted. A goal whose name isn't
+  ticked in the dashboard yet answers `200` with a `results[]` item `{status: "received", reason: "not_counted_yet"}`;
+  an archived goal answers `{status: "received", reason: "goal_archived"}` (R.10: no more `410 goal_archived`). The
+  SDKs treat it as success: removed from the queue, never retried, delivered to the app as `received`. Fixture
+  `goals_response_received`.
+- **Old queue items.** The queue is persisted. An app-event item left by an earlier development build (no `goal`)
+  is dropped on the next flush without a network call.
+- **Version policy.** The `allowed_calls` vocabulary has no `events`. A blocked SDK without `allowed_calls` uses the
+  default `config`, `install`, `open`, `opt_out`, `consent`, `install_ping`: it sends goals only when the server
+  lists `goals`. `allowed_events` and `strip_event_properties` are gone from `blocked_instructions` (ignored if sent).
+- **Firebase forwarding.** `firebase_forwarding.mirror_events` is gone (ignored if sent); the SDKs log only
+  `clikgate_attribution` and set the `cg_first_*` user properties. Goals aren't logged to Firebase.
+- **No conversion values (R.5).** `conversion_value_schema` is gone from `/config` (ignored if sent); the iOS SDK
+  never updates SKAdNetwork / AdAttributionKit conversion values.
+- **Installation ID for the app (I.7, R.26).** Not a wire change: the value is the `Clikgate-Installation-Id` /
+  `installation_id` the SDK already sends. Android `Clikgate.getInstallationId()` (suspend) or
+  `getInstallationId(listener)`, iOS `try await Clikgate.shared.installationId()` (or the completion form), Flutter
+  and React Native `await Clikgate.getInstallationId()`. It waits for the first launch's config answer (one attempt,
+  at most about 5 s; offline it answers at once) and is `null` when tracking is off: opted out, consent denied or not
+  given yet where it's required, or deep-link-only mode (`app_attribution` off). New after a reinstall (iOS reports
+  the previous one as `keychain_previous_installation_id`, SDK spec §4). Not personal data; allowed in private mode.
+  The business's server uses it for identity Path B: `POST /v1/people/identify` with `app_id` + `installation_id`
+  (R.25), or `POST /v1/goals/events` with `app_id` + `installation_id` in place of `click_id` (R.2). Guide:
+  https://clikgate.com/docs/identify-users
+
+## Change 23 additions ("Allow unknown goal names" off: `unknown_goal`)
+
+Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` U, S, R.1, R.2, R.9 (R wins).
+
+- **The setting** (`goals.allow_unknown_names`, per organisation, live only; default on) is server-side. On, names
+  with no goal behind them answer `received` / `not_counted_yet` (change 22). Off, they are **refused**:
+  - a `results[]` item `{status: "refused", reason: "unknown_goal", counted: false, goal_kind: null}` (and, like
+    `payment_goal_needs_confirmation`, the matching `rejected[]` item with `code: "unknown_goal"`);
+  - an archived goal: `{status: "refused", reason: "goal_archived"}` (never `410`);
+  - a whole request answered `422` with the result body itself (`{status: "refused", reason: ...}`, schema
+    `goal_refusal`, no `error` envelope) is read as that reason for every goal in the batch.
+- **SDK behaviour (S, R.9):** final. The item leaves the persisted queue, is never retried or re-queued, and the app
+  gets `refused` with the reason. The SDKs never check names on the device and never cache the setting: every call
+  goes to the server, which decides. Debug builds only (Android `FLAG_DEBUGGABLE`, iOS `#if DEBUG`) log
+  ``Goal `{name}` isn't set up in Clikgate`` — the goal name only, never the reference, customer ID, values or labels.
+  Flutter and React Native pass the native result through.
+- **Check order (R.2):** name format, key and environment, unknown or archived name, "Allow from browser", payment
+  fields. An unknown name sent with `provider` and `reference` in strict mode gets `unknown_goal`.
+- **Fixtures:** `goals_response_refused_unknown_goal` (`goals_response`), `goal_refusal_unknown_goal` and
+  `goal_refusal_goal_archived` (`goal_refusal`).

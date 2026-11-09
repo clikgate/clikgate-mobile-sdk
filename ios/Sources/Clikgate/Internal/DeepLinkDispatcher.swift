@@ -38,7 +38,7 @@ final class DeepLinkDispatcher: @unchecked Sendable {
     private var passwordUrl: String?
     private var passwordAt = Date.distantPast
 
-    /// Not async, which keeps `resolve` small. With `password` (Change 17 R.2: `password_required`, the link's
+    /// Not async, which keeps `resolve` small. With `password` (`password_required`, the link's
     /// `web_url`): the password page in the system browser, at most once per URL per 30 s (no loop). Otherwise, with
     /// `fallback`, another organisation's shared-domain link in the in-app browser (main queue), posting
     /// `Clikgate.browserHandoffNotification`.

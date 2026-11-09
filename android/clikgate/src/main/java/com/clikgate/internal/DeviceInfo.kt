@@ -23,7 +23,10 @@ internal open class DeviceInfo(private val context: Context) {
         }
     }
 
-    /** The host app is a debug build (`FLAG_DEBUGGABLE`): the private-mode warning only shows there. */
+    /**
+     * The host app is a debug build (`FLAG_DEBUGGABLE`): the private-mode warning and the "isn't set up" goal line
+     * only show there.
+     */
     open val isDebuggableApp: Boolean by lazy {
         try {
             context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0

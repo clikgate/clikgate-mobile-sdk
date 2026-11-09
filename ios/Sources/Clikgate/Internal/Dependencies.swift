@@ -53,10 +53,6 @@ protocol SearchAdsTokenProviding: Sendable {
     func attributionToken() -> String?
 }
 
-protocol ConversionValueUpdating: Sendable {
-    func update(fineValue: Int, coarseValue: String?, lockWindow: Bool) async -> Bool
-}
-
 protocol AppAttesting: Sendable {
     var isSupported: Bool { get }
     func generateKey() async throws -> String
@@ -84,7 +80,6 @@ struct ClikgateDependencies: Sendable {
     var device: DeviceInfoProviding
     var tracking: TrackingAuthorizationProviding
     var searchAds: SearchAdsTokenProviding
-    var conversionValues: ConversionValueUpdating
     var appAttest: AppAttesting
     var background: BackgroundTaskRunning
     /// `production` / `sandbox` from the embedded provisioning profile's `aps-environment`.
@@ -115,7 +110,6 @@ struct ClikgateDependencies: Sendable {
             device: SystemDeviceInfo(),
             tracking: SystemTrackingAuthorization(),
             searchAds: SystemSearchAds(),
-            conversionValues: SystemConversionValues(),
             appAttest: SystemAppAttest(),
             background: SystemBackgroundTasks(),
             apnsEnvironment: { ProvisioningProfile.apsEnvironment() },

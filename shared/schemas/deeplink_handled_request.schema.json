@@ -12,6 +12,13 @@
     },
     "is_deferred": {
       "type": "boolean"
+    },
+    "click_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
     }
   },
   "additionalProperties": false,

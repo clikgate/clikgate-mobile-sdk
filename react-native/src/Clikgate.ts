@@ -16,7 +16,6 @@ import {
   isConsentState,
   stringMapFromMap,
   type ClikgateFeature,
-  type ClikgateMoney,
   type ClikgateRequestContext,
   type GoalOptions,
   type IdentifyUserOptions,
@@ -53,7 +52,7 @@ function goalValueString(value: unknown): string | null {
 }
 
 /**
- * Clikgate (core): deep links, install attribution, events, identifyUser, referee-side referral
+ * Clikgate (core): deep links, install attribution, goals, identifyUser, referee-side referral
  * calls, uninstall tracking and feature switches. A thin bridge over the native Android and iOS
  * SDKs (no attribution or referral logic in JS). Referral links/stats, leaderboards, promo codes
  * and share helpers live in `@clikgate/react-native-engage` (apps without a backend) or, the
@@ -135,35 +134,9 @@ export const Clikgate = {
   },
 
   /**
-   * Tracks an app event (queued and batched natively). Rejects with
-   * `ClikgateError('invalid_argument')` for an invalid name, currency or properties over 8 KB.
-   */
-  async track(
-    name: string,
-    options: {
-      revenue?: ClikgateMoney | null;
-      properties?: Record<string, unknown> | null;
-    } = {}
-  ): Promise<void> {
-    const revenue = options.revenue ?? null;
-    if (revenue != null && !Number.isInteger(revenue.amountMinor)) {
-      throw new ClikgateError(
-        ClikgateError.invalidArgument,
-        'revenue.amountMinor must be an integer amount in minor units',
-        { param: 'revenueMinor' }
-      );
-    }
-    await invoke<void>('track', {
-      name,
-      revenueMinor: revenue?.amountMinor ?? null,
-      currency: revenue?.currency ?? null,
-      properties: options.properties ?? null,
-    });
-  },
-
-  /**
    * Records a goal: an outcome your business chose, such as `account_opened`, `loan_disbursed`
-   * or `purchase`, attributed to the click or install that brought this user:
+   * or `purchase`, attributed to the click or install that brought this user. `goal()` is the only
+   * method for what happens in your app; it works on every plan:
    * `Clikgate.goal('account_opened', { value: 2000000, currency: 'NGN', reference: 'APP-55231', isFirst: true })`.
    *
    * For a **Payment goal** (set in the dashboard), pass the payment provider and the reference
@@ -176,11 +149,12 @@ export const Clikgate = {
    * `'1500.50'` (pass a string for exact amounts: it reaches the native SDK as a decimal string,
    * never as a double); zero or more, at most 15 significant digits. `reference` is your own
    * unique id (1-128 characters; a UUID is generated when omitted). Queued, retried and
-   * consent-buffered like `track`, idempotent by key and reference, and sent in private mode too.
-   * Never put customer data in a goal.
+   * consent-buffered, idempotent by key and reference, and sent in private mode too. A name counts
+   * once it's ticked in the dashboard ("Count this as a goal"). Never put customer data in a goal.
    *
    * Resolves with a `GoalResult` once Clikgate has answered: `GoalStatus.Counted`,
-   * `GoalStatus.Waiting` (a Payment goal waiting for its confirmation) or `GoalStatus.Refused`
+   * `GoalStatus.Waiting` (a Payment goal waiting for its confirmation), `GoalStatus.Received`
+   * (stored, not counted: the name isn't ticked yet; not retried) or `GoalStatus.Refused`
    * with a `reason` (`invalid_argument` for a bad key, value, currency or reference). Never
    * rejects. While the device is offline the goal stays queued and the promise resolves when it
    * is sent, so don't block your UI on it.
@@ -216,6 +190,13 @@ export const Clikgate = {
    * private mode the customer ID and token are dropped on the device, and the label too unless
    * your organisation allows labels there. Don't put information in labels that your customers
    * wouldn't expect you to keep.
+   *
+   * Identity Path A (the default): your server makes the token with the server SDK's
+   * `createIdentityToken` (it reads `CLIKGATE_IDENTITY_SECRET`; the secret never goes in the app)
+   * and returns it in the sign-in and "current user" responses; pass the newest one here. Call
+   * after sign-in or sign-up and at app open when already signed in; on sign-out call
+   * `identifyUser({ customerId: null })`. Path B needs no token: see `getInstallationId()`.
+   * Guide: https://clikgate.com/docs/identify-users
    */
   async identifyUser(options: IdentifyUserOptions = {}): Promise<void> {
     await invoke<void>('identifyUser', {
@@ -225,6 +206,26 @@ export const Clikgate = {
         : {}),
       identityToken: options.identityToken ?? null,
     });
+  },
+
+  /**
+   * This installation's ID: the random UUID the native SDK created at first launch and sends to
+   * Clikgate with every call (not personal data; allowed in private mode). For identity Path B,
+   * include it in the sign-in request to your own server (and at every signed-in app open); your
+   * server calls the server SDK's `identifyUser({appId, installationId, customerId, label?})`. No
+   * identity secret or token is needed.
+   *
+   * `const id = await Clikgate.getInstallationId();` Right after `configure` it waits for the
+   * first launch's config answer (a few seconds at most; offline it answers at once). A reinstall
+   * gets a new ID. Resolves `null` when tracking is off (`setTrackingEnabled(false)`, consent
+   * denied or not given yet where it's required, or deep-link-only mode), so your server simply
+   * skips `identifyUser`. Guide: https://clikgate.com/docs/identify-users
+   */
+  async getInstallationId(): Promise<string | null> {
+    const m = (await invoke<unknown>('getInstallationId', {})) as {
+      installationId?: unknown;
+    } | null;
+    return typeof m?.installationId === 'string' ? m.installationId : null;
   },
 
   /** Opt-out switch: `false` stops all processing for this installation. */
@@ -351,22 +352,16 @@ export const Clikgate = {
   /**
    * Sends Clikgate attribution to Firebase Analytics when the app includes it (detected by the
    * native SDK; with `@react-native-firebase/analytics` it is): `clikgate_attribution` once per
-   * install, `cg_first_source` / `cg_first_campaign`, optionally every tracked event, and reports
+   * install, `cg_first_source` / `cg_first_campaign`, and reports
    * Firebase's app instance id to Clikgate. Needs `analytics` consent and GA4 forwarding switched
    * on in Clikgate. Call on every launch.
    */
   async enableFirebaseForwarding(
     options: ClikgateFirebaseForwardingOptions = {}
   ): Promise<void> {
-    const map: Record<string, string> = {};
-    for (const [k, v] of Object.entries(options.eventNameMap ?? {})) {
-      if (typeof v === 'string') map[k] = v;
-    }
     await invoke<void>('enableFirebaseForwarding', {
       logAttributionEvent: options.logAttributionEvent ?? true,
       setUserProperties: options.setUserProperties ?? true,
-      mirrorEvents: options.mirrorEvents ?? false,
-      eventNameMap: map,
     });
   },
 

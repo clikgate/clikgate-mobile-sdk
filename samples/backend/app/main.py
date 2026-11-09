@@ -13,6 +13,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Header, Query, Request
@@ -26,6 +27,14 @@ from .tokens import Session, create_session_token, read_session_token, sign_iden
 USER_ID = re.compile(r"^[A-Za-z0-9_.@:-]{1,64}$")
 STAT_KEYS = ("clicks", "installs", "signups", "in_progress", "qualified", "disqualified", "rejected")
 BOARD_META_TTL = 300.0
+# ISO 4217 currencies without minor units (the rest used here have 2; goal values are in normal units).
+ZERO_DECIMAL = {"BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF"}
+
+
+def major_units(amount_minor: int, currency: str) -> str:
+    """`1500000` kobo → `"15000"`: goal values are sent in normal units, as a decimal string."""
+    exponent = 0 if currency in ZERO_DECIMAL else 2
+    return format(Decimal(amount_minor).scaleb(-exponent).normalize(), "f")
 
 
 class ApiError(Exception):
@@ -45,7 +54,7 @@ class OrderBody(BaseModel):
     order_id: str | None = Field(default=None, max_length=64)
     amount_minor: int = Field(ge=0)
     currency: str = Field(pattern=r"^[A-Z]{3}$")
-    # Optional: the SDK installation id, to tie the event to this device's install too
+    # Optional: the SDK installation id (getInstallationId()), so the goal is credited to this device's install
     installation_id: str | None = Field(default=None, max_length=36)
     # android | ios: picks CLIKGATE_APP_ID_ANDROID / _IOS when set
     platform: str | None = Field(default=None, pattern=r"^(android|ios)$")
@@ -256,28 +265,32 @@ def create_app(settings: Settings | None = None, clikgate: ClikgateClient | None
 
     @app.post("/orders", status_code=201)
     async def create_order(body: OrderBody, user: User) -> dict[str, Any]:
-        """A confirmed purchase: report it to Clikgate as a server-side event (`purchase`).
+        """A confirmed purchase: report it to Clikgate as the `purchase` goal, from this server.
 
-        Server events can't be forged by a modified app, so referral steps such as "first purchase
-        over N" should rely on them rather than on the SDK's `track`.
+        Goals sent by a server can't be forged by a modified app, so referral steps such as "first purchase
+        over N" should rely on them. The goal is credited to the user's installation (`app_id` +
+        `installation_id` from the app's getInstallationId()) or, without one, to the customer ID the app passed
+        to identifyUser().
         """
         app_id = settings.app_id_for(body.platform)
         if not app_id:
             raise ApiError(500, "app_id_not_configured", "Set CLIKGATE_APP_ID (or _ANDROID / _IOS).")
         order_id = body.order_id or f"ord_{uuid.uuid4().hex[:12]}"
         event: dict[str, Any] = {
-            "customer_user_id": user.user_id,
-            "event_id": f"order-{order_id}",
-            "name": "purchase",
-            "occurred_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "revenue_minor": body.amount_minor,
+            "goal": "purchase",
+            "reference": f"order-{order_id}",
+            "value": major_units(body.amount_minor, body.currency),
             "currency": body.currency,
-            "properties": {"order_id": order_id},
+            "provider": "custom",  # your own server confirms the payment
+            "occurred_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         if body.installation_id:
+            event["app_id"] = app_id
             event["installation_id"] = body.installation_id
-        result = await client.send_events(app_id, [event], idempotency_key=f"order-{order_id}")
-        return {"order_id": order_id, "event_id": event["event_id"], "clikgate": result}
+        else:
+            event["customer_id"] = user.user_id
+        result = await client.send_goal(event, idempotency_key=f"order-{order_id}")
+        return {"order_id": order_id, "reference": event["reference"], "clikgate": result}
 
     return app
 

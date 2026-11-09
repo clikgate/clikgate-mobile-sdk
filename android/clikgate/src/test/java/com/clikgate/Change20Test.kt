@@ -121,7 +121,7 @@ class Change20Test {
         assertEquals(listOf(true, false), reports().map { it.getBoolean("is_deferred") })
     }
 
-    /** Not metered: never an `/events` or `/goals` item, never queued; sent in deep-link-only and private mode. */
+    /** Not metered: never a `/goals` item, never queued; sent in deep-link-only and private mode. */
     @Test
     fun neverQueuedOrSentAsAnEvent() {
         for (config in listOf("config_response_deep_link_only", "config_response_private_mode")) {
@@ -135,7 +135,7 @@ class Change20Test {
             eventually(message = config) { reports().size == 1 }
             env.core().flushBlocking(3_000)
             assertEquals(config, 0, env.queue.count())
-            val sent = env.api.calls("POST /v1/sdk/events") + env.api.calls("POST /v1/sdk/goals")
+            val sent = env.api.calls("POST /v1/sdk/goals")
             assertFalse(config, sent.any { "deeplink" in it.body.clone().readUtf8() })
         }
     }

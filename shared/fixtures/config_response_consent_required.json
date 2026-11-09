@@ -36,26 +36,6 @@
       "require_identity_token": true
     }
   ],
-  "conversion_value_schema": {
-    "id": "cvs_01JAB3C4D5E6F7G8H9JKMNPQRS",
-    "version": 1,
-    "rules": [
-      {
-        "fine_value": 1,
-        "coarse_value": "low",
-        "event": "signup",
-        "lock_window": false
-      },
-      {
-        "fine_value": 20,
-        "coarse_value": "medium",
-        "event": "purchase",
-        "min_revenue_minor": 500000,
-        "currency": "NGN",
-        "lock_window": false
-      }
-    ]
-  },
   "batching": {
     "max_batch_size": 100,
     "flush_interval_seconds": 15,
@@ -87,7 +67,6 @@
     "enabled": true,
     "log_attribution_event": true,
     "set_user_properties": true,
-    "mirror_events": true,
     "report_app_instance_id": true
   }
 }

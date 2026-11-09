@@ -12,7 +12,6 @@ import {
 import {
   Clikgate,
   ClikgateError,
-  ClikgateMoney,
   ClikgateProvider,
   type ClikgateAttribution,
   type ClikgateDeepLink,
@@ -128,13 +127,15 @@ export function HomeScreen({ navigate }: { navigate: (r: Route) => void }) {
     refresh();
   }, [refresh]);
 
-  const trackPurchase = async () => {
+  // Identity Path B: send this to your own server with the sign-in request; your server calls identifyUser.
+  const showInstallationId = async () => {
     try {
-      await Clikgate.track('purchase', {
-        revenue: ClikgateMoney.ofMinor(1500000, 'NGN'),
-        properties: { order_id: 'A-1001' },
-      });
-      setMessage('purchase tracked');
+      const id = await Clikgate.getInstallationId();
+      setMessage(
+        id == null
+          ? 'Tracking is off: no installation ID'
+          : `Installation ${id.slice(0, 8)}…`
+      );
     } catch (e) {
       setMessage(describeError(e));
     }
@@ -255,7 +256,7 @@ export function HomeScreen({ navigate }: { navigate: (r: Route) => void }) {
         title="Redeem a promo code"
         onPress={() => navigate({ name: 'promoCode' })}
       />
-      <Button title="Track a purchase (₦15,000)" onPress={trackPurchase} />
+      <Button title="Show installation ID" onPress={showInstallationId} />
       <Button title="Goal: account opened (₦2,000,000)" onPress={recordGoal} />
       <Button
         title="Payment goal: purchase (Paystack)"

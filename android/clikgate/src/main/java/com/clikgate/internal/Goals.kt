@@ -15,6 +15,9 @@ internal object Goals {
     const val MAX_SIGNIFICANT_DIGITS = 15
     const val MAX_REFERENCE = 128
 
+    /** The server's reason for a name that isn't set up as a goal while the organisation accepts only set-up goals. */
+    const val UNKNOWN_GOAL = "unknown_goal"
+
     /** Queue dedupe key of a goal: the server's idempotency key `(goal, reference)`, hashed. */
     fun dedupeKey(goal: String, reference: String): String = "goal:" + Core.hash("$goal:$reference")
 

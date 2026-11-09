@@ -4,10 +4,10 @@ import { resetClikgateForTesting } from '../Clikgate';
 import {
   Clikgate,
   ClikgateError,
-  ClikgateMoney,
   VERSION,
   type ClikgateDeepLink,
 } from '../index';
+import * as api from '../index';
 import { nativeRejection, type MockModule } from './testModule';
 
 jest.mock('../NativeClikgate', () => ({
@@ -109,55 +109,21 @@ describe('configure', () => {
 });
 
 describe('method and argument mapping', () => {
-  it('track with revenue and properties', async () => {
-    await Clikgate.track('purchase', {
-      revenue: { amountMinor: 1500000, currency: 'NGN' },
-      properties: { order_id: 'A-1001', nested: { a: [1, 2] } },
-    });
-    expect(mockModule.track).toHaveBeenCalledWith({
-      name: 'purchase',
-      revenueMinor: 1500000,
-      currency: 'NGN',
-      properties: { order_id: 'A-1001', nested: { a: [1, 2] } },
-    });
+  it('there is no track method or ClikgateMoney (goal() is the only method)', () => {
+    expect((Clikgate as Record<string, unknown>).track).toBeUndefined();
+    expect('ClikgateMoney' in api).toBe(false);
   });
 
-  it('ClikgateMoney.ofMinor builds the minor-unit amount (X.E10)', async () => {
-    expect(ClikgateMoney.ofMinor(1500000, 'NGN')).toEqual({
-      amountMinor: 1500000,
-      currency: 'NGN',
+  it('getInstallationId unwraps the native map', async () => {
+    mockModule.getInstallationId.mockResolvedValueOnce({
+      installationId: '6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11',
     });
-    await Clikgate.track('purchase', {
-      revenue: ClikgateMoney.ofMinor(250, 'USD'),
-    });
-    expect(mockModule.track).toHaveBeenCalledWith({
-      name: 'purchase',
-      revenueMinor: 250,
-      currency: 'USD',
-      properties: null,
-    });
-  });
-
-  it('track without revenue sends nulls', async () => {
-    await Clikgate.track('signup');
-    expect(mockModule.track).toHaveBeenCalledWith({
-      name: 'signup',
-      revenueMinor: null,
-      currency: null,
-      properties: null,
-    });
-  });
-
-  it('track rejects a fractional amount in minor units', async () => {
-    await expect(
-      Clikgate.track('purchase', {
-        revenue: { amountMinor: 12.5, currency: 'USD' },
-      })
-    ).rejects.toMatchObject({
-      code: 'invalid_argument',
-      param: 'revenueMinor',
-    });
-    expect(mockModule.track).not.toHaveBeenCalled();
+    await expect(Clikgate.getInstallationId()).resolves.toBe(
+      '6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11'
+    );
+    expect(mockModule.getInstallationId).toHaveBeenCalledWith({});
+    // Tracking off natively: null.
+    await expect(Clikgate.getInstallationId()).resolves.toBeNull();
   });
 
   it('identifyUser: customer ID, logout, label only', async () => {
@@ -326,13 +292,13 @@ describe('error mapping', () => {
   });
 
   it('maps SDK errors without status (null userInfo values)', async () => {
-    mockModule.track.mockRejectedValueOnce(
+    mockModule.getInstallationId.mockRejectedValueOnce(
       nativeRejection('invalid_argument', 'Bad name', {
         status: null,
         param: null,
       })
     );
-    await expect(Clikgate.track('bad name')).rejects.toMatchObject({
+    await expect(Clikgate.getInstallationId()).rejects.toMatchObject({
       code: 'invalid_argument',
       status: null,
       param: null,

@@ -130,8 +130,8 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
   `Clikgate.identify(id, identityToken:)` (verified identity). Invite / stats / leaderboard
   calls carry the session (`Authorization: Bearer`). The share button uses `share_plus`
   directly; there is no WhatsApp deep link in this variant (the helper lives in Engage, and the
-  share sheet offers WhatsApp). "Buy something" posts `/orders` (server-side event) instead of
-  `Clikgate.track`. Promo codes are not in the backend variant (a backend would redeem them
+  share sheet offers WhatsApp). "Buy something" posts `/orders` (the backend sends the `purchase` goal;
+  Change 22: there is no app-side event call). Promo codes are not in the backend variant (a backend would redeem them
   server-side with `POST /v1/codes/redeem`; not part of the sample backend).
 - Engage variant: `Clikgate.identify(id)` without a token (no backend to sign one), so the
   program must not set `require_identity_token`; the "hide me" switch (`setOptOut`) and promo

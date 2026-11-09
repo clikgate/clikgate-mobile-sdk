@@ -244,7 +244,7 @@ class FirstLaunchTest {
         env.api.on("POST /v1/sdk/install", errorCode(401, "invalid_sdk_key"))
         env.configure()
         eventually { env.api.calls("POST /v1/sdk/install").size == 1 }
-        Clikgate.track("signup")
+        Clikgate.goal("signup")
         Clikgate.identifyUser(customerId = "user_42")
         settle(300)
         assertEquals(1, env.api.calls("POST /v1/sdk/install").size)

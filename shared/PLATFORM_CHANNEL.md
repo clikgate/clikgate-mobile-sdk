@@ -24,7 +24,6 @@ String, List, Map<String, Object?>.
 |---|---|---|
 | `configure` | `{sdkKey: String, linkDomains: List<String>, apiBaseUrl: String?, logLevel: "verbose"\|"debug"\|"info"\|"warn"\|"error"\|"none", environment: "production"\|"sandbox", attestation: "off"\|"ifAvailable", pasteboardMode: "off"\|"automatic"\|"pasteControlOnly" (iOS only), waitForATT: bool (iOS only), deferredDeepLinkTimeoutMs: int, wrapperVersion: String}` | `null` |
 | `getAttribution` | `{}` | Attribution map |
-| `track` | `{name: String, revenueMinor: int?, currency: String?, properties: Map?}` | `null` |
 | `identify` | `{customerUserId: String?, identityToken: String?}` | `null` |
 | `setTrackingEnabled` | `{enabled: bool}` | `null` |
 | `setPushToken` | `{token: String, provider: "fcm"\|"apns"}` (for `apns` the token is the hex device token) | `null` |
@@ -153,7 +152,7 @@ The native SDKs expose the same as internal API: Android `@ClikgateInternalApi`
 | `setConsent` | `{analytics: String?, attribution: String?, adUserData: String?, adPersonalization: String?}` (each `"granted"\|"denied"\|"unknown"`; null or missing = unchanged) | `null` |
 | `getConsent` | `{}` | Consent map |
 | `setConsentRegion` | `{region: String?}` (`EEA`, `UK` or an ISO 3166-1 alpha-2 code; null clears) | `null` |
-| `enableFirebaseForwarding` | `{logAttributionEvent: bool, setUserProperties: bool, mirrorEvents: bool, eventNameMap: Map<String, String>}` | `null` |
+| `enableFirebaseForwarding` | `{logAttributionEvent: bool, setUserProperties: bool}` | `null` |
 | `attributionMetadata` | `{}` | `Map<String, String>` (`cg_click_id`, `cg_link_id`; empty map when none) |
 | `enableGoogleOnDeviceMeasurement` | `{}` | `null` (Android: no-op) |
 
@@ -180,7 +179,7 @@ double: Dart / TypeScript convert numbers with their shortest representation fir
 NaN, infinity and numbers they print with an exponent). The native SDK parses it into
 `BigDecimal` (Android, `Clikgate.goalFromWrapper`) / validates and normalises it (iOS,
 `goal(_:decimalString:...)`). Validation failures are `invalid_argument` with `details.param` =
-`goal`, `value`, `currency` or `reference`. Like `track`: before `configure`, Android validates and
+`goal`, `value`, `currency` or `reference`. Before `configure`, Android validates and
 queues the goal, iOS fails with `not_configured`.
 
 Private mode (config `private_mode`) is handled entirely inside the native SDKs; the bridges have
@@ -235,3 +234,21 @@ code: String?, shortUrl: String?}`; `code` (with `shortUrl`) means a referral li
 `invalid_argument`. Both forward to the native Engage add-on (`EngageShare.link` / `referralLink` on
 Android, `ClikgateEngage.share.link` / `referralLink` on iOS), which builds the per-app links and records
 the share, so the behaviour is identical on every platform (SDK_BEHAVIOUR.md "Change 13").
+
+## Change 22: one method `goal()`, `getInstallationId`
+
+- **Removed:** the `track` method and the `mirrorEvents` / `eventNameMap` arguments of `enableFirebaseForwarding`.
+  `goal` is the only method for what happens in the app. The goal result's `status` may now be `"received"`
+  (stored, not counted: the name isn't ticked as a goal yet, reason `not_counted_yet`, or `goal_archived`); the
+  wrappers treat it as a success.
+- **Added:**
+
+| Method | Arguments | Result |
+|---|---|---|
+| `getInstallationId` | Flutter: none; React Native: `{}` | Flutter: `String?`; React Native: `{installationId: String \| null}` |
+
+The value comes from the native SDK (Android `Clikgate.getInstallationId(listener)`, iOS
+`Clikgate.shared.installationId(completion:)`): the installation's random UUID, or null when tracking is off
+(opt-out, consent denied or not given yet where it's required, deep-link-only mode). Before `configure`, Android
+answers once `configure` runs; iOS fails with `not_configured`.
+

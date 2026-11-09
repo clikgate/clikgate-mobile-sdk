@@ -95,9 +95,9 @@ static void (^rejecter(RCTPromiseRejectBlock reject))(NSString *, NSString *, NS
   [_impl getAttribution:args resolve:resolve reject:rejecter(reject)];
 }
 
-- (void)track:(NSDictionary *)args resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+- (void)getInstallationId:(NSDictionary *)args resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
 {
-  [_impl track:args resolve:resolve reject:rejecter(reject)];
+  [_impl getInstallationId:args resolve:resolve reject:rejecter(reject)];
 }
 
 - (void)identifyUser:(NSDictionary *)args resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject

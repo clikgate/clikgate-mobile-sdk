@@ -13,7 +13,6 @@ import com.clikgate.ClikgateDeepLink
 import com.clikgate.ClikgateError
 import com.clikgate.ClikgateInternalApi
 import com.clikgate.ClikgateLink
-import com.clikgate.ClikgateMoney
 import com.clikgate.ClikgateOptions
 import com.clikgate.ClikgateRequestContext
 import com.clikgate.ClikgateResult
@@ -115,8 +114,8 @@ class ClikgateFlutterPlugin :
             when (call.method) {
                 "configure" -> configure(call, result)
                 "getAttribution" -> Clikgate.attribution { result.success(attributionMap(it)) }
-                "track" -> track(call, result)
                 "goal" -> goal(call, result)
+                "getInstallationId" -> Clikgate.getInstallationId { result.success(it) }
                 "identifyUser" -> {
                     val label = call.argument<String>("label")
                     val token = call.argument<String>("identityToken")
@@ -169,15 +168,10 @@ class ClikgateFlutterPlugin :
                     result.success(null)
                 }
                 "enableFirebaseForwarding" -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val map = (call.argument<Map<String, Any?>>("eventNameMap") ?: emptyMap())
-                        .mapNotNull { (k, v) -> (v as? String)?.let { k to it } }.toMap()
                     Clikgate.enableFirebaseForwarding(
                         FirebaseForwardingOptions(
                             logAttributionEvent = call.argument<Boolean>("logAttributionEvent") ?: true,
                             setUserProperties = call.argument<Boolean>("setUserProperties") ?: true,
-                            mirrorEvents = call.argument<Boolean>("mirrorEvents") ?: false,
-                            eventNameMap = map,
                         ),
                     )
                     result.success(null)
@@ -221,20 +215,6 @@ class ClikgateFlutterPlugin :
         Clikgate.setWrapper("flutter", call.argument<String>("wrapperVersion") ?: "unknown")
         Clikgate.configure(ctx, sdkKey, options)
         result.success(null)
-    }
-
-    @OptIn(ClikgateInternalApi::class)
-    private fun track(call: MethodCall, result: MethodChannel.Result) {
-        val name = call.argument<String>("name") ?: return invalid(result, "name is required", "name")
-        val amount = (call.argument<Any>("revenueMinor") as? Number)?.toLong()
-        val currency = call.argument<String>("currency")
-        if ((amount == null) != (currency == null)) {
-            return invalid(result, "revenueMinor and currency go together", if (amount == null) "revenueMinor" else "currency")
-        }
-        val revenue = if (amount != null && currency != null) ClikgateMoney.ofMinor(amount, currency) else null
-        val properties = call.argument<Map<String, Any?>>("properties")
-        val error = Clikgate.trackValidated(name, revenue, properties)
-        if (error != null) result.error(error.code, error.message, details(error.status, error.param)) else result.success(null)
     }
 
     /** The value arrives as a decimal string and becomes a BigDecimal natively; answers with the goal's result. */

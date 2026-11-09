@@ -10,7 +10,7 @@ import { name as appName } from './app.json';
 // Change 03: client-side Firebase / GA4 forwarding. The native SDK finds Firebase Analytics at
 // runtime (e.g. installed by @react-native-firebase/analytics); without it this is a no-op. It is
 // called before configure so it applies from the first launch.
-Clikgate.enableFirebaseForwarding({ mirrorEvents: true }).catch(() => {});
+Clikgate.enableFirebaseForwarding().catch(() => {});
 
 Clikgate.configure({
   sdkKey: ExampleConfig.sdkKey,

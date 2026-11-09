@@ -1,5 +1,5 @@
 name: clikgate_engage
-description: "Optional Clikgate Engage add-on for Flutter apps without their own backend: referral link and stats, leaderboards, promo codes and share helpers. Dart over clikgate_flutter, plus the native Engage share menu."
+description: "Clikgate Engage for Flutter: share links to WhatsApp and other apps with per-app tracking, referral sharing, and in-app engagement tools built on the Clikgate SDK."
 version: 1.0.0
 homepage: https://clikgate.com
 repository: https://github.com/clikgate/clikgate-mobile-sdk/tree/main/flutter_engage

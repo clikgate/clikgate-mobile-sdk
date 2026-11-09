@@ -37,7 +37,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- In-app events sent with track(). -->
+		<!-- Goals sent with goal() (outcomes the business chose). -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
@@ -50,7 +50,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Revenue events (track with ClikgateMoney), only when the app sends them. -->
+		<!-- Goal values and payment references (goal() with value or provider), only when the app sends them. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>

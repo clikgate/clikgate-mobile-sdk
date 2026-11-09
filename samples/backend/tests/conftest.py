@@ -92,9 +92,9 @@ class FakeClikgate:
                 "best_rank": e["rank"], "eligible": True, "opted_out": False, "period_ends_at": "2026-10-26T23:00:00Z"})
         if path.startswith("/v1/leaderboards/"):
             return error(404, "leaderboard_not_found")
-        if method == "POST" and path == "/v1/apps/app_android/events":
-            self.events.extend(json.loads(request.content)["events"])
-            return httpx.Response(200, json={"accepted": 1, "duplicates": 0, "rejected": []})
+        if method == "POST" and path == "/v1/goals/events":
+            self.events.append(json.loads(request.content))
+            return httpx.Response(201, json={"object": "goal_event", "status": "counted", "reason": None})
         return error(404, "not_found")
 
 

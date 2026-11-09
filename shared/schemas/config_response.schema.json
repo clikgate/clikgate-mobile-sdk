@@ -135,75 +135,6 @@
         ]
       }
     },
-    "conversion_value_schema": {
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "pattern": "^[a-z]{2,4}_[0-9A-HJKMNP-TV-Z]{26}$"
-            },
-            "version": {
-              "type": "integer"
-            },
-            "rules": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "fine_value": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 63
-                  },
-                  "coarse_value": {
-                    "enum": [
-                      "low",
-                      "medium",
-                      "high"
-                    ]
-                  },
-                  "event": {
-                    "type": "string"
-                  },
-                  "min_revenue_minor": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  },
-                  "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "lock_window": {
-                    "type": "boolean"
-                  }
-                },
-                "additionalProperties": true,
-                "required": [
-                  "fine_value",
-                  "coarse_value",
-                  "event"
-                ]
-              }
-            }
-          },
-          "additionalProperties": true,
-          "required": [
-            "id",
-            "version",
-            "rules"
-          ]
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "batching": {
       "type": "object",
       "properties": {
@@ -340,7 +271,6 @@
                   "install_ping",
                   "open",
                   "resolve",
-                  "events",
                   "identify",
                   "push_token",
                   "opt_out",
@@ -353,18 +283,6 @@
                   "goals"
                 ]
               }
-            },
-            "allowed_events": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "string"
-              }
-            },
-            "strip_event_properties": {
-              "type": "boolean"
             },
             "message": {
               "type": [
@@ -395,9 +313,6 @@
         "set_user_properties": {
           "type": "boolean"
         },
-        "mirror_events": {
-          "type": "boolean"
-        },
         "report_app_instance_id": {
           "type": "boolean"
         }
@@ -423,7 +338,6 @@
     "server_time",
     "features",
     "referral_programs",
-    "conversion_value_schema",
     "batching"
   ]
 }

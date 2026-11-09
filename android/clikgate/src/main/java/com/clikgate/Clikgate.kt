@@ -23,7 +23,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * Clikgate Android SDK (core): deep links, install attribution, events, identifyUser, referee-side
+ * Clikgate Android SDK (core): deep links, install attribution, goals, identifyUser, referee-side
  * referral calls, push token / uninstall tracking and feature switches. Call [configure] once from
  * `Application.onCreate`. All methods are thread-safe and non-blocking; callbacks run on the main
  * thread.
@@ -241,45 +241,12 @@ public object Clikgate {
         attribution { cont.resume(it) }
     }
 
-    // ---------------------------------------------------------------- events / identity
-
-    /**
-     * Tracks an app event. Validated locally (name `^[A-Za-z0-9_.$:-]{1,64}$`, properties ≤ 8 KB,
-     * currency ISO 4217); invalid events are logged and dropped. Queued and sent in batches.
-     * Needs install attribution (Growth and up): on a deep-link-only plan it logs one "needs Growth"
-     * warning and does nothing (no error).
-     */
-    @OptIn(ClikgateInternalApi::class)
-    @JvmStatic
-    @JvmOverloads
-    public fun track(name: String, revenue: ClikgateMoney? = null, properties: Map<String, Any?>? = null) {
-        trackValidated(name, revenue, properties)
-    }
-
-    /** [track] that reports validation errors (used by the wrappers). */
-    @ClikgateInternalApi
-    @JvmStatic
-    public fun trackValidated(name: String, revenue: ClikgateMoney?, properties: Map<String, Any?>?): ClikgateError? {
-        val c = core
-        if (c != null) return c.track(name, revenue, properties)
-        // Validate now so the event keeps its id/time from the call, enqueue after configure.
-        val payloadError = try {
-            Core.buildEvent(name, revenue, properties, false, System.currentTimeMillis())
-            null
-        } catch (e: ClikgateError) {
-            e
-        }
-        if (payloadError != null) {
-            Log.e("track(\"$name\") rejected: ${payloadError.message}")
-            return payloadError
-        }
-        withCore { it.track(name, revenue, properties) }
-        return null
-    }
+    // ---------------------------------------------------------------- goals / identity
 
     /**
      * Records a goal: an outcome your business chose, such as `account_opened`, `loan_disbursed` or
-     * `purchase`, attributed to the click or install that brought this user:
+     * `purchase`, attributed to the click or install that brought this user. `goal()` is the only method for
+     * what happens in your app:
      * `Clikgate.goal("account_opened", value = BigDecimal("2000000"), currency = "NGN", reference = "APP-55231", isFirst = true)`.
      * [isFirst] is sent but only your server's `is_first` decides a new customer; [label] sets the
      * person's label like [identifyUser] (needs Growth; dropped in private mode unless labels are allowed).
@@ -291,14 +258,15 @@ public object Clikgate {
      *
      * Validated locally (key `^[a-z][a-z0-9_]*$`, 2–40 characters; [value] in normal units, ≥ 0, at most
      * 15 significant digits; [currency] ISO 4217; [reference] 1–128 characters, a UUID when null);
-     * invalid goals are logged and refused. Queued, retried and consent-buffered like [track] events,
-     * and idempotent by `(key, reference)`. Works in private mode. Never put customer data in a goal:
-     * use your own reference only. Needs install attribution (Growth and up).
+     * invalid goals are logged and refused. Queued, retried and consent-buffered, and idempotent by
+     * `(key, reference)`. Works in private mode. Never put customer data in a goal: use your own reference
+     * only. Works on every plan (basic app attribution is included). A name counts once it's ticked as a
+     * goal in the dashboard ("Seen from your app and website" › "Count this as a goal").
      *
      * [onResult] gets the [GoalResult] on the main thread once Clikgate has answered: [GoalStatus.COUNTED],
-     * [GoalStatus.WAITING] (for example a Payment goal waiting for its confirmation) or
-     * [GoalStatus.REFUSED] with a reason. A goal still queued when the app is closed is sent on a later
-     * launch, without a result.
+     * [GoalStatus.WAITING] (for example a Payment goal waiting for its confirmation), [GoalStatus.RECEIVED]
+     * (stored, not counted: the name isn't ticked yet; not retried) or [GoalStatus.REFUSED] with a reason.
+     * A goal still queued when the app is closed is sent on a later launch, without a result.
      */
     @OptIn(ClikgateInternalApi::class)
     @JvmStatic
@@ -378,6 +346,12 @@ public object Clikgate {
      * with `require_identity_token`). Calling it with nothing is a no-op. In private mode the customer
      * ID and token are dropped on the device, and the label too unless your organisation allows labels
      * in private mode. Don't put information in labels that your customers wouldn't expect you to keep.
+     *
+     * Identity Path A (the default): your server makes the token with the server SDK's `createIdentityToken`
+     * (it reads `CLIKGATE_IDENTITY_SECRET`; never put the secret in the app) and returns it in the sign-in and
+     * "current user" responses; the app passes the newest one here. Call after sign-in or sign-up and at app open
+     * when already signed in; on sign-out call `identifyUser(customerId = null)`. Path B needs no token: see
+     * [getInstallationId]. Guide: https://clikgate.com/docs/identify-users.
      */
     @JvmStatic
     @JvmOverloads
@@ -390,7 +364,30 @@ public object Clikgate {
     private const val KEEP_CUSTOMER_ID = "\u0000"
 
     /**
-     * Opt-out switch. `false` clears queued events, tells Clikgate to stop processing and erase
+     * This installation's ID: the random UUID the SDK created at first launch and sends to Clikgate with every
+     * call (not personal data; allowed in private mode). For identity Path B: send it to your own server with the
+     * sign-in request (and at every signed-in app open), and your server calls the server SDK's
+     * `identifyUser({appId, installationId, customerId, label?})`. No identity secret or token is needed.
+     * See https://clikgate.com/docs/identify-users.
+     *
+     * The listener runs on the main thread. Right after [configure] it waits for the first launch's config answer
+     * (a few seconds at most; offline it answers at once), never blocking the main thread. A reinstall gets a new
+     * ID. Null when tracking is off: [setTrackingEnabled] `false`, consent denied (or not given yet) where it's
+     * required, or deep-link-only mode, so your server simply skips `identifyUser`.
+     */
+    @JvmStatic
+    public fun getInstallationId(listener: InstallationIdListener) {
+        withCore { c -> c.installationIdForApp { listener.onInstallationId(it) } }
+    }
+
+    /** Suspending [getInstallationId]: `val id = Clikgate.getInstallationId()`. Null when tracking is off. */
+    @JvmStatic
+    public suspend fun getInstallationId(): String? = suspendCoroutine { cont ->
+        getInstallationId { cont.resume(it) }
+    }
+
+    /**
+     * Opt-out switch. `false` clears queued goals, tells Clikgate to stop processing and erase
      * device data for this installation, and stops all other calls; `true` resumes.
      */
     @JvmStatic
@@ -403,8 +400,8 @@ public object Clikgate {
     /**
      * Sets the user's consent per purpose (B.3). A null argument leaves that purpose unchanged; all
      * purposes are [ConsentState.UNKNOWN] until set. When consent is required for this device (see
-     * [getConsent]) and `attribution` is unknown, the SDK buffers events locally (up to 7 days /
-     * 1,000 events) and sends nothing identifying; on grant it sends the buffer, on deny it drops it.
+     * [getConsent]) and `attribution` is unknown, the SDK buffers goals locally (up to 7 days /
+     * 1,000 goals) and sends nothing identifying; on grant it sends the buffer, on deny it drops it.
      * Consent is sent with every request. Safe to call before [configure].
      */
     @JvmStatic
@@ -445,7 +442,7 @@ public object Clikgate {
     /**
      * Forwards Clikgate attribution to Firebase Analytics when the app includes it (detected at
      * runtime; no dependency): `clikgate_attribution` once per install, the `cg_first_source` /
-     * `cg_first_campaign` user properties and, optionally, every tracked event. Also reports
+     * `cg_first_campaign` user properties. Also reports
      * Firebase's app instance id to Clikgate (for server-side GA4). Needs `analytics` consent and
      * the app's GA4 forwarding setting in Clikgate. Call on every launch.
      */

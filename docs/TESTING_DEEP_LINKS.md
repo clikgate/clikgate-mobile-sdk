@@ -97,7 +97,7 @@ link on the device, install within the window from the **same network**, open th
    (sign in → "Invite friends"), or the Engage variant without a backend (section 7).
 3. On device B (not installed): open the link → install (as in section 3) → launch. The install
    response carries `referral` with `status = installed`; webhook `referral.created`.
-4. On device B: sign up → `identifyUser()`, `track("signup")`, `track("purchase", revenue)`; watch
+4. On device B: sign up → `identifyUser()`, `goal("sign_up")`, `goal("purchase", reference, provider)` (ticked as goals in the dashboard); watch
    `referral.step_completed`, then `referral.holding`.
 5. Hold: the worker's `referral_hold_evaluator` qualifies it after `hold_until` if the referee is
    still installed and was active on `min_active_days` distinct days → `referral.qualified`.
