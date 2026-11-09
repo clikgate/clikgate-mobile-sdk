@@ -3,6 +3,7 @@ import type { Platform } from './args';
 import { Clikgate, type SetupCheck, type FileCheck } from './api/clikgate';
 import { CLI_VERSION, DOCS_URL, SDK, SDK_KEY_ANY, SHARED_DOMAIN_FIX, SHARED_PLATFORM_DOMAINS, TEST_LINK_DOMAIN, isTestHost, maskKey } from './constants';
 import { allLinkHosts, verifiedHosts } from './edit/androidManifest';
+import { backupDeclarations, backupProblems } from './edit/backupRules';
 import { catalogAliasFor, hasClikgateDependency } from './edit/gradle';
 import { expoRoot, findClikgatePlugin, parseJsonc } from './edit/json';
 import { applinksHosts } from './edit/plistEdit';
@@ -207,6 +208,27 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
       if (debugTest.length) add({ id: 'android.debug_test_domain', status: 'pass', title: `Android: ${debugTest.join(', ')} in debug builds` });
       else add({ id: 'android.debug_test_domain', status: 'warn', title: `Android: your app's test subdomain (<link_subdomain>.${TEST_LINK_DOMAIN}) missing from debug builds`, fix: 'Test links won\'t open debug builds. Run `npx @clikgate/setup` to add it to src/debug/AndroidManifest.xml.' });
       sharedCheck('android', 'Android', [...releaseAll, ...debugHosts]);
+      // Auto Backup: the app's own rules need Clikgate's excludes and tools:replace (else the
+      // manifest merge fails). No own rules: the SDK's rules apply.
+      let decls: ReturnType<typeof backupDeclarations> = [];
+      try {
+        decls = backupDeclarations(main);
+      } catch {
+        decls = [];
+      }
+      if (decls.length) {
+        const resDir = path.join(path.dirname(mod.mainManifest), 'res', 'xml');
+        const problems = backupProblems(main, (r) => readIfExists(path.join(resDir, `${r}.xml`)) ?? null);
+        if (problems.length) {
+          add({
+            id: 'android.backup_rules',
+            status: 'fail',
+            title: 'Android: backup rules',
+            detail: problems.join('; '),
+            fix: "Run `npx @clikgate/setup` to add Clikgate's excludes to your backup rules and tools:replace to <application>.",
+          });
+        } else add({ id: 'android.backup_rules', status: 'pass', title: "Android: backup rules exclude Clikgate's installation ID" });
+      }
     }
   }
 

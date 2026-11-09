@@ -503,8 +503,9 @@ proof. Not sent when the user opted out. Details: [android/DECISIONS.md](../andr
 
 **Backup.** The SDK's manifest excludes `clikgate.prefs.xml` and `clikgate_events.db` from
 Auto Backup and device transfer (a restored app is a new installation). If your app declares
-its own `android:fullBackupContent` / `android:dataExtractionRules`, add these excludes to your
-files and resolve the merge with `tools:replace`:
+its own `android:fullBackupContent` / `android:dataExtractionRules` (Android Studio's templates
+do), `npx @clikgate/setup` adds these excludes to your files and resolves the merge with
+`tools:replace`; `npx @clikgate/setup doctor` checks it (`android.backup_rules`). By hand:
 
 ```xml
 <application
