@@ -124,7 +124,9 @@ jobs:
             dir="$RUNNER_TEMP/$name"
             cp -R "$f" "$dir"
             node bundle/cli.cjs --cwd "$dir" --sdk-key "$TEST_KEY" --domain "$LIVE_DOMAINS" --yes --no-install --no-color
-            node bundle/cli.cjs doctor --json --cwd "$dir" --domain "$LIVE_DOMAINS" > "$RUNNER_TEMP/$name.json"
+            # doctor exits 1 when a check fails: allowed only for ios-swiftui (the manual Swift package
+            # step below); the JSON check then makes sure that's the only failure.
+            node bundle/cli.cjs doctor --json --cwd "$dir" --domain "$LIVE_DOMAINS" > "$RUNNER_TEMP/$name.json" || [ "$name" = ios-swiftui ]
             # ios-swiftui has no Podfile: adding the Swift package is a manual step, so doctor
             # correctly reports the missing dependency there and nothing else.
             node -e "const [f,n]=process.argv.slice(1); const r=require(f); const expected=n==='ios-swiftui'?['sdk.dependency']:[]; const bad=r.checks.filter(c=>c.status==='fail'&&!expected.includes(c.id)); if(bad.length){console.error(JSON.stringify(bad,null,2)); process.exit(1)}" "$RUNNER_TEMP/$name.json" "$name"
@@ -256,8 +258,13 @@ jobs:
               echo "clikgate.useMavenLocal=true" >> android/gradle.properties ;;
             react-native|expo-blank|expo-router)
               (cd "$GITHUB_WORKSPACE/react-native" && npm ci && npm run build)
-              npm install
-              npm install --install-links "$GITHUB_WORKSPACE/react-native"
+              # Install @clikgate/react-native from this checkout instead of the version the setup
+              # command wrote (it may not be on npm yet), then put the setup command's package.json back
+              # so doctor checks what it wrote.
+              cp package.json "$RUNNER_TEMP/package.json.setup"
+              npm pkg set "dependencies[@clikgate/react-native]=file:$GITHUB_WORKSPACE/react-native"
+              npm install --install-links
+              cp "$RUNNER_TEMP/package.json.setup" package.json
               npx tsc --noEmit || true   # template type errors aren't ours; the compile below is the check
               if [ "${{ matrix.template }}" != react-native ]; then npx expo prebuild --platform android --no-install; fi
               echo "clikgate.useMavenLocal=true" >> android/gradle.properties ;;
