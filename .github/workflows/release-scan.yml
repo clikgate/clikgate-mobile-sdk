@@ -42,6 +42,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Build the release AARs and sources jars
         run: ./gradlew :clikgate:assembleRelease :clikgate-engage:assembleRelease :clikgate:releaseSourcesJar :clikgate-engage:releaseSourcesJar

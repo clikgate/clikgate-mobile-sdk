@@ -56,7 +56,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LIVE_DOMAINS: ciz.to,go.example.com
+  # An app's own link subdomain plus a custom domain: the CLI refuses shared domains (ciz.to, clk.ng,
+  # clkg.to, dev.ciz.to). Offline, debug builds get the app's test host <sub>.dev.ciz.to.
+  LIVE_DOMAINS: acme.ciz.to,go.example.com
+  TEST_DOMAIN: acme.dev.ciz.to
   TEST_KEY: cg_sdk_test_ci0000000000
 
 jobs:
@@ -159,7 +162,7 @@ jobs:
           for p in flutter_app RnApp swiftui uikit; do
             node "$CLI" --cwd "$RUNNER_TEMP/$p" --sdk-key "$TEST_KEY" --domain "$LIVE_DOMAINS" --yes --no-install --no-color
             dir="$RUNNER_TEMP/$p"; [ -d "$dir/ios" ] && dir="$dir/ios"
-            (cd "$GITHUB_WORKSPACE/cli" && node "$V" "$dir" --live "$LIVE_DOMAINS")
+            (cd "$GITHUB_WORKSPACE/cli" && node "$V" "$dir" --live "$LIVE_DOMAINS" --test "$TEST_DOMAIN")
           done
       - name: Swift syntax check of the edited sources (swiftc -parse)
         run: |
@@ -222,7 +225,10 @@ jobs:
               # Android Studio templates can't be generated headless: use the fixtures made from
               # Android Studio's template sources, plus a Gradle wrapper.
               cp -R "$GITHUB_WORKSPACE/cli/test/fixtures/${{ matrix.template }}" app
-              (cd app && gradle wrapper --gradle-version 8.14.3)
+              # The runner's own Gradle (9.x) can't configure an AGP 8 project, which `gradle wrapper`
+              # does: generate the wrapper in an empty build instead, then copy it in.
+              mkdir wrapper && (cd wrapper && touch settings.gradle && gradle wrapper --gradle-version 8.14.3)
+              cp -R wrapper/gradlew wrapper/gradlew.bat wrapper/gradle app/ && rm -rf wrapper
               echo "android=app" >> "$GITHUB_OUTPUT"
               echo "outputs=app/app/build" >> "$GITHUB_OUTPUT" ;;
           esac
@@ -264,14 +270,14 @@ jobs:
           else
             ./gradlew --no-daemon :app:assembleDebug :app:assembleRelease
           fi
-      - name: dev.ciz.to only in the debug build
-        run: cli/scripts/check-merged-manifests.sh "$RUNNER_TEMP/${{ steps.project.outputs.outputs }}" "$LIVE_DOMAINS"
+      - name: The test domain only in the debug build
+        run: cli/scripts/check-merged-manifests.sh "$RUNNER_TEMP/${{ steps.project.outputs.outputs }}" "$LIVE_DOMAINS" "$TEST_DOMAIN"
       - name: Expo production variant never gets the test domain
         if: startsWith(matrix.template, 'expo')
         run: |
           cd "$RUNNER_TEMP/app"
           APP_VARIANT=production npx expo prebuild --platform ios --no-install
-          node "$GITHUB_WORKSPACE/cli/scripts/validate-ios.mjs" ios --live "$LIVE_DOMAINS"
+          node "$GITHUB_WORKSPACE/cli/scripts/validate-ios.mjs" ios --live "$LIVE_DOMAINS" --test "$TEST_DOMAIN"
       - name: doctor --json (local checks)
         run: |
           node cli/dist/cli.cjs doctor --json --cwd "$RUNNER_TEMP/app" --domain "$LIVE_DOMAINS" > "$RUNNER_TEMP/doctor.json"
