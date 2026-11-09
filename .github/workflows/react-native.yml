@@ -123,7 +123,10 @@ jobs:
           set -o pipefail
           xcodebuild -workspace ClikgateExample.xcworkspace -scheme ClikgateExample \
             -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO build | tail -50
+            CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || {
+            # The compiler errors, which the last lines of the log don't show.
+            grep -E "error:" -A4 "$RUNNER_TEMP/xcodebuild.log" | head -150; tail -20 "$RUNNER_TEMP/xcodebuild.log"; exit 1; }
+          tail -50 "$RUNNER_TEMP/xcodebuild.log"
 
   # Publishes @clikgate/react-native-engage to npm on react-native-engage-v* tags (same secrets).
   # Public releases are PAUSED (owner 2026-11-08): track() is being removed and no published version may include it.
