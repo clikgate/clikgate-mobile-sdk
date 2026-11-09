@@ -255,7 +255,7 @@ jobs:
               printf 'dependency_overrides:\n  clikgate_flutter:\n    path: %s/flutter\n' "$GITHUB_WORKSPACE" > pubspec_overrides.yaml
               flutter pub get
               flutter analyze --no-fatal-infos lib/main.dart
-              echo "clikgate.useMavenLocal=true" >> android/gradle.properties ;;
+              printf "\nclikgate.useMavenLocal=true\n" >> android/gradle.properties ;;  # the template may end without a newline
             react-native|expo-blank|expo-router)
               (cd "$GITHUB_WORKSPACE/react-native" && npm ci && npm run build)
               # Install @clikgate/react-native from this checkout instead of the version the setup
@@ -267,7 +267,7 @@ jobs:
               cp "$RUNNER_TEMP/package.json.setup" package.json
               npx tsc --noEmit || true   # template type errors aren't ours; the compile below is the check
               if [ "${{ matrix.template }}" != react-native ]; then npx expo prebuild --platform android --no-install; fi
-              echo "clikgate.useMavenLocal=true" >> android/gradle.properties ;;
+              printf "\nclikgate.useMavenLocal=true\n" >> android/gradle.properties ;;  # the template may end without a newline
           esac
       - name: Android debug and release builds
         run: |
