@@ -1,32 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-/// An amount in minor units (e.g. kobo, cents) and an ISO 4217 currency code.
-@immutable
-class ClikgateMoney {
-  /// [amountMinor] in minor units (kobo, cents): `ClikgateMoney.ofMinor(1500000, 'NGN')` is ₦15,000.
-  /// Goals take normal units instead (`Clikgate.goal(key, value: ...)`).
-  const ClikgateMoney.ofMinor(this.amountMinor, this.currency);
-
-  /// The old name of [ClikgateMoney.ofMinor].
-  @Deprecated('Use ClikgateMoney.ofMinor(amountMinor, currency): the name says the amount is in minor units')
-  const ClikgateMoney(this.amountMinor, this.currency);
-
-  final int amountMinor;
-  final String currency;
-
-  @override
-  bool operator ==(Object other) =>
-      other is ClikgateMoney &&
-      other.amountMinor == amountMinor &&
-      other.currency == currency;
-
-  @override
-  int get hashCode => Object.hash(amountMinor, currency);
-
-  @override
-  String toString() => 'ClikgateMoney.ofMinor($amountMinor, $currency)';
-}
-
 /// Push provider of a token passed to `Clikgate.setPushToken`.
 enum PushProvider {
   /// Firebase Cloud Messaging registration token.
@@ -70,14 +43,23 @@ enum GoalStatus {
   /// payment provider or server, or a goal waiting for its click.
   waiting,
 
-  /// Not counted; [GoalResult.reason] says why.
+  /// Stored, not counted: the name isn't ticked as a goal in the dashboard yet
+  /// (`not_counted_yet`) or the goal is archived (`goal_archived`). A success:
+  /// it isn't retried. It counts once the name is ticked.
+  received,
+
+  /// Not counted; [GoalResult.reason] says why. Final: never retried. When
+  /// the organisation accepts only goals it has set up, a name with no goal
+  /// behind it is refused with `unknown_goal` (an archived goal with
+  /// `goal_archived`); debug builds log "Goal `name` isn't set up in Clikgate".
   refused;
 
-  /// The status for a wire value (`counted`, `waiting`, `refused`); unknown
-  /// values are [refused].
+  /// The status for a wire value (`counted`, `waiting`, `received`,
+  /// `refused`); unknown values are [refused].
   static GoalStatus parse(Object? value) => switch (value) {
         'counted' => counted,
         'waiting' => waiting,
+        'received' => received,
         _ => refused,
       };
 }
@@ -119,7 +101,8 @@ class GoalResult {
   final GoalStatus status;
 
   /// Null when counted; else a reason code such as `waiting_for_confirmation`,
-  /// `unattributed`, `payment_goal_needs_confirmation` or `invalid_argument`.
+  /// `not_counted_yet`, `goal_archived`, `unknown_goal`, `unattributed`,
+  /// `payment_goal_needs_confirmation` or `invalid_argument`.
   final String? reason;
 
   /// The goal's kind, when Clikgate said (null for goals refused on the

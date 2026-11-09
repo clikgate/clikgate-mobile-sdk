@@ -107,32 +107,6 @@ enum PasteboardToken {
     }
 }
 
-/// Maps a tracked event onto the conversion value schema. Values only go up.
-enum ConversionValueMapper {
-    struct Update: Equatable, Sendable {
-        var fineValue: Int
-        var coarseValue: String?
-        var lockWindow: Bool
-    }
-
-    static func update(for name: String, revenue: ClikgateMoney?, schema: RemoteConfig.ConversionValueSchema?, lastValue: Int?) -> Update? {
-        guard let schema = schema else { return nil }
-        let matching = schema.rules.filter { rule in
-            guard rule.event == name else { return false }
-            if let min = rule.minRevenueMinor {
-                guard let revenue = revenue else { return false }
-                if let cur = rule.currency, cur.uppercased() != revenue.currency.uppercased() { return false }
-                return revenue.amountMinor >= min
-            }
-            return true
-        }
-        guard let best = matching.max(by: { $0.fineValue < $1.fineValue }) else { return nil }
-        guard (0...63).contains(best.fineValue) else { return nil }
-        if let last = lastValue, best.fineValue <= last { return nil }
-        return Update(fineValue: best.fineValue, coarseValue: best.coarseValue, lockWindow: best.lockWindow)
-    }
-}
-
 enum PushTokens {
     static func hash(provider: String, token: String) -> String {
         hex(Data(SHA256.hash(data: Data((provider + token).utf8))))
@@ -157,28 +131,7 @@ enum RemoteNotification {
 }
 
 enum EventValidation {
-    static let maxPropertiesBytes = 8 * 1024
-
-    static func isValidName(_ name: String) -> Bool {
-        guard (1...64).contains(name.count) else { return false }
-        return name.unicodeScalars.allSatisfy { s in
-            ("0"..."9").contains(s) || ("a"..."z").contains(s) || ("A"..."Z").contains(s) || "_.$:-".unicodeScalars.contains(s)
-        }
-    }
-
     static func isValidCurrency(_ c: String) -> Bool {
         c.count == 3 && c.unicodeScalars.allSatisfy { ("A"..."Z").contains($0) }
-    }
-
-    /// Validates and converts app-supplied properties.
-    static func properties(_ props: [String: Any]?) -> Result<[String: JSONValue]?, ClikgateError> {
-        guard let props = props else { return .success(nil) }
-        guard case .object(let obj)? = JSONValue(any: props as [String: Any?]) else {
-            return .failure(ClikgateError(code: ClikgateError.invalidArgument, message: "Event properties must be JSON-compatible"))
-        }
-        guard JSON.size(obj.anyDictionary) <= maxPropertiesBytes else {
-            return .failure(ClikgateError(code: ClikgateError.invalidArgument, message: "Event properties exceed 8 KB"))
-        }
-        return .success(obj)
     }
 }

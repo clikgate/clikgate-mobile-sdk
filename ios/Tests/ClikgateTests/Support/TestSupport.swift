@@ -236,16 +236,6 @@ final class FakeSearchAds: SearchAdsTokenProviding, @unchecked Sendable {
     }
 }
 
-final class FakeConversionValues: ConversionValueUpdating, @unchecked Sendable {
-    private let lock = NSLock()
-    private(set) var updates: [ConversionValueMapper.Update] = []
-    func update(fineValue: Int, coarseValue: String?, lockWindow: Bool) async -> Bool {
-        record(.init(fineValue: fineValue, coarseValue: coarseValue, lockWindow: lockWindow))
-        return true
-    }
-    private func record(_ u: ConversionValueMapper.Update) { lock.lock(); updates.append(u); lock.unlock() }
-}
-
 final class FakeAppAttest: AppAttesting, @unchecked Sendable {
     var isSupported: Bool
     private(set) var hashes: [Data] = []
@@ -268,7 +258,6 @@ final class Harness: @unchecked Sendable {
     let clock = FakeClock()
     let keychain: FakeKeychain
     let pasteboard: FakePasteboard
-    let conversion = FakeConversionValues()
     let attest: FakeAppAttest
     let tracking: FakeTracking
     let searchAds = FakeSearchAds()
@@ -306,7 +295,7 @@ final class Harness: @unchecked Sendable {
         ClikgateDependencies(
             transport: URLSessionTransport(session: StubURLProtocol.session()),
             clock: clock, keychain: keychain, pasteboard: pasteboard, device: device,
-            tracking: tracking, searchAds: searchAds, conversionValues: conversion,
+            tracking: tracking, searchAds: searchAds,
             appAttest: attest, background: ImmediateBackground(),
             apnsEnvironment: { "sandbox" }, appURLSchemes: ["myapp"], storageDirectory: dir,
             uuid: { [unowned self] in self.nextUUID() }, jitter: { 0 },
@@ -330,7 +319,7 @@ extension XCTestCase {
         s.on("GET /v1/sdk/config", .fixture("config_response"))
         s.on("POST /v1/sdk/install", .fixture(install))
         s.on("POST /v1/sdk/open", .json(#"{"open_id":"aop_1","uninstall_status":"installed"}"#))
-        s.on("POST /v1/sdk/events", .fixture("events_response"))
+        s.on("POST /v1/sdk/goals", .fixture("goals_response"))
         s.on("POST /v1/sdk/identify", .fixture("identify_response"))
         s.on("POST /v1/sdk/push-token", .ok)
         s.on("POST /v1/sdk/opt-out", .json(#"{"opt_out": true}"#))

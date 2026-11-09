@@ -34,12 +34,8 @@ public data class ClikgateConsent(
  *
  * @property logAttributionEvent Log `clikgate_attribution` once per install.
  * @property setUserProperties Set the `cg_first_source` / `cg_first_campaign` user properties.
- * @property mirrorEvents Also log every [Clikgate.track] event to Firebase.
- * @property eventNameMap Clikgate event name → Firebase event name for mirrored events.
  */
 public data class FirebaseForwardingOptions @JvmOverloads constructor(
     val logAttributionEvent: Boolean = true,
     val setUserProperties: Boolean = true,
-    val mirrorEvents: Boolean = false,
-    val eventNameMap: Map<String, String> = emptyMap(),
 )

@@ -88,18 +88,29 @@ def test_leaderboard_allowlist(client, fake):
     assert fake.requests == []
 
 
-def test_order_sends_server_side_event(client, fake):
+def test_order_sends_the_purchase_goal_for_the_installation(client, fake):
     login(client)
     r = client.post("/orders", json={"order_id": "A-1001", "amount_minor": 1500000, "currency": "NGN",
                                      "installation_id": "6a1f0c2e-0000-4000-8000-000000000000"})
     assert r.status_code == 201, r.text
-    assert r.json()["clikgate"] == {"accepted": 1, "duplicates": 0, "rejected": []}
+    assert r.json()["clikgate"]["status"] == "counted"
     (event,) = fake.events
-    assert event["customer_user_id"] == "ada" and event["event_id"] == "order-A-1001"
-    assert event["name"] == "purchase" and event["revenue_minor"] == 1500000 and event["currency"] == "NGN"
-    assert event["installation_id"].startswith("6a1f0c2e")
+    assert event["goal"] == "purchase" and event["reference"] == "order-A-1001"
+    assert event["value"] == "15000" and event["currency"] == "NGN" and event["provider"] == "custom"
+    assert event["app_id"] == "app_android" and event["installation_id"].startswith("6a1f0c2e")
+    assert "customer_id" not in event
     assert event["occurred_at"].endswith("Z")
+    assert fake.requests[-1].url.path == "/v1/goals/events"
     assert fake.requests[-1].headers["idempotency-key"] == "order-A-1001"
+
+
+def test_order_without_installation_uses_the_customer_id(client, fake):
+    login(client)
+    r = client.post("/orders", json={"order_id": "A-1002", "amount_minor": 2500, "currency": "JPY"})
+    assert r.status_code == 201, r.text
+    (event,) = fake.events
+    assert event["customer_id"] == "ada" and "installation_id" not in event
+    assert event["value"] == "2500"
 
 
 def test_order_validation(client):

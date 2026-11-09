@@ -6,9 +6,9 @@ class Clikgate
   static Stream<ClikgateDeepLink> get onDeepLink
   static Stream<ClikgateBrowserHandoff> get onBrowserHandoff
   static Future<ClikgateAttribution> getAttribution()
-  static Future<void> track(String name, {ClikgateMoney? revenue, Map<String, Object?>? properties})
   static Future<GoalResult> goal(String key, {Object? value, String? currency, String? reference, ClikgateProvider? provider, bool? isFirst, String? label})
   static Future<void> identifyUser({String? label, String? customerId = _keepCustomerId, String? identityToken})
+  static Future<String?> getInstallationId()
   static Future<void> setTrackingEnabled(bool enabled)
   static Future<void> setPushToken(String? token, {required PushProvider provider})
   static bool isClikgateMessage(Map<String, dynamic>? data)
@@ -16,7 +16,7 @@ class Clikgate
   static Future<void> setConsent({ConsentState? analytics, ConsentState? attribution, ConsentState? adUserData, ConsentState? adPersonalization,})
   static Future<ClikgateConsent> getConsent()
   static Future<void> setConsentRegion(String? region)
-  static Future<void> enableFirebaseForwarding({bool logAttributionEvent = true, bool setUserProperties = true, bool mirrorEvents = false, Map<String, String> eventNameMap = const {},})
+  static Future<void> enableFirebaseForwarding({bool logAttributionEvent = true, bool setUserProperties = true,})
   static Future<Map<String, String>> attributionMetadata()
   static Future<void> enableGoogleOnDeviceMeasurement()
   static Future<String> nativeSdkVersion()
@@ -40,14 +40,6 @@ class ClikgateException implements Exception
   static const installPending
   static const unsupportedPlatform
   static const featureDisabled
-  String toString()
-class ClikgateMoney
-  const ClikgateMoney.ofMinor(this.amountMinor, this.currency)
-  const ClikgateMoney(this.amountMinor, this.currency)
-  final int amountMinor
-  final String currency
-  bool operator ==(Object other)
-  int get hashCode
   String toString()
 enum PushProvider
   fcm
@@ -77,6 +69,7 @@ enum ClikgateAttributionStatus
 enum GoalStatus
   counted
   waiting
+  received
   refused
   static GoalStatus parse(Object? value)
 enum GoalKind

@@ -29,7 +29,15 @@ final class ClikgateLogger: @unchecked Sendable {
         if first { emit(.error, m) }
     }
 
+    #if DEBUG
+    /// Test hook: every message, whatever the level (debug builds only, not in the shipped size).
+    var testSink: ((String) -> Void)?
+    #endif
+
     private func emit(_ l: ClikgateOptions.LogLevel, _ m: () -> String) {
+        #if DEBUG
+        if let sink = testSink { sink(m()) }
+        #endif
         guard l != .none, l >= level else { return }
         let type: OSLogType
         switch l {

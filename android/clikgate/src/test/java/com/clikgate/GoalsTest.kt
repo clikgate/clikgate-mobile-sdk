@@ -152,7 +152,6 @@ class GoalsTest {
         assertEquals("2000000", g.getString("value"))
         assertEquals("APP-55231", g.getString("reference"))
         assertEquals(0, env.queue.count())
-        assertTrue(env.api.calls("POST /v1/sdk/events").isEmpty())
     }
 
     @Test
@@ -165,15 +164,11 @@ class GoalsTest {
     }
 
     @Test
-    fun eventsAndGoalsKeepTheirOrderInSeparateBatches() {
+    fun goalsKeepTheirOrder() {
         installed()
-        Clikgate.track("e1")
         Clikgate.goal("g_one", reference = "R1")
         Clikgate.goal("g_two", reference = "R2")
-        Clikgate.track("e2")
         assertTrue(env.core().flushBlocking(5_000))
-        val paths = env.api.requests.map { it.path!! }.filter { it == "/v1/sdk/events" || it == "/v1/sdk/goals" }
-        assertEquals(listOf("/v1/sdk/events", "/v1/sdk/goals", "/v1/sdk/events"), paths)
         assertEquals(listOf("R1", "R2"), sentGoals().map { it.getString("reference") })
     }
 
@@ -238,10 +233,8 @@ class GoalsTest {
 
         env.api.on("POST /v1/sdk/goals", errorCode(404, "not_found"))
         Clikgate.goal("kyc_passed")
-        Clikgate.track("after_goal")
         assertTrue(env.core().flushBlocking(3_000))
-        assertEquals(0, env.queue.count())
-        assertEquals(1, env.api.calls("POST /v1/sdk/events").size) // the queue isn't blocked
+        assertEquals(0, env.queue.count()) // the queue isn't blocked
     }
 
     @Test
@@ -293,27 +286,21 @@ class GoalsTest {
         assertFalse(com.clikgate.internal.SdkConfig.parse(Fixtures.json("config_response_legacy")).privateMode)
         assertTrue(com.clikgate.internal.SdkConfig.parse(Fixtures.json("config_response_private_mode")).privateMode)
         installed()
-        Clikgate.track("purchase", ClikgateMoney.ofMinor(1500, "NGN"), mapOf("order_id" to "A-1"))
         Clikgate.identifyUser(customerId = "user_42")
-        env.core().flushBlocking(3_000)
         eventually { env.api.calls("POST /v1/sdk/identify").isNotEmpty() }
-        val e = env.api.body(env.api.calls("POST /v1/sdk/events").single()).getJSONArray("events").getJSONObject(0)
-        assertTrue(e.has("properties") && e.has("revenue_minor"))
+        assertEquals("user_42", env.api.body(env.api.calls("POST /v1/sdk/identify").single()).getString("customer_user_id"))
     }
 
     @Test
-    fun privateModeDropsIdentifyAndEventPropertiesButNotGoals() {
+    fun privateModeDropsIdentifyButNotGoals() {
         config("config_response_private_mode")
         installed()
         Clikgate.identifyUser(customerId = "user_42", identityToken = "tok")
-        Clikgate.track("purchase", ClikgateMoney.ofMinor(1500, "NGN"), mapOf("email" to "ada@example.com"))
         Clikgate.goal("order_paid", value = BigDecimal("15"), currency = "NGN", reference = "ORD-1")
         assertTrue(env.core().flushBlocking(5_000))
         settle(300)
         assertTrue(env.api.calls("POST /v1/sdk/identify").isEmpty())
         assertNull(env.storage.customerUserId)
-        val e = env.api.body(env.api.calls("POST /v1/sdk/events").single()).getJSONArray("events").getJSONObject(0)
-        assertEquals(setOf("event_id", "name", "occurred_at"), e.keys().asSequence().toSet())
         val g = sentGoals().single()
         assertEquals("15", g.getString("value"))
         assertEquals("ORD-1", g.getString("reference"))
@@ -330,19 +317,6 @@ class GoalsTest {
         assertTrue(env.api.calls("POST /v1/sdk/identify").isEmpty())
         assertFalse(env.storage.identifyPending)
         assertNull(env.storage.customerUserId)
-    }
-
-    @Test
-    fun eventsQueuedBeforePrivateModeWasKnownAreStrippedAtSendTime() {
-        // Queued by an earlier launch (with properties and revenue), before private mode was known.
-        env.queue.add(com.clikgate.internal.Core.buildEvent("purchase", ClikgateMoney.ofMinor(1500, "NGN"), mapOf("order_id" to "A-1"), false, 0), 1000, 1_048_576)
-        config("config_response_private_mode")
-        installed()
-        env.core().flushBlocking(3_000)
-        eventually { env.api.calls("POST /v1/sdk/events").isNotEmpty() }
-        val e = env.api.body(env.api.calls("POST /v1/sdk/events").single()).getJSONArray("events").getJSONObject(0)
-        assertFalse(e.has("properties"))
-        assertFalse(e.has("revenue_minor"))
     }
 
     // ------------------------------------------------------------ Change 14: labels

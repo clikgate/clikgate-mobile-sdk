@@ -90,7 +90,6 @@ internal class FakeApi {
         on("GET /v1/sdk/config", ok(Fixtures.text("config_response")))
         on("POST /v1/sdk/install", ok(Fixtures.text("install_response_organic")))
         on("POST /v1/sdk/open", ok("""{"open_id":"aop_01JAB3C4D5E6F7G8H9JKMNPQRS","uninstall_status":"installed"}"""))
-        on("POST /v1/sdk/events", ok(Fixtures.text("events_response")))
         on("POST /v1/sdk/goals", ok("""{"accepted":1,"duplicates":0,"rejected":[]}"""))
         on("POST /v1/sdk/identify", ok(Fixtures.text("identify_response")))
         on("POST /v1/sdk/push-token", ok("""{"ok":true}"""))

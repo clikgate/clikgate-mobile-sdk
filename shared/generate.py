@@ -109,7 +109,7 @@ PUSH = obj(
 )
 
 # Change 03 (B.3): consent purposes and the request-side consent object. Sent on every SDK request
-# body from SDK 1.2.0 (install, open, resolve, events, identify, push-token, attest, consent).
+# body from SDK 1.2.0 (install, open, resolve, goals, identify, push-token, attest, consent).
 CONSENT_STATE = {"enum": ["granted", "denied", "unknown"]}
 # Region hint (`setConsentRegion`): an ISO 3166-1 alpha-2 country code or one of the region codes
 # EEA / UK (Switzerland is the country code CH).
@@ -163,7 +163,8 @@ ATTESTATION = obj(
 )
 VERSION = {"type": "string", "pattern": r"^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$"}
 SDK_CALL = {
-    "enum": ["config", "install", "install_ping", "open", "resolve", "events", "identify", "push_token",
+    # Change 22: "events" removed (goal() is the only method; there is no events call).
+    "enum": ["config", "install", "install_ping", "open", "resolve", "identify", "push_token",
              "opt_out", "consent", "attest", "apple_search_ads", "referrals", "leaderboards", "codes",
              # Change 06: POST /v1/sdk/goals
              "goals"]
@@ -231,7 +232,9 @@ GOAL_REJECTION_CODES = [
 
 # ---- Change 12 (S.1): one goal() method, enums (backend contract C12 B2, B3) ----
 # GoalStatus and GoalKind (OpenAPI enums). The SDKs map unknown values defensively.
-GOAL_STATUS = {"enum": ["counted", "waiting", "refused"]}
+# Change 22 (R.9): `received` = stored, not counted (the name isn't ticked as a goal yet, reason `not_counted_yet`,
+# or the goal is archived, reason `goal_archived`). A success: the SDKs remove it from the queue and never retry it.
+GOAL_STATUS = {"enum": ["counted", "waiting", "received", "refused"]}
 GOAL_KIND = {"enum": ["standard", "payment"]}
 # The result of one goal item, in request order (`index`).
 GOAL_RESULT = obj(
@@ -324,29 +327,7 @@ SCHEMAS: dict[str, dict] = {
                     ["id", "name", "status", "client_link_creation", "allow_manual_code_entry"],
                 ),
             },
-            "conversion_value_schema": nullable(
-                obj(
-                    {
-                        "id": ID,
-                        "version": {"type": "integer"},
-                        "rules": {
-                            "type": "array",
-                            "items": obj(
-                                {
-                                    "fine_value": {"type": "integer", "minimum": 0, "maximum": 63},
-                                    "coarse_value": {"enum": ["low", "medium", "high"]},
-                                    "event": {"type": "string"},
-                                    "min_revenue_minor": {"type": ["integer", "null"]},
-                                    "currency": NULLABLE_STRING,
-                                    "lock_window": {"type": "boolean"},
-                                },
-                                ["fine_value", "coarse_value", "event"],
-                            ),
-                        },
-                    },
-                    ["id", "version", "rules"],
-                )
-            ),
+            # Change 22 (R.5): no `conversion_value_schema` (the SDKs never update SKAdNetwork values from goal()).
             "batching": obj(
                 {
                     "max_batch_size": {"type": "integer"},
@@ -384,8 +365,6 @@ SCHEMAS: dict[str, dict] = {
                 obj(
                     {
                         "allowed_calls": {"type": "array", "items": SDK_CALL},
-                        "allowed_events": {"type": ["array", "null"], "items": {"type": "string"}},
-                        "strip_event_properties": {"type": "boolean"},
                         "message": NULLABLE_STRING,
                     },
                     ["allowed_calls"],
@@ -398,15 +377,13 @@ SCHEMAS: dict[str, dict] = {
                     "enabled": {"type": "boolean"},
                     "log_attribution_event": {"type": "boolean"},
                     "set_user_properties": {"type": "boolean"},
-                    "mirror_events": {"type": "boolean"},
                     "report_app_instance_id": {"type": "boolean"},
                 },
                 ["enabled"],
             ),
             # ---- Change 06 (optional: servers before change 06 omit it; absent = false) ----
-            # B.5 organisation private mode. When true the SDK sends no /identify, no event
-            # `properties` (nor event revenue: value only through goal()), and logs one warning in
-            # debug builds. goal() works normally.
+            # B.5 organisation private mode. When true the SDK sends no customer ID on /identify and
+            # logs one warning in debug builds. goal() works normally.
             "private_mode": {"type": "boolean", "default": False},
             # ---- Change 14 (absent = true): false in private mode without "Allow labels in private mode";
             # the SDKs then drop labels on the device with one debug warning.
@@ -418,7 +395,6 @@ SCHEMAS: dict[str, dict] = {
             "server_time",
             "features",
             "referral_programs",
-            "conversion_value_schema",
             "batching",
         ],
     ),
@@ -547,44 +523,6 @@ SCHEMAS: dict[str, dict] = {
         },
         ["matched", "click_id", "deep_link", "link", "is_reengagement", "referral"],
     ),
-    "events_request": obj(
-        {
-            "events": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 100,
-                "items": obj(
-                    {
-                        "event_id": {"type": "string", "minLength": 1, "maxLength": 64},
-                        "name": {"type": "string", "pattern": r"^[A-Za-z0-9_.$:-]{1,64}$"},
-                        "occurred_at": TIMESTAMP,
-                        "revenue_minor": {"type": ["integer", "null"]},
-                        "currency": nullable(CURRENCY),
-                        "properties": {"type": ["object", "null"]},
-                    },
-                    ["event_id", "name", "occurred_at"],
-                    additional=False,
-                ),
-            },
-            "consent": nullable(CONSENT),
-        },
-        ["events"],
-        additional=False,
-    ),
-    "events_response": obj(
-        {
-            "accepted": {"type": "integer"},
-            "duplicates": {"type": "integer"},
-            "rejected": {
-                "type": "array",
-                "items": obj(
-                    {"event_id": {"type": "string"}, "code": {"type": "string"}, "message": {"type": "string"}},
-                    ["event_id", "code"],
-                ),
-            },
-        },
-        ["accepted", "duplicates", "rejected"],
-    ),
     # Change 14 identifyUser(): `customer_user_id` absent keeps it, null clears it (never sent in private mode);
     # `label` trimmed, 1-80 characters, "" clears.
     "identify_request": obj(
@@ -603,6 +541,9 @@ SCHEMAS: dict[str, dict] = {
             "person_id": NULLABLE_STRING,
             # "plan": below Growth the label isn't stored; "lower_rank": a label from your server or team was kept
             "label_ignored": {"enum": ["plan", "lower_rank", None]},
+            # Change 22 (R.22): the token check on this call; a bad token no longer fails identify
+            "verified": {"type": "boolean"},
+            "reason": {"enum": ["expired", "bad_signature", "secret_rotated", "no_secret_set", "not_yet_valid", None]},
         },
         ["customer_user_id", "identity_verified"],
     ),
@@ -824,21 +765,6 @@ FIXTURES: dict[str, dict] = {
                 "require_identity_token": True,
             }
         ],
-        "conversion_value_schema": {
-            "id": f"cvs_{ULID}",
-            "version": 1,
-            "rules": [
-                {"fine_value": 1, "coarse_value": "low", "event": "signup", "lock_window": False},
-                {
-                    "fine_value": 20,
-                    "coarse_value": "medium",
-                    "event": "purchase",
-                    "min_revenue_minor": 500000,
-                    "currency": "NGN",
-                    "lock_window": False,
-                },
-            ],
-        },
         "batching": {
             "max_batch_size": 100,
             "flush_interval_seconds": 15,
@@ -866,14 +792,13 @@ FIXTURES: dict[str, dict] = {
             "enabled": False,
             "log_attribution_event": True,
             "set_user_properties": True,
-            "mirror_events": False,
             "report_app_instance_id": True,
         },
     },
     "install_request_android": {
         "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
         "app_version": "3.4.1",
-        "sdk_version": "1.5.0",
+        "sdk_version": "1.5.1",
         "platform": "android",
         "os_version": "14",
         "device_model": "Pixel 8",
@@ -909,7 +834,7 @@ FIXTURES: dict[str, dict] = {
         "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
         "keychain_previous_installation_id": None,
         "app_version": "3.4.1",
-        "sdk_version": "1.5.0",
+        "sdk_version": "1.5.1",
         "platform": "ios",
         "os_version": "18.1",
         "device_model": "iPhone15,2",
@@ -1023,19 +948,6 @@ FIXTURES: dict[str, dict] = {
         "is_reengagement": False,
         "referral": None,
     },
-    "events_request": {
-        "events": [
-            {
-                "event_id": "4f1c2b3a-5d6e-4f70-8a9b-0c1d2e3f4a5b",
-                "name": "purchase",
-                "occurred_at": "2026-10-20T10:02:41.123Z",
-                "revenue_minor": 1500000,
-                "currency": "NGN",
-                "properties": {"order_id": "A-1001"},
-            }
-        ]
-    },
-    "events_response": {"accepted": 1, "duplicates": 0, "rejected": []},
     "identify_response": {"customer_user_id": "user_42", "identity_verified": True, "person_id": f"per_{ULID}", "label_ignored": None},
     "referral_link_response": {
         "referrer_id": f"rfr_{ULID}",
@@ -1186,7 +1098,7 @@ FIXTURES["install_request_ios_signals"] = {
 FIXTURES["install_request_opted_out"] = {
     "installation_id": FIXTURES["install_request_android"]["installation_id"],
     "app_version": "3.4.1",
-    "sdk_version": "1.5.0",
+    "sdk_version": "1.5.1",
     "platform": "android",
     "consent": {
         "analytics": "denied",
@@ -1215,7 +1127,6 @@ FIXTURES["config_response_consent_required"] = {
         "enabled": True,
         "log_attribution_event": True,
         "set_user_properties": True,
-        "mirror_events": True,
         "report_app_instance_id": True,
     },
 }
@@ -1231,9 +1142,7 @@ FIXTURES["config_response_blocked"] = {
     "latest_version": "1.4.0",
     "version_status": "blocked",
     "blocked_instructions": {
-        "allowed_calls": ["config", "install", "open", "events", "opt_out", "consent", "install_ping"],
-        "allowed_events": ["purchase", "sign_up"],
-        "strip_event_properties": True,
+        "allowed_calls": ["config", "install", "open", "opt_out", "consent", "install_ping"],
         "message": "Clikgate SDK 1.2.x is blocked. Update to 1.4.0 or later.",
     },
 }
@@ -1261,7 +1170,6 @@ FIXTURES["resolve_request"] = {
     "consent": FIXTURES["install_request_android"]["consent"],
     "google_click_ids": {"gclid": "Cj0KCQjw-test_gclid", "gbraid": None, "wbraid": None, "source": "deep_link"},
 }
-FIXTURES["events_request_consent"] = {**FIXTURES["events_request"], "consent": FIXTURES["install_request_android"]["consent"]}
 FIXTURES["consent_request"] = {
     "consent": {
         "analytics": "granted",
@@ -1276,7 +1184,7 @@ FIXTURES["consent_response"] = {"ok": True}
 FIXTURES["install_ping_request"] = {
     "platform": "android",
     "app_version": "3.4.1",
-    "sdk_version": "1.5.0",
+    "sdk_version": "1.5.1",
     "consent": {"analytics": "unknown", "attribution": "denied", "ad_user_data": "denied", "ad_personalization": "denied", "region": "DE", "updated_at": "2026-10-20T10:05:00Z"},
 }
 FIXTURES["install_ping_response"] = {"ok": True}
@@ -1330,8 +1238,7 @@ FIXTURES["config_response_deep_link_only"] = {
     "link_domains": ["yourapp.clk.ng", "inv.myapp.com"],
     "features": {**FIXTURES["config_response"]["features"], "app_attribution": False, "deep_linking": True},
 }
-# /events and /goals answer 200 with this no-op body: drop the batch, warn once ("needs Growth"), never retry.
-FIXTURES["events_response_feature_disabled"] = {"accepted": False, "reason": "feature_disabled", "feature": "app_attribution"}
+# /goals answers 200 with this no-op body: drop the batch, warn once ("attribution is switched off"), never retry.
 FIXTURES["goals_response_feature_disabled"] = {"accepted": False, "reason": "feature_disabled", "feature": "app_attribution"}
 # /install: attribution is always the organic shape; deep_link is the deferred link when one matched...
 ORGANIC_DEEP_LINK_ONLY = {
@@ -1374,8 +1281,6 @@ FIXTURE_SCHEMA = {
     "install_response_pending": "install_response",
     "resolve_response_matched": "resolve_response",
     "resolve_response_unmatched": "resolve_response",
-    "events_request": "events_request",
-    "events_response": "events_response",
     "identify_response": "identify_response",
     "referral_link_response": "referral_link_response",
     "referral_stats_response": "referral_stats_response",
@@ -1394,7 +1299,6 @@ FIXTURE_SCHEMA = {
     "install_response_attributed_source": "install_response",
     "open_request": "open_request",
     "resolve_request": "resolve_request",
-    "events_request_consent": "events_request",
     "consent_request": "consent_request",
     "consent_response": "consent_response",
     "install_ping_request": "install_ping_request",
@@ -1406,7 +1310,6 @@ FIXTURE_SCHEMA = {
     "goals_response_rejected": "goals_response",
     "install_request_opted_out": "install_request",
     "config_response_deep_link_only": "config_response",
-    "events_response_feature_disabled": "feature_disabled",
     "goals_response_feature_disabled": "feature_disabled",
     "install_response_deep_link_only": "install_response",
     "install_response_deferred_cap": "install_response",
@@ -1439,13 +1342,64 @@ FIXTURES["goals_response_results"] = {
          "goal_kind": "payment", "counted": False, "value_ignored": False, "id": None},
     ],
 }
+# ---- Change 22 (R.9): a name not ticked as a goal yet, and an archived goal: stored, not counted. A success. ----
+FIXTURES["goals_response_received"] = {
+    "accepted": 2,
+    "duplicates": 0,
+    "rejected": [],
+    "results": [
+        {"index": 0, "goal": "level_completed", "reference": "APP-7", "status": "received", "reason": "not_counted_yet",
+         "goal_kind": None, "counted": False, "value_ignored": False, "id": None},
+        {"index": 1, "goal": "old_signup", "reference": "APP-8", "status": "received", "reason": "goal_archived",
+         "goal_kind": "standard", "counted": False, "value_ignored": False, "id": None},
+    ],
+}
 FIXTURE_SCHEMA.update(
     {
         "goals_request_payment": "goals_request",
         "goals_response_results": "goals_response",
+        "goals_response_received": "goals_response",
     }
 )
 
+
+# Strict goal names: the organisation accepts only goals it has set up. A name with no goal behind it is refused with
+# `unknown_goal`, an archived goal with `goal_archived`. Final: the SDK drops the item and never retries it.
+FIXTURES["goals_response_refused_unknown_goal"] = {
+    "accepted": 0,
+    "duplicates": 0,
+    "rejected": [
+        {"index": 0, "goal": "level_complete", "reference": "APP-11", "code": "unknown_goal", "param": "goal",
+         "message": "This goal isn't set up in Clikgate."},
+        {"index": 1, "goal": "old_signup", "reference": "APP-12", "code": "goal_archived", "param": "goal",
+         "message": "This goal is archived."},
+    ],
+    "results": [
+        {"index": 0, "goal": "level_complete", "reference": "APP-11", "status": "refused", "reason": "unknown_goal",
+         "goal_kind": None, "counted": False, "value_ignored": False, "id": None},
+        {"index": 1, "goal": "old_signup", "reference": "APP-12", "status": "refused", "reason": "goal_archived",
+         "goal_kind": "standard", "counted": False, "value_ignored": False, "id": None},
+    ],
+}
+# The same refusal answered for the whole request (`422`, a result body rather than an error envelope).
+SCHEMAS["goal_refusal"] = obj(
+    {
+        "status": {"const": "refused"},
+        "reason": {"type": "string"},
+        "counted": {"const": False},
+        "goal_kind": {"anyOf": [{"enum": ["standard", "payment"]}, {"type": "null"}]},
+    },
+    ["status", "reason"],
+)
+FIXTURES["goal_refusal_unknown_goal"] = {"status": "refused", "reason": "unknown_goal", "counted": False, "goal_kind": None}
+FIXTURES["goal_refusal_goal_archived"] = {"status": "refused", "reason": "goal_archived"}
+FIXTURE_SCHEMA.update(
+    {
+        "goals_response_refused_unknown_goal": "goals_response",
+        "goal_refusal_unknown_goal": "goal_refusal",
+        "goal_refusal_goal_archived": "goal_refusal",
+    }
+)
 
 # ---- Change 13: share helpers (Engage share.link, website share widget) ----
 SHARE_APP = {"enum": json.loads((ROOT / "share_targets.json").read_text())["share_apps"]}
@@ -1501,6 +1455,11 @@ FIXTURE_SCHEMA.update({
     "identify_response_plan": "identify_response",
     "identify_response": "identify_response",
 })
+# ---- Change 22 (R.22): a bad identity token answers 200 with the reason; the customer ID stays unverified ----
+FIXTURES["identify_response_token_expired"] = {
+    **FIXTURES["identify_response"], "identity_verified": False, "verified": False, "reason": "expired",
+}
+FIXTURE_SCHEMA["identify_response_token_expired"] = "identify_response"
 # Test cases for every share.link implementation (Android, iOS, the web script): the URL each app gets.
 # Internal test data, not documentation.
 FIXTURES["share_cases"] = {
@@ -1649,7 +1608,7 @@ FIXTURE_SCHEMA.update({
 # the path it handled: no query or fragment, every segment that looks like an ID, an email address or a phone number
 # replaced with `:id` on the device (cases below). Only with a test SDK key (`cg_sdk_test_`), or when the /resolve or
 # /install answer says the dashboard's debug view is open for this app (`debug_view: true`, optional, absent =
-# false); never in normal live use. A call of its own: never queued with events, never metered, never an attributed
+# false); never in normal live use. A call of its own: never queued with goals, never metered, never an attributed
 # event; one retry, failures dropped. Not sent while consent is pending or denied, after opt-out, for a blocked
 # SDK version (unless `deeplink_handled` is in `allowed_calls`), for a gated (password / blocked) link, or for a
 # link delivered locally without a server answer.
@@ -1684,6 +1643,23 @@ FIXTURE_SCHEMA.update({
     "deeplink_handled_response": "deeplink_handled_response",
     "resolve_response_debug_view": "resolve_response",
     "install_response_debug_view": "install_response",
+})
+
+# ---- Change 22 (R.6): `deeplink_handled` in live mode for App banner taps measuring the right screen ----
+# /v1/sdk/resolve says `measure_right_screen: true` when the opening click came from an App banner with "measure right
+# screen" on; the SDK then reports the handled path in live mode too, with that click as `click_id`. Still never
+# queued, metered, a goal or a "Seen from your app and website" name.
+SCHEMAS["deeplink_handled_request"]["properties"]["click_id"] = {"type": ["string", "null"], "maxLength": 64}
+SCHEMAS["resolve_response"]["properties"]["measure_right_screen"] = {"type": "boolean"}
+FIXTURES["resolve_response_banner_right_screen"] = {
+    **FIXTURES["resolve_response_matched"],
+    "deep_link": {"url": "https://inv.myapp.com/products/42", "path": "/products/42?ref=banner", "data": {}, "is_deferred": False},
+    "measure_right_screen": True,
+}
+FIXTURES["deeplink_handled_request_banner"] = {"path": "/products/:id", "is_deferred": False, "click_id": FIXTURES["resolve_response_matched"]["click_id"]}
+FIXTURE_SCHEMA.update({
+    "resolve_response_banner_right_screen": "resolve_response",
+    "deeplink_handled_request_banner": "deeplink_handled_request",
 })
 # Test cases for every SDK's path cleaning (internal test data, not documentation): `path` → `expected`.
 FIXTURES["deeplink_path_cases"] = {

@@ -27,8 +27,6 @@ struct RemoteConfig: Sendable {
     /// `blocked_instructions`.
     struct Blocked: Sendable {
         var allowedCalls = SDKCall.blockedDefault
-        var allowedEvents: [String]?
-        var stripEventProperties = true
         var message: String?
     }
 
@@ -37,7 +35,6 @@ struct RemoteConfig: Sendable {
         var enabled = false
         var logAttributionEvent = true
         var setUserProperties = true
-        var mirrorEvents = false
         var reportAppInstanceId = true
     }
 
@@ -53,31 +50,10 @@ struct RemoteConfig: Sendable {
         var maxQueueBytes = 1_048_576
     }
 
-    struct ConversionRule: Sendable {
-        var fineValue: Int
-        var coarseValue: String?
-        var event: String
-        var minRevenueMinor: Int64?
-        var currency: String?
-        var lockWindow: Bool
-
-        init(fineValue: Int, coarseValue: String?, event: String, minRevenueMinor: Int64? = nil, currency: String? = nil, lockWindow: Bool = false) {
-            self.fineValue = fineValue; self.coarseValue = coarseValue; self.event = event
-            self.minRevenueMinor = minRevenueMinor; self.currency = currency; self.lockWindow = lockWindow
-        }
-    }
-
-    struct ConversionValueSchema: Sendable {
-        var id: String
-        var version: Int
-        var rules: [ConversionRule]
-    }
-
     var appId: String?
     var environment: String?
     var linkDomains: [String] = []
     var features = Features()
-    var conversionValueSchema: ConversionValueSchema?
     var batching = Batching()
     var reattestationIntervalDays = 7
     var sessionTimeoutMinutes = 30
@@ -118,15 +94,6 @@ struct RemoteConfig: Sendable {
             }
             switches = sw
         }
-        if let s = j.obj("conversion_value_schema") {
-            let rules = s.objects("rules").compactMap { r -> ConversionRule? in
-                guard let fine = r.int("fine_value"), let event = r.str("event") else { return nil }
-                return ConversionRule(fineValue: fine, coarseValue: r.str("coarse_value"), event: event,
-                                      minRevenueMinor: r.int64("min_revenue_minor"), currency: r.str("currency"),
-                                      lockWindow: r.bool("lock_window") ?? false)
-            }
-            conversionValueSchema = ConversionValueSchema(id: s.str("id") ?? "", version: s.int("version") ?? 0, rules: rules)
-        }
         if let b = j.obj("batching") {
             batching.maxBatchSize = Swift.min(100, Swift.max(1, b.int("max_batch_size") ?? 100))
             batching.flushIntervalSeconds = Swift.max(1, b.int("flush_interval_seconds") ?? 15)
@@ -154,8 +121,6 @@ struct RemoteConfig: Sendable {
             var b = Blocked()
             if let o = j.obj("blocked_instructions") {
                 if o["allowed_calls"] is [Any] { b.allowedCalls = o.strings("allowed_calls") }
-                if o["allowed_events"] is [Any] { b.allowedEvents = o.strings("allowed_events") }
-                b.stripEventProperties = o.bool("strip_event_properties") ?? true
                 b.message = o.str("message")
             }
             blocked = b
@@ -166,7 +131,6 @@ struct RemoteConfig: Sendable {
             firebase = Firebase(enabled: f.bool("enabled") ?? false,
                                 logAttributionEvent: f.bool("log_attribution_event") ?? true,
                                 setUserProperties: f.bool("set_user_properties") ?? true,
-                                mirrorEvents: f.bool("mirror_events") ?? false,
                                 reportAppInstanceId: f.bool("report_app_instance_id") ?? true)
         }
     }
@@ -303,7 +267,7 @@ struct InstallResponse: Sendable {
     var retryAfterMs: Int?
     /// The dashboard's debug view is open for this app (report the handled deep link).
     var debugView = false
-    /// Change 21 R.2: the launch URL matched, so /install already recorded its click.
+    /// The launch URL matched, so /install already recorded its click.
     var launchMatched = false
 
     @_optimize(size)
@@ -312,7 +276,7 @@ struct InstallResponse: Sendable {
         debugView = j.bool("debug_view") ?? false
         installId = id
         attribution = j.obj("attribution").map(ClikgateAttribution.init(json:))
-        // Change 17 R.2: a gated launch URL never routes into the app; with no deep link the launch URL is
+        // A gated launch URL never routes into the app; with no deep link the launch URL is
         // /resolve'd as before, which gives the gate's answer (password page / blocked).
         let status = j.str("status")
         launchMatched = status == "matched"
@@ -328,15 +292,18 @@ struct ResolveResponse: Sendable {
     var deepLink: WireDeepLink?
     var link: ClikgateLink?
     var referral: ClikgateReferral?
-    /// Change 17 R.2 gates (`status`): `password_required` → the URL to open in the browser; `blocked` → the text.
+    /// Gates (`status`): `password_required` → the URL to open in the browser; `blocked` → the text.
     var webUrl: String?
     var blockMessage: String?
     var debugView = false
+    /// The click of an App banner tap measuring the right screen (`measure_right_screen`).
+    var bannerClickId: String?
 
     @_optimize(size)
     init?(json j: JSONObject?) {
         guard let j = j else { return nil }
         debugView = j.bool("debug_view") ?? false
+        if j.bool("measure_right_screen") == true { bannerClickId = j.str("click_id") }
         switch j.str("status") {
         case "password_required": webUrl = j.str("web_url") ?? ""
         case "blocked": blockMessage = j.str("block_message") ?? ""
@@ -354,37 +321,30 @@ struct ResolveResponse: Sendable {
 }
 
 struct QueuedEvent: Sendable {
-    /// The `/goals` item when this queue entry is a goal (`name` = key, `eventId` = dedupe key).
+    /// The `/goals` item (`name` = key, `eventId` = dedupe key). Nil only for an app event an earlier development
+    /// build left in the persisted queue (dropped on the next flush, never sent).
     var goal: [String: JSONValue]?
     var eventId: String
     var name: String
     var occurredAt: String
-    var revenueMinor: Int64?
-    var currency: String?
-    var properties: [String: JSONValue]?
     /// The `goal()` completion (in memory only).
     var done: (@Sendable (ClikgateGoalResult) -> Void)?
 
-    init(eventId: String, name: String, occurredAt: String, revenueMinor: Int64? = nil, currency: String? = nil,
-         properties: [String: JSONValue]? = nil) {
+    init(eventId: String, name: String, occurredAt: String) {
         self.eventId = eventId; self.name = name; self.occurredAt = occurredAt
-        self.revenueMinor = revenueMinor; self.currency = currency; self.properties = properties
     }
 
     init?(json j: JSONObject) {
         guard let id = j.str("event_id"), let name = j.str("name"), let at = j.str("occurred_at") else { return nil }
         eventId = id; self.name = name; occurredAt = at
-        revenueMinor = j.int64("revenue_minor"); currency = j.str("currency")
-        properties = j.obj("properties").map { JSONValue.object(from: $0) }
         goal = j.obj("goal").map { JSONValue.object(from: $0) }
     }
 
+    /// The persisted form (the queue file).
     var json: JSONObject {
         var b = JSONBuilder()
         b.set("event_id", eventId); b.set("name", name); b.set("occurred_at", occurredAt)
-        b.set("revenue_minor", revenueMinor); b.set("currency", currency)
-        b.set("properties", properties?.anyDictionary)
-        b.set("goal", goal?.anyDictionary)   // persisted form only (the queue file)
+        b.set("goal", goal?.anyDictionary)
         return b.object
     }
 }

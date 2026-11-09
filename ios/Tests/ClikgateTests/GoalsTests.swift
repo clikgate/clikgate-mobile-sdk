@@ -120,7 +120,6 @@ final class GoalsTests: XCTestCase {
         XCTAssertNotNil(ref.range(of: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", options: .regularExpression), ref)
         XCTAssertEqual(Set(goals[1].keys), ["goal", "reference", "occurred_at"])
         XCTAssertNotNil(ISO8601.parse(goals[1]["occurred_at"] as? String))
-        XCTAssertTrue(server.requests("POST /v1/sdk/events").isEmpty)
     }
 
     func testWrapperStringValues() async {
@@ -276,16 +275,12 @@ final class GoalsTests: XCTestCase {
         XCTAssertEqual(sentGoals().first?["click_id"] as? String, "clk_01JAB3C4D5E6F7G8H9JKMNPQRS")
     }
 
-    func testEventsAndGoalsKeepTheirOrderInSeparateBatches() async {
+    func testGoalsKeepTheirOrder() async {
         let core = h.makeCore()
         await core.start(startTimers: false)
-        await core.track(name: "e1", revenue: nil, properties: nil)
         await core.goal("g_one", value: nil, currency: nil, reference: "R1", isFirst: nil)
         await core.goal("g_two", value: "10", currency: nil, reference: "R2", isFirst: nil)
-        await core.track(name: "e2", revenue: nil, properties: nil)
         await core.flush()
-        let paths = server.requests.map { $0.path }.filter { $0 == "/v1/sdk/events" || $0 == "/v1/sdk/goals" }
-        XCTAssertEqual(paths, ["/v1/sdk/events", "/v1/sdk/goals", "/v1/sdk/events"])
         XCTAssertEqual(sentGoals().map { $0["reference"] as? String }, ["R1", "R2"])
         let left = await core.queuedEventCount
         XCTAssertEqual(left, 0)
@@ -344,11 +339,9 @@ final class GoalsTests: XCTestCase {
 
         server.on("POST /v1/sdk/goals", .json(#"{"error":{"type":"not_found","code":"not_found","message":"x"}}"#, status: 404))
         await core.goal("kyc_passed", value: nil, currency: nil, reference: "K3", isFirst: nil)
-        await core.track(name: "after_goal", revenue: nil, properties: nil)
         await core.flush()
         left = await core.queuedEventCount
-        XCTAssertEqual(left, 0)
-        XCTAssertEqual(server.requests("POST /v1/sdk/events").count, 1, "the queue isn't blocked")
+        XCTAssertEqual(left, 0, "the queue isn't blocked")
     }
 
     // MARK: - Consent
@@ -382,27 +375,20 @@ final class GoalsTests: XCTestCase {
         let core = h.makeCore()
         await core.start(startTimers: false)
         await core.identifyUser(label: nil, customerId: "user_42", identityToken: nil)
-        await core.track(name: "purchase", revenue: ClikgateMoney.ofMinor(1500, currency: "NGN"), properties: ["order_id": .string("A-1")])
         await core.flush()
-        XCTAssertEqual(server.requests("POST /v1/sdk/identify").count, 1)
-        let e = (server.requests("POST /v1/sdk/events").first?.json["events"] as? [[String: Any]])?.first
-        XCTAssertNotNil(e?["properties"])
-        XCTAssertNotNil(e?["revenue_minor"])
+        XCTAssertEqual(server.requests("POST /v1/sdk/identify").first?.json["customer_user_id"] as? String, "user_42")
     }
 
-    func testPrivateModeDropsIdentifyAndEventPropertiesButNotGoals() async throws {
+    func testPrivateModeDropsIdentifyButNotGoals() async throws {
         stubConfig("config_response_private_mode")
         let core = h.makeCore()
         await core.start(startTimers: false)
         await core.identifyUser(label: nil, customerId: "user_42", identityToken: "tok")
-        await core.track(name: "purchase", revenue: ClikgateMoney.ofMinor(1500, currency: "NGN"), properties: ["email": .string("ada@example.com")])
         await core.goal("order_paid", value: "15", currency: "NGN", reference: "ORD-1", isFirst: nil)
         await core.flush()
         XCTAssertTrue(server.requests("POST /v1/sdk/identify").isEmpty)
         let st = await core.currentState()
         XCTAssertNil(st.customerUserId)
-        let e = try XCTUnwrap((server.requests("POST /v1/sdk/events").first?.json["events"] as? [[String: Any]])?.first)
-        XCTAssertEqual(Set(e.keys), ["event_id", "name", "occurred_at"])
         XCTAssertEqual(sentGoals().first?["value"] as? String, "15")
         XCTAssertEqual(sentGoals().first?["reference"] as? String, "ORD-1")
     }
@@ -461,12 +447,12 @@ final class GoalsTests: XCTestCase {
         XCTAssertNil(sentGoals().first?["label"])
     }
 
-    func testPrivateModeDiscardsAPendingIdentifyAndStripsOldEvents() async throws {
+    func testPrivateModeDiscardsAPendingIdentify() async throws {
         // Queued on an earlier launch, before private mode was known.
         let old = h.makeCore()
         server.on("POST /v1/sdk/install", .offline())
         await old.identifyUser(label: nil, customerId: "user_42", identityToken: nil)
-        await old.track(name: "purchase", revenue: ClikgateMoney.ofMinor(1500, currency: "NGN"), properties: ["order_id": .string("A-1")])
+        await old.goal("purchase", value: nil, currency: nil, reference: "P-1", isFirst: nil)
 
         stubHappyPath()
         stubConfig("config_response_private_mode")
@@ -478,9 +464,7 @@ final class GoalsTests: XCTestCase {
         let st = await core.currentState()
         XCTAssertFalse(st.identifyPending)
         XCTAssertNil(st.customerUserId)
-        let e = try XCTUnwrap((server.requests("POST /v1/sdk/events").first?.json["events"] as? [[String: Any]])?.first)
-        XCTAssertNil(e["properties"])
-        XCTAssertNil(e["revenue_minor"])
+        XCTAssertEqual(sentGoals().map { $0["reference"] as? String }, ["P-1"], "goals queued before private mode are sent as they are")
     }
 }
 

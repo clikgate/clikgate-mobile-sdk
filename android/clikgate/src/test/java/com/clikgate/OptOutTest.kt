@@ -31,8 +31,8 @@ class OptOutTest {
     @Test
     fun optOutClearsQueueSendsOptOutAndStopsCalls() {
         installed()
-        Clikgate.track("a")
-        Clikgate.track("b")
+        Clikgate.goal("goal_a")
+        Clikgate.goal("goal_b")
         eventually { env.queue.count() == 2 }
         Clikgate.setTrackingEnabled(false)
         eventually { env.api.calls("POST /v1/sdk/opt-out").size == 1 }
@@ -41,7 +41,7 @@ class OptOutTest {
         eventually { env.storage.pendingOptOut == null }
 
         val before = env.api.requests.size
-        Clikgate.track("c")
+        Clikgate.goal("goal_c")
         Clikgate.identifyUser(customerId = "user_42")
         Clikgate.setPushToken("tok", PushProvider.FCM)
         env.core().onBackground()
@@ -92,9 +92,9 @@ class OptOutTest {
         eventually { env.api.calls("POST /v1/sdk/opt-out").size == 2 }
         assertFalse(env.api.body(env.api.calls("POST /v1/sdk/opt-out")[1]).getBoolean("opt_out"))
         eventually { env.storage.pendingOptOut == null }
-        Clikgate.track("back")
+        Clikgate.goal("back")
         env.core().onBackground()
-        eventually { env.api.calls("POST /v1/sdk/events").size == 1 }
+        eventually { env.api.calls("POST /v1/sdk/goals").size == 1 }
         // no new install
         assertEquals(1, env.api.calls("POST /v1/sdk/install").size)
     }

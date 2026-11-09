@@ -1,5 +1,20 @@
 # Changelog — Clikgate iOS SDK
 
+## Unreleased: one method, `goal()`; installation ID (Change 22)
+
+Nothing has been published, so no public version ever has `track()`. The version stays 1.5.1 until the first public release.
+
+- **Removed:** `Clikgate.shared.track(_:revenue:properties:completion:)` and `ClikgateMoney`. `goal()` is the only method for what happens in the app. Names arrive in the dashboard's "Seen from your app and website" and count once they are ticked.
+- **Removed:** the app-event call and its queue path. App events left in the persisted queue by an earlier development build are dropped on the next flush, without a network call.
+- **Removed:** SKAdNetwork / AdAttributionKit conversion-value updates on the device and the `conversion_value_schema` config (change 22 R.5). The SDK no longer imports StoreKit or AdAttributionKit.
+- **Removed:** `ClikgateFirebaseForwardingOptions.mirrorEvents` and `eventNameMap`. Attribution forwarding to Firebase is unchanged.
+- **Added:** `ClikgateGoalStatus.received`: stored, not counted (`not_counted_yet`, `goal_archived`). A success: never retried.
+- **Added:** `try await Clikgate.shared.installationId()` (and a completion form) for identity Path B. Nil when tracking is off. Guide: https://clikgate.com/docs/identify-users
+- **Added:** the reason `unknown_goal` (`.refused`) for a name that isn't set up as a goal while the organisation accepts only set-up goals, and `.refused` / `goal_archived` for an archived goal there. Both are final: dropped from the queue, never retried. Debug builds log "Goal `{name}` isn't set up in Clikgate" with the goal name only. A whole-request `422` answered as `{status: "refused", reason}` is refused with that reason. The SDK never checks names itself. No public API change.
+- A blocked SDK version's default calls no longer list `events`; goals go only when the server lists `goals`.
+- **Changed (R.22):** `identifyUser()` with an identity token that doesn't verify: the server now answers 200 with `verified: false` and a `reason` (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`). The SDK keeps the customer ID (unverified) and logs a warning naming the reason in plain words, e.g. "identifyUser: the identity token did not verify (expired); the customer ID is kept but not verified". The new fields are optional: an older server's `422 identity_invalid` is still handled. Referral calls refused with `403 identity_expired` (or `422 identity_invalid`) return that error and log a warning to get a new token. The token, the identity secret and the customer ID are never logged. No public API change (`identifyUser()` returns nothing).
+- Size: core 385.3 KB after R.22 (382.6 KB before; was 407.6 KB; ceiling 410 KB).
+
 ## 1.5.1 (unreleased): one tap is one click, X click ids (Change 21)
 
 Nothing has been published yet: this patch also carries everything under "Unreleased" below.
@@ -75,7 +90,7 @@ Breaking against the unreleased 1.5.0 API. No version is published yet, so this 
 
 ### Deep links on every plan
 - **Deep-link-only mode** (Free, Starter, or an app with attribution switched off: `/config` says
-  `app_attribution: false`, `deep_linking: true`): `goal()` and `track()` log one "needs Growth" warning per
+  `app_attribution: false`, `deep_linking: true`): `goal()` and `track()` log one "attribution is switched off" warning per
   launch and do nothing: nothing is queued or sent, and no error is returned. Direct and deferred deep links work
   as before.
 - `/events` and `/goals` answering `200 {"accepted": false, "reason": "feature_disabled", "feature": "app_attribution"}`

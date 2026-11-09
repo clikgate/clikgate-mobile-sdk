@@ -78,6 +78,10 @@ struct APIClient: Sendable {
                                  param: e.str("param"), requestId: e.str("request_id"),
                                  feature: e.str("feature"), offlineTouchId: e.str("offline_touch_id"))
         }
+        // A goal refusal answered as a result body (`{status: "refused", reason: ...}`): the reason is the code.
+        if let j = JSON.object(data), j.str("status") == "refused", let reason = j.str("reason") {
+            return ClikgateError(code: reason, message: "HTTP \(status)", status: status)
+        }
         let code: String
         switch status {
         case 401: code = ClikgateError.invalidSdkKey

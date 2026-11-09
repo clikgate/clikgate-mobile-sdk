@@ -12,6 +12,8 @@ Clikgate.goal(_:value:currency:reference:provider:isFirst:label:completion:): fu
 Clikgate.handle(url:): @discardableResult @objc(handleURL:) func handle(url: URL) -> Bool
 Clikgate.handleRemoteNotification(_:): @objc(handleRemoteNotification:) func handleRemoteNotification(_ userInfo: [AnyHashable : Any]) -> Bool
 Clikgate.identifyUser(label:customerId:identityToken:): func identifyUser(label: String? = nil, customerId: String? = "\u{0}", identityToken: String? = nil)
+Clikgate.installationId(): func installationId() async throws -> String?
+Clikgate.installationId(completion:): func installationId(completion: @escaping @MainActor (Result<String?, ClikgateError>) -> Void)
 Clikgate.isClikgateMessage(_:): @objc static func isClikgateMessage(_ userInfo: [AnyHashable : Any]) -> Bool
 Clikgate.isFeatureEnabled(_:): func isFeatureEnabled(_ key: String) -> Bool
 Clikgate.onDeepLink(_:): func onDeepLink(_ handler: @escaping @MainActor (ClikgateDeepLinkResult) -> Void)
@@ -24,7 +26,6 @@ Clikgate.setPushToken(deviceToken:): @objc(setPushTokenWithDeviceToken:) func se
 Clikgate.setPushToken(fcmToken:): @objc(setPushTokenWithFcmToken:) func setPushToken(fcmToken: String)
 Clikgate.setTrackingEnabled(_:): func setTrackingEnabled(_ enabled: Bool)
 Clikgate.shared: @objc static let shared: Clikgate
-Clikgate.track(_:revenue:properties:completion:): func track(_ name: String, revenue: ClikgateMoney? = nil, properties: [String : Any]? = nil, completion: (@MainActor (ClikgateError?) -> Void)? = nil)
 Clikgate: @objc(Clikgate) final class Clikgate
 ClikgateAttribution.Status.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
 ClikgateAttribution.Status.attributed: case attributed
@@ -130,10 +131,8 @@ ClikgateFeatures.skanPostbacks: static let skanPostbacks: String
 ClikgateFeatures.uninstallTracking: static let uninstallTracking: String
 ClikgateFeatures.whatsappAttribution: static let whatsappAttribution: String
 ClikgateFeatures: enum ClikgateFeatures
-ClikgateFirebaseForwardingOptions.eventNameMap: var eventNameMap: [String : String]
-ClikgateFirebaseForwardingOptions.init(logAttributionEvent:setUserProperties:mirrorEvents:eventNameMap:): init(logAttributionEvent: Bool = true, setUserProperties: Bool = true, mirrorEvents: Bool = false, eventNameMap: [String : String] = [:])
+ClikgateFirebaseForwardingOptions.init(logAttributionEvent:setUserProperties:): init(logAttributionEvent: Bool = true, setUserProperties: Bool = true)
 ClikgateFirebaseForwardingOptions.logAttributionEvent: var logAttributionEvent: Bool
-ClikgateFirebaseForwardingOptions.mirrorEvents: var mirrorEvents: Bool
 ClikgateFirebaseForwardingOptions.setUserProperties: var setUserProperties: Bool
 ClikgateFirebaseForwardingOptions: struct ClikgateFirebaseForwardingOptions
 ClikgateGoalKind.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
@@ -147,6 +146,7 @@ ClikgateGoalResult.valueIgnored: let valueIgnored: Bool
 ClikgateGoalResult: struct ClikgateGoalResult
 ClikgateGoalStatus.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
 ClikgateGoalStatus.counted: case counted
+ClikgateGoalStatus.received: case received
 ClikgateGoalStatus.refused: case refused
 ClikgateGoalStatus.waiting: case waiting
 ClikgateGoalStatus: enum ClikgateGoalStatus
@@ -156,11 +156,6 @@ ClikgateLink.id: let id: String
 ClikgateLink.kind: let kind: String
 ClikgateLink.metadata: var metadata: [String : Any] { get }
 ClikgateLink: struct ClikgateLink
-ClikgateMoney.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
-ClikgateMoney.amountMinor: let amountMinor: Int64
-ClikgateMoney.currency: let currency: String
-ClikgateMoney.ofMinor(_:currency:): static func ofMinor(_ amountMinor: Int64, currency: String) -> ClikgateMoney
-ClikgateMoney: struct ClikgateMoney
 ClikgateOptions.Attestation.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
 ClikgateOptions.Attestation.appAttestIfAvailable: case appAttestIfAvailable
 ClikgateOptions.Attestation.hash(into:): func hash(into hasher: inout Hasher)

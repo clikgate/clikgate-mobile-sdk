@@ -1,25 +1,8 @@
 package com.clikgate
 
-/**
- * An amount of money in minor units (e.g. kobo, cents) and an ISO 4217 currency code, for `track()`
- * revenue. Create it with [ClikgateMoney.ofMinor]: `ClikgateMoney.ofMinor(1_500_000, "NGN")` is ₦15,000.
- * (Goals take normal units instead: see [Clikgate.goal].)
- */
-public data class ClikgateMoney @Deprecated(
-    "Use ClikgateMoney.ofMinor(amountMinor, currency): the name says the amount is in minor units",
-    ReplaceWith("ClikgateMoney.ofMinor(amountMinor, currency)"),
-) constructor(val amountMinor: Long, val currency: String) {
-    public companion object {
-        /** [amountMinor] in minor units (kobo, cents): `ofMinor(1_500_000, "NGN")` is ₦15,000. */
-        @JvmStatic
-        @Suppress("DEPRECATION")
-        public fun ofMinor(amountMinor: Long, currency: String): ClikgateMoney = ClikgateMoney(amountMinor, currency)
-    }
-}
-
 /** The outcome of a [Clikgate.goal] call. */
 public enum class GoalStatus(
-    /** The wire value: `counted`, `waiting` or `refused`. */
+    /** The wire value: `counted`, `waiting`, `received` or `refused`. */
     public val value: String,
 ) {
     /** Counted now. */
@@ -28,7 +11,18 @@ public enum class GoalStatus(
     /** Stored, not counted yet: a Payment goal waiting for its confirmation, or a goal waiting for its click. */
     WAITING("waiting"),
 
-    /** Not counted; [GoalResult.reason] says why. */
+    /**
+     * Stored, not counted: the name isn't ticked as a goal in the dashboard yet (reason `not_counted_yet`), or the
+     * goal is archived (reason `goal_archived`). A success: the SDK doesn't retry it. It counts from the moment the
+     * name is ticked ("Count this as a goal").
+     */
+    RECEIVED("received"),
+
+    /**
+     * Not counted; [GoalResult.reason] says why. Final: the SDK never retries or re-queues it. When the organisation
+     * accepts only goals it has set up, a name with no goal behind it is refused with `unknown_goal` (and an archived
+     * goal with `goal_archived`); debug builds log "Goal `name` isn't set up in Clikgate".
+     */
     REFUSED("refused"),
 }
 
@@ -47,9 +41,9 @@ public enum class GoalKind(
 /**
  * What Clikgate did with a goal.
  *
- * @property status [GoalStatus.COUNTED], [GoalStatus.WAITING] or [GoalStatus.REFUSED].
- * @property reason Null when counted; else a reason code such as `waiting_for_confirmation`,
- *   `unattributed`, `goal_not_found`, `payment_goal_needs_confirmation` or `invalid_argument`.
+ * @property status [GoalStatus.COUNTED], [GoalStatus.WAITING], [GoalStatus.RECEIVED] or [GoalStatus.REFUSED].
+ * @property reason Null when counted; else a reason code such as `waiting_for_confirmation`, `not_counted_yet`,
+ *   `goal_archived`, `unknown_goal`, `unattributed`, `payment_goal_needs_confirmation` or `invalid_argument`.
  * @property goalKind The goal's kind, when the server said.
  * @property valueIgnored True when a value was sent for a Payment goal and dropped (the amount comes
  *   from the confirmation).
@@ -302,4 +296,12 @@ public class ClikgateRequestContext(
     override fun toString(): String =
         "ClikgateRequestContext(installationId=$installationId, environment=$environment, apiBaseUrl=$apiBaseUrl, " +
             "identified=${customerUserId != null}, sdkVersion=$sdkVersion)"
+}
+
+/**
+ * Receives [Clikgate.getInstallationId]'s answer on the main thread: this installation's ID, or null when tracking is
+ * off (opt-out, consent denied or not given yet where it's required, or deep-link-only mode).
+ */
+public fun interface InstallationIdListener {
+    public fun onInstallationId(installationId: String?)
 }

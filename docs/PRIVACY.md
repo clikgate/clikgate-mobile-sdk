@@ -7,7 +7,7 @@ responsibility.
 
 ## Summary
 
-- Clikgate measures which links and campaigns lead to installs and in-app events, opens the
+- Clikgate measures which links and campaigns lead to installs and goals, opens the
   right screen after install (deferred deep linking), tracks referrals for the app's own
   referral program, and detects uninstalls.
 - The SDKs never request ATT, notification or location permission, never read the IDFA or
@@ -33,10 +33,9 @@ responsibility.
 | Installer package | first launch (Android) | attribution, fraud checks | e.g. `com.android.vending` |
 | Pasteboard contents | first launch only (iOS), only if the app opts in (1.2.0: `pasteboardMode` defaults to `off`) and the app's Clikgate setting enables it | deferred deep linking | Only a `cgdl_` token Clikgate's own landing page copied after the user tapped "Open in app" is sent; nothing else from the pasteboard leaves the device. Never read again after first launch. iOS 16+ shows the system "Allow Paste" prompt |
 | Launch URLs | when a link opens the app | deep linking, re-engagement | Only URLs on the app's Clikgate link domains or with a Clikgate click id |
-| Handled deep link path (`deeplink_handled`) | when a Clikgate deep link is handed to the app, only with a test SDK key or while the dashboard's debug view is open for the app | checking the integration ("See it live", debug view) | Path only: the query and fragment are removed and every segment that looks like an ID, email address or phone number is replaced with `:id` on the device. Never sent in normal live use, never an app event, never counted |
-| Customer user ID | when the app calls `identifyUser()` | referrals, linking events to the app's own user | The app's own identifier; optionally verified with an HMAC identity token from the app's backend. Never sent in the organisation's private mode (SDK 1.3.0) |
-| App events (name, revenue, properties) | when the app calls `track()` | analytics, conversions, referral qualification | Whatever the app chooses to send; properties are limited to 8 KB. In the organisation's private mode (SDK 1.3.0) only the name and time are sent |
-| Goal events (key, value, currency, reference, `is_first`, click id) | when the app calls `goal()` (SDK 1.3.0) | goal measurement, conversions, value-based bidding | The business's own reference (or an SDK-generated UUID), never customer data; the value is a decimal amount. Allowed in private mode, where Clikgate stores the reference only as a keyed hash |
+| Handled deep link path (`deeplink_handled`) | when a Clikgate deep link is handed to the app, only with a test SDK key or while the dashboard's debug view is open for the app | checking the integration ("See it live", debug view) | Path only: the query and fragment are removed and every segment that looks like an ID, email address or phone number is replaced with `:id` on the device. Never sent in normal live use, never a goal, never counted |
+| Customer user ID | when the app calls `identifyUser()` | referrals, linking goals to the app's own user | The app's own identifier; optionally verified with an HMAC identity token from the app's backend. Never sent in the organisation's private mode (SDK 1.3.0) |
+| Goal events (key, value, currency, reference, `is_first`, click id) | when the app calls `goal()` (SDK 1.3.0; the only method for what happens in the app since Change 22) | goal measurement, conversions, value-based bidding, referral qualification. Names not yet ticked as goals in the dashboard are stored for 30 days only, not counted and not sent to ad networks | The business's own reference (or an SDK-generated UUID), never customer data; the value is a decimal amount. Allowed in private mode, where Clikgate stores the reference only as a keyed hash |
 | Push token (APNs / FCM) | when the app provides it | uninstall detection | Encrypted at rest; only used to send silent check pushes (below) |
 | Attestation results (App Attest / Play Integrity) | install, every 7 days, only if enabled | fraud prevention | The server keeps the attested public key and a valid/invalid verdict |
 | Apple Ads (AdServices) attribution token | with the first install request (iOS 14.3+), only if Apple Ads is on in the dashboard and attribution consent allows it | Apple Ads attribution | Requested when the install is sent (after consent when consent is required), renewed after 24 hours, kept in memory only and never stored on the device. Resolved with Apple's AdServices API |
@@ -110,8 +109,8 @@ the content they just tapped is acceptable is not clearly settled by Apple. So:
   sends one install marked as not consenting and nothing else.
 - `POST /v1/privacy/requests` (app owner, `apps:manage` scope), for an installation ID or a customer
   user ID:
-  - `export` produces a JSON file with the installs, app events and referrals concerned.
-  - `erasure` deletes app events, opens and uninstall checks, strips the install of every device
+  - `export` produces a JSON file with the installs, goal events and referrals concerned.
+  - `erasure` deletes goal events, opens and uninstall checks, strips the install of every device
     field and identifier (the anonymous row stays so aggregate counts don't change), removes the
     user from referrals they were referred in, and anonymises them as a referrer (the referral
     history of the people they invited stays, without their identity).
@@ -122,7 +121,7 @@ the content they just tapped is acceptable is not clearly settled by Apple. So:
 | Data | Kept for |
 |---|---|
 | Installs | until inactive for 25 months |
-| App events | 25 months |
+| Goal events | 25 months (names not ticked as goals: 30 days) |
 | App opens | 13 months |
 | Uninstall checks | 6 months |
 | Probabilistic signals, pasteboard tokens | the matching window / install lookback (Redis only) |
@@ -176,6 +175,6 @@ from SDK endpoints and the hosted page; the app owner still sees them, flagged, 
   [ios.md](ios.md). Clikgate doesn't track users across apps or websites owned by other companies,
   so the SDK alone doesn't require ATT; if your app enables advertising-ID collection, you need ATT.
 - **Android**: for Play's Data safety form, declare: device or other IDs (installation ID; app
-  functionality, analytics), app activity (in-app events you send; analytics), and, if you enable
+  functionality, analytics), app activity (goals you send; analytics), and, if you enable
   uninstall tracking, the push token. Data is encrypted in transit; users can request deletion
   (via your app's process, which calls the privacy API).

@@ -17,7 +17,7 @@ apps that use [Clikgate](https://clikgate.com) links. The backend side lives in 
 | Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
 
 These are the **core SDKs**: only what must happen on the device (deep links, attribution,
-events, identify, apply code / referred-by, push token / uninstall checks, feature switches). The
+goals, identifyUser and the installation ID, apply code / referred-by, push token / uninstall checks, feature switches). The
 Flutter and React Native packages are thin bridges over the native SDKs: all attribution,
 queueing and referral logic is in the native code.
 
@@ -53,7 +53,7 @@ registration (spec deliverable 6):
 | Sample | Path | Notes |
 |---|---|---|
 | Flutter (primary demo) | [`flutter/example`](flutter/example) | Two variants, `--dart-define=CLIKGATE_VARIANT=backend\|engage`: with the sample backend (recommended path), or the Engage add-on without a backend. Invite, stats, weekly leaderboard with live ranks and "my rank" in both; promo codes in the Engage variant. [docs/flutter.md §9](docs/flutter.md#9-example-app-two-variants) |
-| Sample backend | [`samples/backend`](samples/backend) | FastAPI (Python 3.12): demo login with identity tokens, referral link / stats, leaderboards and server-side purchase events through the Clikgate control-plane API. The API key and identity secret stay on the server |
+| Sample backend | [`samples/backend`](samples/backend) | FastAPI (Python 3.12): demo login with identity tokens, referral link / stats, leaderboards and purchase goals sent from the server through the Clikgate control-plane API. The API key and identity secret stay on the server |
 | Android | [`android/sample`](android/sample) | Kotlin, core SDK + Engage invite/stats; optional FCM via `-Pclikgate.firebase*` |
 | iOS | [`ios/Sample`](ios/Sample) | Swift (xcodegen), core SDK + Engage invite/stats, APNs token |
 | React Native | [`react-native/example`](react-native/example) | Bare RN, core + Engage screens |
@@ -94,8 +94,13 @@ Every SDK has one `goal()` method for the outcomes the business chose (`account_
 | Flutter | `final r = await Clikgate.goal('purchase', reference: 'T123456', provider: ClikgateProvider.paystack);` |
 | React Native | `const r = await Clikgate.goal('purchase', { reference: 'T123456', provider: ClikgateProvider.Paystack });` |
 
-- The result has `status` (`GoalStatus`: counted, waiting or refused), `reason`, `goalKind` (`GoalKind`: standard or
-  payment, when Clikgate said) and `valueIgnored`.
+- `goal()` is the only method for what happens in the app (Change 22). Every
+  name sent with `goal()` appears in the dashboard's "Seen from your app and website" and counts once the business
+  ticks "Count this as a goal". Goals work on every plan, up to the plan's allowance.
+- The result has `status` (`GoalStatus`: counted, waiting, received or refused), `reason`, `goalKind` (`GoalKind`:
+  standard or payment, when Clikgate said) and `valueIgnored`. `received` means stored, not counted (the name isn't
+  ticked yet: `not_counted_yet`; or the goal is archived: `goal_archived`); it is a success and isn't retried.
+- If the business has switched off "Allow unknown goal names", a name that isn't set up as a goal is refused with `unknown_goal` (an archived goal with `goal_archived`). That refusal is final: it isn't retried or queued again, and debug builds log "Goal `{name}` isn't set up in Clikgate". The SDK never checks names itself: Clikgate decides.
 - A goal's kind is set in the dashboard, never in the call. On a **Payment goal** the app only reports the
   payment: send the gateway's `provider` and its payment `reference`. It is `waiting` until the payment provider
   or the business's server confirms it, with the real amount; a value the app sends is ignored.
@@ -104,11 +109,38 @@ Every SDK has one `goal()` method for the outcomes the business chose (`account_
   provider added after the SDK release (the server checks it).
 - With a test SDK key (`cg_sdk_test_…`) the SDKs log one line when a Payment goal is waiting and when a value was
   ignored.
-- Goals share the event queue, consent buffering and retries, and are idempotent by key and reference. **Never put
+- Goals use the offline queue, consent buffering and retries, and are idempotent by key and reference. **Never put
   customer data in goal calls; use the business's reference only.** In an organisation's **private mode** the SDKs
-  stop sending the customer ID of `identifyUser()`, event properties and event revenue; goals still work.
+  stop sending the customer ID of `identifyUser()`; goals still work.
 - `payment()` (Change 11) is removed on every platform. Behaviour: [shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md)
   "Change 12"; wire format: [shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 12 additions".
+
+## Identify your users: `identifyUser()` and the installation ID (Change 22)
+
+Optional: for labels and the person timeline, referrals and leaderboards that need a verified user, and "existing
+customer" checks. The customer ID is your own internal user ID (never an email, phone, BVN or NIN). Guide:
+https://clikgate.com/docs/identify-users
+
+- **Path A, identity token (the default):** the business's server makes the token with the server SDK
+  (`createIdentityToken` in Node, `create_identity_token` in Python, `\Clikgate\IdentityToken::create` in PHP,
+  `IdentityTokens.create` / `Create` in Java / .NET; secret `CLIKGATE_IDENTITY_SECRET`, or `CLIKGATE_IDENTITY_SECRETS`
+  for several apps, server only) and returns it in the sign-in and "current user" responses; the app calls
+  `identifyUser(customerId, identityToken)` after sign-in and at app open, and clears it on sign-out
+  (`customerId = null`). Tokens are never made in the app.
+- **Path B, installation ID (no secret, no token):** the app sends its installation ID with the sign-in request (and
+  at every signed-in app open); the server calls `identifyUser({appId, installationId, customerId, label?})`.
+
+| Platform | Installation ID |
+|---|---|
+| Android | `Clikgate.getInstallationId()` (suspend) or `Clikgate.getInstallationId { id -> }` |
+| iOS | `try await Clikgate.shared.installationId()` (or the completion form) |
+| Flutter | `await Clikgate.getInstallationId()` |
+| React Native | `await Clikgate.getInstallationId()` |
+
+The value is the random UUID the SDK created at first launch and sends with every call (not personal data; allowed
+in private mode). Right after `configure` it waits for the first launch's config answer (seconds at most; offline it
+answers at once); a reinstall gets a new ID. It is `null` when tracking is off (opt-out, consent denied or not given
+yet where it's required, deep-link-only mode), so the server skips `identifyUser`.
 
 ## Password and country-restricted links on app opens (Change 17)
 
@@ -132,8 +164,6 @@ Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `
 
 ## Consistency fixes (native SDKs 1.5.0, Flutter 1.5.0, React Native 1.6.0, setup command 1.1.0, change 09)
 
-- `ClikgateMoney.ofMinor(amountMinor, currency)` is the `track()` revenue helper on every platform (the old
-  constructors stay as deprecated aliases).
 - `/install` sends the four-purpose consent object only; an opted-out first install sends every purpose
   `denied` (no more `tracking_allowed`).
 - Goals keep one random `Idempotency-Key` per request, reused by its retries.
@@ -148,12 +178,13 @@ Contract: [shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 09 additions"
 ## Deep links on every plan (change 10)
 
 - Deep links into your app work on every plan, Free included: direct links without a limit, deferred deep
-  links 1,000 a month on Free and 10,000 on Starter (unlimited on Growth and up).
+  links 1,000 a month on Free and 10,000 on Starter (no monthly cap on Growth and up).
 - On Free the app's link subdomain is `yourapp.clk.ng` in release builds (`yourapp.ciz.to` on Starter and up);
   debug builds use `yourapp.dev.ciz.to` on every plan. The setup command and `doctor` handle both. An app
   subdomain under `clk.ng` is not a shared domain.
-- Install attribution, in-app events and goals need **Growth**. On Free and Starter `goal()` and `track()` log
-  one "needs Growth" warning and do nothing (no error); attribution reads `organic`.
+- Since change 20, basic install attribution and goals work on every plan, up to the plan's allowance. Only when
+  attribution is switched off for the app (deep-link-only mode) does `goal()` log one warning and do nothing (no
+  error); attribution reads `organic`.
 - At the monthly deferred deep link allowance the SDK gets the normal "no deferred link" result (the app opens
   its home screen), never an error.
 

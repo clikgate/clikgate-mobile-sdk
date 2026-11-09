@@ -1,6 +1,16 @@
 # Changelog
 
-## 1.6.1 (unreleased): one tap is one click, X click ids (Change 21)
+## Unreleased: one method, `goal()`; installation ID
+
+Nothing has been published, so no public version ever has `track()`. The version stays 1.6.1 until the first public release.
+
+- **Removed:** `Clikgate.track(...)`, `ClikgateMoney` and the native `track` method. `goal()` is the only method; names count once they are ticked in the dashboard.
+- **Removed:** `enableFirebaseForwarding({ mirrorEvents, eventNameMap })`.
+- **Added:** `GoalStatus.Received` (`not_counted_yet`, `goal_archived`): stored, not counted; a success.
+- **Added (docs):** `GoalStatus.Refused` with reason `unknown_goal` (a name that isn't set up while the organisation accepts only set-up goals) or `goal_archived`: final, never retried. The native SDKs decide and log; the bridge passes the result through.
+- **Added:** `await Clikgate.getInstallationId()` (native method `getInstallationId`, resolving `{installationId}`); null when tracking is off. Guide: https://clikgate.com/docs/identify-users
+
+## 1.6.1 (unreleased): one tap is one click, X click ids
 
 Nothing has been published yet: this patch also carries everything under "Unreleased" below.
 
@@ -14,10 +24,10 @@ Nothing has been published yet: this patch also carries everything under "Unrele
 ### Deep link check for "See it live" (test mode and the debug view)
 - From the native SDKs: when a Clikgate deep link is handed to the app, the path it handled is reported (`deeplink_handled`), only with a test SDK key or while the dashboard's debug view is open; the query is removed and ID, email and phone segments become `:id` on the device. Never an app event, never counted. Your `onDeepLink` result is unchanged. No JavaScript API change.
 
-### Apple Ads token and LinkedIn / Snap click ids (Change 19)
+### Apple Ads token and LinkedIn / Snap click ids
 - From the native SDKs: on iOS the Apple Ads (AdServices) token is requested when the install is sent (after consent when it is required) and never kept on the device; LinkedIn `li_fat_id` and Snap `ScCid` in Clikgate links reach Clikgate unchanged. No JavaScript API change.
 
-### Password and country-restricted links on app opens (Change 17)
+### Password and country-restricted links on app opens
 - The native SDKs open a password link's page in the system browser (nothing reaches `onDeepLink`) and deliver a link blocked for the visitor's country with the new `ClikgateDeepLink.blockMessage` (no path, click or link; show the text, don't route). Native module deep-link map key `blockMessage`.
 
 ### identifyUser() replaces identify(); goals take a label
@@ -50,8 +60,8 @@ Queueing and retries are unchanged.
 ## 1.6.0 (unreleased): consistency fixes
 
 - **Deep links on every plan**, from the native SDKs: in
-  deep-link-only mode (Free, Starter, or attribution switched off) `goal` and `track` log one "needs Growth"
-  warning and do nothing; they complete without an error. A `feature_disabled` answer on `/events` or `/goals` is
+  deep-link-only mode (attribution switched off) `goal` and `track` log one warning
+  and do nothing; they complete without an error. A `feature_disabled` answer on `/events` or `/goals` is
   dropped and never retried. The "no deferred link" install result at the monthly cap is the normal empty result.
   `isFeatureEnabled('deep_linking')` is on by default.
 

@@ -1,0 +1,46 @@
+{
+  "accepted": 0,
+  "duplicates": 0,
+  "rejected": [
+    {
+      "index": 0,
+      "goal": "level_complete",
+      "reference": "APP-11",
+      "code": "unknown_goal",
+      "param": "goal",
+      "message": "This goal isn't set up in Clikgate."
+    },
+    {
+      "index": 1,
+      "goal": "old_signup",
+      "reference": "APP-12",
+      "code": "goal_archived",
+      "param": "goal",
+      "message": "This goal is archived."
+    }
+  ],
+  "results": [
+    {
+      "index": 0,
+      "goal": "level_complete",
+      "reference": "APP-11",
+      "status": "refused",
+      "reason": "unknown_goal",
+      "goal_kind": null,
+      "counted": false,
+      "value_ignored": false,
+      "id": null
+    },
+    {
+      "index": 1,
+      "goal": "old_signup",
+      "reference": "APP-12",
+      "status": "refused",
+      "reason": "goal_archived",
+      "goal_kind": "standard",
+      "counted": false,
+      "value_ignored": false,
+      "id": null
+    }
+  ]
+}

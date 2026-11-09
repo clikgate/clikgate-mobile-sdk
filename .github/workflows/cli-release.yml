@@ -16,7 +16,10 @@ permissions:
   contents: read
 
 jobs:
+  # Public releases are PAUSED (owner 2026-11-08): track() is being removed and no published version may include it.
+  # This job runs only when the repository variable PUBLIC_SDK_RELEASES_ENABLED is set to 'true' (unset = paused).
   publish:
+    if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: npm
     permissions:

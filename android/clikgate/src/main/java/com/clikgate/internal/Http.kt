@@ -90,7 +90,12 @@ internal class HttpClient(
             var param: String? = null
             var offlineTouchId: String? = null
             try {
-                val err = JSONObject(body).optJSONObject("error")
+                val json = JSONObject(body)
+                val err = json.optJSONObject("error")
+                // A goal refusal answered as a result body (`{status: "refused", reason: ...}`): the reason is the code.
+                if (err == null && json.optString("status") == "refused") {
+                    code = if (json.isNull("reason")) null else json.optString("reason").takeIf { it.isNotEmpty() }
+                }
                 if (err != null) {
                     code = err.optString("code").takeIf { it.isNotEmpty() }
                     message = err.optString("message").takeIf { it.isNotEmpty() }

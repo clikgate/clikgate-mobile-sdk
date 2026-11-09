@@ -481,7 +481,7 @@ actor ClikgateCore {
                     deliverDeferred(dl, attribution: attribution, r)
                 }
             } else if launchUrlConsumed, !deliveredLocally, let url = sent.launchUrl.flatMap(URL.init(string:)) {
-                // Change 21 R.2: one tap is one click. /install already recorded a matched launch URL's click, so
+                // One tap is one click. /install already recorded a matched launch URL's click, so
                 // /resolve attaches to it by `click_id`, never the URL (which would record a second click).
                 if !r.launchMatched { await resolve(url: url) }
                 else if let c = attribution.clickId { await resolve(url: url, clickId: c) }
@@ -517,11 +517,14 @@ actor ClikgateCore {
         reportHandled(dl.path ?? url?.path, deferred: dl.isDeferred ?? true, debugView: r.debugView)
     }
 
-    /// `deeplink_handled` (the live check) with the delivered link's path (IDs → `:id`), only with a test key
-    /// or while the answer says the debug view is open. Never queued or counted; one retry, failures dropped.
-    private func reportHandled(_ path: String?, deferred: Bool, debugView: Bool) {
-        guard testMode || debugView else { return }
-        let body = encode(["path": DeepLinkPath.clean(path ?? ""), "is_deferred": deferred])
+    /// `deeplink_handled` (the live check) with the delivered link's path (IDs → `:id`), only with a test key,
+    /// while the answer says the debug view is open, or (live mode too) for an App banner tap that
+    /// measures the right screen (sent with its `click_id`). Never queued, counted or a goal; one retry, then dropped.
+    private func reportHandled(_ path: String?, deferred: Bool, debugView: Bool, bannerClickId: String? = nil) {
+        guard testMode || debugView || bannerClickId != nil else { return }
+        var b: [String: Any] = ["path": DeepLinkPath.clean(path ?? ""), "is_deferred": deferred]
+        if let c = bannerClickId { b["click_id"] = c }
+        let body = encode(b)
         Task { _ = await call("POST", "v1/sdk/deeplink-handled", body: body, retry: .attempts(2)) }
     }
 
@@ -679,7 +682,7 @@ actor ClikgateCore {
         case .success(let data):
             guard let r = ResolveResponse(json: parse(data)) else { return }
             guard r.matched || r.blockMessage != nil else {
-                // A password link (Change 17 R.2), or another organisation's shared-domain link.
+                // A password link, or another organisation's shared-domain link.
                 if deliver { dispatcher.handOff(url, deps.browser, password: r.webUrl, fallback: options.platformDomainBrowserFallback) }
                 return
             }
@@ -694,9 +697,10 @@ actor ClikgateCore {
                 url: r.deepLink?.url.flatMap(URL.init(string:)) ?? url, path: r.deepLink?.path,
                 dataJSON: r.deepLink?.data ?? [:], isDeferred: r.deepLink?.isDeferred ?? false,
                 clickId: r.clickId, matchType: r.blockMessage == nil ? "app_link" : nil, link: r.link, referral: r.referral,
-                blockMessage: r.blockMessage))   // blocked (Change 17 R.2): no path, click or link
+                blockMessage: r.blockMessage))   // blocked: no path, click or link
             if r.blockMessage == nil {
-                reportHandled(r.deepLink?.path ?? url.path, deferred: r.deepLink?.isDeferred ?? false, debugView: r.debugView)
+                reportHandled(r.deepLink?.path ?? url.path, deferred: r.deepLink?.isDeferred ?? false, debugView: r.debugView,
+                              bannerClickId: r.bannerClickId)
             }
         case .failure(let f):
             logger.warning("/resolve failed: \(f.error.code)")
@@ -704,34 +708,26 @@ actor ClikgateCore {
         }
     }
 
-    // MARK: - Events
+    // MARK: - Installation ID
 
-    func track(name: String, revenue: ClikgateMoney?, properties: [String: JSONValue]?) async {
-        guard isActive, !attributionOff() else { return }
-        let g = gate
-        if g == .denied { return }   // consent required and attribution denied: nothing is kept
-        let event = QueuedEvent(eventId: deps.uuid(), name: name, occurredAt: ISO8601.format(deps.clock.now()),
-                                revenueMinor: revenue?.amountMinor, currency: revenue?.currency, properties: properties)
-        guard enqueue(event) else { return }
-        mirrorToFirebase(name: name, revenue: revenue, properties: properties)
-        await updateConversionValue(name: name, revenue: revenue)
-        if queue.count >= config.batching.flushAtCount { await flush() }
-    }
-
-    private func updateConversionValue(name: String, revenue: ClikgateMoney?) async {
-        guard let u = ConversionValueMapper.update(for: name, revenue: revenue, schema: config.conversionValueSchema,
-                                                   lastValue: state.skanLastFineValue) else { return }
-        if await deps.conversionValues.update(fineValue: u.fineValue, coarseValue: u.coarseValue, lockWindow: u.lockWindow) {
-            if u.fineValue > (state.skanLastFineValue ?? -1) {
-                state.skanLastFineValue = u.fineValue
-                save()
-            }
+    /// This installation's ID for identity Path B (the app sends it to its own server, which
+    /// calls `identifyUser({appId, installationId, customerId})`). Nil when tracking is off: opted out, consent denied
+    /// or not given yet where it's required, or deep-link-only mode. On a first launch it waits for the first config
+    /// answer (at most about 5 s; offline it answers at once) so the consent and attribution switches are known.
+    func installationIdForApp() async -> String? {
+        ensureInstallationId()
+        var waited = 0
+        while isActive && state.config == nil && configFetching && waited < 50 {
+            await deps.clock.sleep(seconds: 0.1)
+            waited += 1
         }
+        guard isActive, gate == .allowed, features.isEnabled(ClikgateFeatures.appAttribution) else { return nil }
+        return state.installationId
     }
 
     // MARK: - Goals
 
-    /// Enqueues a validated goal in the event queue (same limits, consent buffering and retries).
+    /// Enqueues a validated goal in the queue (limits, consent buffering and retries).
     /// `value` is a validated decimal string; a nil `reference` gets a UUID. `done` gets the result.
     /// Validates first: invalid input (a malformed `provider` key too) is logged and refused.
     func goal(_ key: String, value: String?, currency: String?, reference: String?, provider: String? = nil,
@@ -775,12 +771,13 @@ actor ClikgateCore {
         for o in j?.objects("results") ?? [] {
             guard let i = o.int("index"), i >= 0, i < batch.count else { continue }
             let s = o.str("status"), kind: ClikgateGoalKind? = o.str("goal_kind").map { $0 == "payment" ? .payment : .standard }
-            let r = ClikgateGoalResult(status: s == "counted" ? .counted : s == "waiting" ? .waiting : .refused,
+            let r = ClikgateGoalResult(status: s == "counted" ? .counted : s == "waiting" ? .waiting : s == "received" ? .received : .refused,
                                        reason: o.str("reason"), goalKind: kind, valueIgnored: o.bool("value_ignored") ?? false)
             if testMode && kind == .payment && r.status == .waiting {
                 logger.warning(batch[i].name + (r.valueIgnored ? " is a Payment goal: waiting for confirmation; its value was ignored"
                                                                : " is a Payment goal: waiting for confirmation"))
             }
+            noteUnsetGoal(batch[i].name, r.reason)
             batch[i].done?(r)
             seen[i] = true
         }
@@ -789,9 +786,9 @@ actor ClikgateCore {
         }
     }
 
-    /// Deep-link-only mode (Free, Starter, or an app with attribution switched off):
+    /// Deep-link-only mode (an app with attribution switched off):
     /// `app_attribution` is off in the cached config, or the server answered `feature_disabled` for
-    /// `/events` or `/goals`. Logs the one-time "needs Growth" warning.
+    /// `/goals`. Logs the one-time "attribution is switched off" warning.
     private func attributionOff() -> Bool {
         if features.isEnabled(ClikgateFeatures.appAttribution) { return false }
         warnNeedsGrowth()
@@ -801,7 +798,7 @@ actor ClikgateCore {
     private func warnNeedsGrowth() {
         if needsGrowthWarned { return }
         needsGrowthWarned = true
-        logger.warning("goal() and track() need Growth: this plan has deep links only, so nothing is sent.")
+        logger.warning("goal() is off: app attribution is switched off, so nothing is sent.")
     }
 
     /// Appends to the queue; false while buffering for consent (nothing more to do).
@@ -813,23 +810,22 @@ actor ClikgateCore {
         return !pending
     }
 
-    /// The next batch: the leading run of events or of goals (they share the queue). In private mode
-    /// events go without properties or revenue (value only through goal()).
+    /// The next batch of goals. App events an earlier development build left in the persisted queue are dropped
+    /// first, never sent (`goal()` is the only method; there is no events endpoint).
     private func nextBatch() -> [QueuedEvent] {
-        var batch = queue.peek(config.batching.maxBatchSize)
-        let isGoal = batch[0].goal != nil
-        batch = Array(batch.prefix { ($0.goal != nil) == isGoal })
-        if config.privateMode && !isGoal {
-            for i in batch.indices { batch[i].properties = nil; batch[i].revenueMinor = nil; batch[i].currency = nil }
+        let legacy = queue.events.filter { $0.goal == nil }
+        if !legacy.isEmpty {
+            logger.debug("Dropped \(legacy.count) queued app event(s) from an earlier SDK build")
+            queue.remove(ids: Set(legacy.map { $0.eventId }))
         }
-        return batch
+        return queue.peek(config.batching.maxBatchSize)
     }
 
     /// Private mode: one warning per launch, debug builds only.
     private func warnPrivateMode() {
         #if DEBUG
         if !privateModeWarned {
-            logger.warning("Private mode: customer IDs, event properties and revenue aren't sent. Use goal().")
+            logger.warning("Private mode: customer IDs aren't sent. goal() works as usual.")
         }
         privateModeWarned = true
         #endif
@@ -846,7 +842,6 @@ actor ClikgateCore {
         await sendConsentIfPending()
         if state.identifyPending && callAllowed("identify") { await sendIdentify() }
         if callAllowed("push_token") { await sendPushTokenIfChanged() }
-        guard callAllowed("events") else { return }
 
         while queue.count > 0 {
             if attributionOff() {
@@ -855,23 +850,16 @@ actor ClikgateCore {
                 queue.clear()
                 return
             }
-            var batch = nextBatch()
-            let isGoal = batch[0].goal != nil   // a run of goals goes to /goals
-            if isGoal && !callAllowed("goals") {
+            let batch = nextBatch()
+            if batch.isEmpty { return }
+            if !callAllowed("goals") {
                 logger.warning("Goals dropped: this SDK version is blocked for them")
                 dropGoals(batch, "sdk_version_blocked")
                 continue
             }
-            if !isGoal, isBlocked, let b = config.blocked {
-                // Blocked SDK version: only the allowed event names, properties stripped if asked.
-                let dropped = batch.filter { e in b.allowedEvents.map { !$0.contains(e.name) } ?? false }
-                if !dropped.isEmpty { queue.remove(ids: Set(dropped.map { $0.eventId })); continue }
-                if b.stripEventProperties { batch = batch.map { var e = $0; e.properties = nil; return e } }
-            }
             let key = deps.uuid()
-            let items = batch.map { $0.goal?.anyDictionary ?? $0.json }
-            let result = await call("POST", isGoal ? "v1/sdk/goals" : "v1/sdk/events",
-                                    body: encode([isGoal ? "goals" : "events": items, "consent": state.consent.json()]),
+            let items = batch.compactMap { $0.goal?.anyDictionary }
+            let result = await call("POST", "v1/sdk/goals", body: encode(["goals": items, "consent": state.consent.json()]),
                                     idempotencyKey: key, retry: .attempts(5))
             switch result {
             case .success(let data):
@@ -887,11 +875,11 @@ actor ClikgateCore {
                 let rejected = j?.objects("rejected") ?? []
                 if !rejected.isEmpty { logger.warning("\(rejected.count) item(s) rejected by the server and dropped") }
                 queue.remove(ids: Set(batch.map { $0.eventId }))
-                if isGoal { settleGoals(batch, j) }
+                settleGoals(batch, j)
             case .failure(let f):
-                // Malformed: drop, don't retry. Goals also on any 422 and on a 404 from a server without /goals.
+                // Malformed: drop, don't retry. Also on any 422 and on a 404 from a server without /goals.
                 let st = f.error.status ?? 0, unknownInstall = f.error.code == ClikgateError.installationUnknown
-                let drop = f.error.code == ClikgateError.validationError || isGoal && (st == 422 || st == 404 && !unknownInstall)
+                let drop = f.error.code == ClikgateError.validationError || st == 422 || st == 404 && !unknownInstall
                 if drop { dropGoals(batch, f.error.code) }
                 await recoverIfInstallationUnknown(f.error)
                 if drop { continue }   // installation_unknown: kept, sent again after the reinstall
@@ -903,7 +891,17 @@ actor ClikgateCore {
     /// Removes `batch` from the queue, refusing its goals with `reason`.
     private func dropGoals(_ batch: [QueuedEvent], _ reason: String) {
         queue.remove(ids: Set(batch.map { $0.eventId }))
-        for e in batch { e.done?(.refused(reason)) }
+        for e in batch {
+            noteUnsetGoal(e.name, reason)
+            e.done?(.refused(reason))
+        }
+    }
+
+    /// A refused `unknown_goal` (the organisation accepts only goals it has set up): debug builds only, the name only.
+    private func noteUnsetGoal(_ name: String, _ reason: String?) {
+        #if DEBUG
+        if reason == "unknown_goal" { logger.warning("Goal `\(name)` isn't set up in Clikgate") }
+        #endif
     }
 
     /// Flush inside a background-task window (app moved to background).
@@ -953,14 +951,17 @@ actor ClikgateCore {
         b.set("identity_token", state.identityToken)
         b.set("label", label)
         b.set("consent", state.consent.json())
-        let sentUser = state.customerUserId
+        let sentUser = state.customerUserId, tokenSent = state.identityToken != nil
         let result = await call("POST", "v1/sdk/identify", body: encode(b.object), retry: .attempts(5))
         switch result {
         case .success(let d):
-            if JSON.object(d)?.str("label_ignored") == "plan" { logger.warning("label not stored: labels need Growth") }
+            let j = JSON.object(d)
+            if j?.str("label_ignored") == "plan" { logger.warning("label not stored: labels need Growth") }
+            // A bad token answers 200 with `verified: false` + `reason`; no `verified` = older server.
+            if tokenSent, j?.bool("verified") == false { logger.warning(Self.tokenNotVerifiedMessage(j?.str("reason"))) }
         case .failure(let f):
             if f.error.status != 422 { return }   // retried later
-            logger.error("identifyUser refused: " + f.error.code)   // e.g. identity_invalid; the customer ID is kept
+            logger.error("identifyUser refused: " + f.error.code)   // identity_invalid (older servers); the customer ID is kept
         }
         if state.customerUserId == sentUser { state.identifyPending = false; state.pendingLabel = nil }
         save()
@@ -1148,8 +1149,27 @@ actor ClikgateCore {
             return value
         case .failure(let f):
             await recoverIfInstallationUnknown(f.error)
+            if f.error.code == "identity_expired" || f.error.code == ClikgateError.identityInvalid {
+                logger.warning("\(path): the identity token " + (f.error.code == "identity_expired" ? "has expired" : "did not verify")
+                               + " (\(f.error.code)); get a new token from your server and call identifyUser again")
+            }
             throw f.error
         }
+    }
+
+    /// The identify warning for `verified: false`; names the reason, never the token or customer ID.
+    static func tokenNotVerifiedMessage(_ reason: String?) -> String {
+        let why: String
+        switch reason {
+        case "expired": why = "expired"
+        case "bad_signature": why = "the signature doesn't match"
+        case "secret_rotated": why = "it was signed with a secret that has since been rotated"
+        case "no_secret_set": why = "no identity secret is set for this app"
+        case "not_yet_valid": why = "its issue time is in the future; check the server clock"
+        case nil: why = "no reason given"
+        case let r?: why = String(r.filter { $0.isLetter || $0.isNumber || $0 == "_" }.prefix(40))   // a newer reason code
+        }
+        return "identifyUser: the identity token did not verify (\(why)); the customer ID is kept but not verified"
     }
 
     // MARK: - Engage add-on (internal request context)
@@ -1449,7 +1469,7 @@ extension ClikgateCore {
         switch status {
         case "blocked":
             versionPolicyLogged = true
-            logger.error(config.blocked?.message ?? "Clikgate SDK \(own) is blocked; only basic events are sent. Update the SDK.")
+            logger.error(config.blocked?.message ?? "Clikgate SDK \(own) is blocked; only basic calls are made. Update the SDK.")
         case "deprecated":
             versionPolicyLogged = true
             let latest = config.latestVersion.map { " Update to \($0)." } ?? " Update the SDK."
@@ -1526,16 +1546,6 @@ extension ClikgateCore {
         }
         state.firebaseAttributionLogged = true
         save()
-    }
-
-    func mirrorToFirebase(name: String, revenue: ClikgateMoney?, properties: [String: JSONValue]?) {
-        guard let opts = firebaseOptions, opts.mirrorEvents, config.firebase?.mirrorEvents == true, firebaseActive else { return }
-        let target = opts.eventNameMap[name] ?? name
-        guard FirebaseLimits.isValidName(target) else {
-            logger.debug("Event \(name) not mirrored to Firebase: invalid Firebase event name")
-            return
-        }
-        deps.firebase.logEvent(target, parameters: FirebaseLimits.parameters(from: properties, revenue: revenue))
     }
 
     // MARK: Local deep links

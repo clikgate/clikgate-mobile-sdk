@@ -193,6 +193,11 @@ def pub_files(directory: Path) -> list[Path]:
         top = Path(subprocess.run(["git", "-C", str(directory), "rev-parse", "--show-toplevel"],
                                   check=True, capture_output=True, text=True).stdout.strip())
         files &= {top / f for f in out}
+        # `ls-files -c` lists tracked files whatever the excludes say; take out the tracked files .pubignore drops
+        ignored = subprocess.run(["git", "-C", str(directory), "ls-files", "-ci", "--full-name",
+                                  "--exclude-per-directory=.pubignore", "--", "."],
+                                 check=True, capture_output=True, text=True).stdout.splitlines()
+        files -= {top / f for f in ignored}
     root = directory.resolve()
     keep = []
     for f in sorted(files):

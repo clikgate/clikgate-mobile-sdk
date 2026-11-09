@@ -1,0 +1,29 @@
+{
+  "accepted": 2,
+  "duplicates": 0,
+  "rejected": [],
+  "results": [
+    {
+      "index": 0,
+      "goal": "level_completed",
+      "reference": "APP-7",
+      "status": "received",
+      "reason": "not_counted_yet",
+      "goal_kind": null,
+      "counted": false,
+      "value_ignored": false,
+      "id": null
+    },
+    {
+      "index": 1,
+      "goal": "old_signup",
+      "reference": "APP-8",
+      "status": "received",
+      "reason": "goal_archived",
+      "goal_kind": "standard",
+      "counted": false,
+      "value_ignored": false,
+      "id": null
+    }
+  ]
+}

@@ -21,7 +21,6 @@ export interface Spec extends TurboModule {
   getAttribution(
     args: CodegenTypes.UnsafeObject
   ): Promise<CodegenTypes.UnsafeObject>;
-  track(args: CodegenTypes.UnsafeObject): Promise<void>;
   identifyUser(args: CodegenTypes.UnsafeObject): Promise<void>;
   setTrackingEnabled(args: CodegenTypes.UnsafeObject): Promise<void>;
   setPushToken(args: CodegenTypes.UnsafeObject): Promise<void>;
@@ -53,6 +52,10 @@ export interface Spec extends TurboModule {
 
   // Resolves {status, reason, goalKind, valueIgnored}.
   goal(args: CodegenTypes.UnsafeObject): Promise<CodegenTypes.UnsafeObject>;
+  // Resolves {installationId: string | null} (null when tracking is off).
+  getInstallationId(
+    args: CodegenTypes.UnsafeObject
+  ): Promise<CodegenTypes.UnsafeObject>;
 
   // Engage add-on (internal)
   getRequestContext(

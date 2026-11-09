@@ -129,7 +129,7 @@ final class LifecycleTests: XCTestCase {
         server.on("POST /v1/sdk/install", .json(#"{"error":{"type":"auth","code":"invalid_sdk_key","message":"bad"}}"#, status: 401))
         let core = h.makeCore()
         await core.start(startTimers: false)
-        await core.track(name: "signup", revenue: nil, properties: nil)
+        await core.goal("signup", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.flush()
         let keys = server.requests.map { $0.key }
         XCTAssertEqual(keys, ["GET /v1/sdk/config"], "after a 401 nothing else is sent this launch")
@@ -141,7 +141,6 @@ final class LifecycleTests: XCTestCase {
         XCTAssertEqual(c.features.pasteboardMatching, "on_interstitial_tap")
         XCTAssertEqual(c.features.iosAppAttest, "off")
         XCTAssertEqual(c.batching.flushAtCount, 20)
-        XCTAssertEqual(c.conversionValueSchema?.rules.count, 2)
         XCTAssertEqual(c.sessionTimeoutMinutes, 30)
     }
 

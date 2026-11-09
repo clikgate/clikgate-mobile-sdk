@@ -1,14 +1,14 @@
 # Clikgate Android SDK — integration guide
 
 `com.clikgate:clikgate-android` (the **core SDK**) adds deep links (direct and deferred), install
-attribution, in-app events, identify, referee-side referral calls (apply a code, "who referred
+attribution, goals, identifyUser, referee-side referral calls (apply a code, "who referred
 me") and uninstall tracking to an Android app. minSdk 21, Kotlin and Java, no Firebase dependency.
 
 The core SDK only does what must happen on the device. Referral links and stats, leaderboards,
 promo codes and share helpers are **not** in it:
 
 - **Recommended:** your backend calls the Clikgate control-plane API (referrers, referral stats,
-  leaderboards, identity signals, server events) and your app renders its own screens.
+  leaderboards, identity signals, goals from your server) and your app renders its own screens.
 - **Apps without a backend:** add the optional Engage add-on `com.clikgate:clikgate-engage`
   (section 6d). See [engage.md](engage.md) for when to use which.
 
@@ -162,9 +162,9 @@ every plan: direct links (App Links / Universal Links / your URI scheme) without
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.clk.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.clk.ng` is your
 app's own subdomain, not the shared domain `clk.ng`, so declare it like `yourapp.ciz.to`; the setup command does.
-Basic install attribution (which link, campaign or creator brought each install), in-app events and goals work on
-every plan within its allowances; re-engagement and the advanced app reports need Growth. Only when attribution is
-switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal(...)` and `Clikgate.track(...)` then log one warning and do
+Basic install attribution (which link, campaign or creator brought each install) and goals work on every plan, up to
+the plan's allowance; re-engagement and the advanced app reports need Growth. Only when attribution is
+switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal(...)` then logs one warning and does
 nothing (no error, nothing is sent), and attribution reads `organic`. `Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION)` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
@@ -230,30 +230,42 @@ Then remove the `firebase-dynamic-links` dependency and the `page.link` intent f
 domains to the `autoVerify` intent filter (section 3). Firebase Analytics, Crashlytics and Messaging are unaffected.
 Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
 
-## 5. Events and identity
+## 5. Identify your users
+
+Optional: you need it for labels and the person timeline, referrals and leaderboards that need a verified user, and
+"existing customer" checks. Anonymous users are tracked by click or installation without it. The customer ID is your
+own internal user ID (never an email, phone, BVN or NIN), the same on app, website and server. Full guide:
+https://clikgate.com/docs/identify-users
+
+**Path A: identity token (the default).** Your server makes the token in one line with the server SDK (Node
+`createIdentityToken`, Python `create_identity_token`, PHP `\Clikgate\IdentityToken::create`, Java / .NET
+`IdentityTokens.create` / `Create`; the secret is `CLIKGATE_IDENTITY_SECRET`, or `CLIKGATE_IDENTITY_SECRETS` for
+several apps, on the server only) and returns it in the sign-in response and the "current user" response the app
+already calls at open. The app passes the newest token:
 
 ```kotlin
-Clikgate.track("signup")
-Clikgate.track("purchase", revenue = ClikgateMoney.ofMinor(1_500_000, "NGN"), properties = mapOf("order_id" to "A-1001"))
-
-Clikgate.identifyUser(label = "Ada (VIP)", customerId = "user_42", identityToken = tokenFromYourBackend)
-Clikgate.identifyUser(customerId = null)                   // logout
-Clikgate.identifyUser(label = "Ada (VIP)")                   // just the label (the customer ID is kept)
+Clikgate.identifyUser(customerId = user.id, identityToken = me.clikgateToken)   // after sign-in, and at app open
+Clikgate.identifyUser(label = "Ada (VIP)")                   // just the label (the customer ID is kept; Growth and up)
+Clikgate.identifyUser(customerId = null)                     // sign-out
 ```
 
-Event names match `^[A-Za-z0-9_.$:-]{1,64}$` (`$` prefix reserved), properties ≤ 8 KB, currency
-ISO 4217 uppercase. Invalid events are logged and dropped. Events are queued (SQLite, ≤ 1000 /
-1 MB) and sent in batches: at 20 events, every 15 s in foreground, on background and on start;
-offline batches are retried by WorkManager.
+The token is `base64url_nopad(HMAC_SHA256(identity_secret, "<customer_user_id>.<issued_at>")) + "." + issued_at`,
+always made on your server, never in the app. It lasts 30 days by default; no forced refresh.
 
-**Identity token** (required by referral programs with `require_identity_token`): computed by
-your backend, never in the app:
+**Path B: installation ID (no secret, no token).** The app sends this installation's ID with the sign-in request
+(and at every signed-in app open); your server calls the server SDK's
+`identifyUser({appId, installationId, customerId, label?})`:
 
+```kotlin
+val installationId: String? = Clikgate.getInstallationId()     // suspend; Java: Clikgate.getInstallationId(listener)
+Clikgate.getInstallationId { id -> api.signIn(email, password, clikgateInstallationId = id) }
 ```
-issued_at = unix seconds
-signature = base64url_nopad(HMAC_SHA256(identity_secret, "<customer_user_id>.<issued_at>"))
-identity_token = "<signature>.<issued_at>"
-```
+
+`getInstallationId()` returns the random UUID the SDK created at first launch and sends with every call (not personal
+data; allowed in private mode). Right after `configure` it waits for the first launch's config answer (a few seconds
+at most; offline it answers at once) and never blocks the main thread. A reinstall gets a new ID. It returns `null`
+when tracking is off (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or
+deep-link-only mode): your server then skips `identifyUser`.
 
 ## 5b. Send goals
 
@@ -268,7 +280,7 @@ Clikgate.goal("kyc_passed")                                // no value, SDK-gene
 
 // A Payment goal: send your payment provider's reference from the checkout's success callback.
 Clikgate.goal("purchase", reference = transaction.reference, provider = Provider.PAYSTACK) { result ->
-    // result.status: GoalStatus.COUNTED, WAITING or REFUSED; result.reason says why
+    // result.status: GoalStatus.COUNTED, WAITING, RECEIVED or REFUSED; result.reason says why
 }
 ```
 
@@ -283,7 +295,8 @@ confirmation, so pass `reference` and `provider`; a `value` sent from the app is
 |---|---|
 | `GoalStatus.COUNTED` | Counted. |
 | `GoalStatus.WAITING` | Stored, not counted yet: `reason = "waiting_for_confirmation"` for a Payment goal until it's confirmed. |
-| `GoalStatus.REFUSED` | Not counted. `reason` is the server's code (`unattributed`, `goal_not_found`, `payment_goal_needs_confirmation` when a Payment goal is missing `provider` or `reference`, ...) or, on the device, `invalid_argument`, `feature_disabled` (deep-link-only plan), `opted_out`, `consent_denied` or `sdk_version_blocked`. |
+| `GoalStatus.RECEIVED` | Stored, not counted: the name isn't ticked as a goal in the dashboard yet (`reason = "not_counted_yet"`; "Seen from your app and website" › "Count this as a goal") or the goal is archived (`goal_archived`). A success: never retried. |
+| `GoalStatus.REFUSED` | Not counted. `reason` is the server's code (`unattributed`, `goal_not_found`, `payment_goal_needs_confirmation` when a Payment goal is missing `provider` or `reference`, `unknown_goal` when the business has switched off "Allow unknown goal names" and the name isn't set up (final, never retried; debug builds log "Goal `{name}` isn't set up in Clikgate"), ...) or, on the device, `invalid_argument`, `feature_disabled` (deep-link-only plan), `opted_out`, `consent_denied` or `sdk_version_blocked`. |
 
 `result.goalKind` (`GoalKind.STANDARD` / `PAYMENT`) and `result.valueIgnored` come from the server.
 `onResult` runs on the main thread once Clikgate has answered; while the device is offline the goal
@@ -311,12 +324,13 @@ for the event (application number, order id, transaction reference).
   pass your own when you have one. A second goal with the same key and reference is ignored.
 - **isFirst** (optional): your statement that this is the customer's first such event (for
   "click to first purchase"). Clikgate never checks it against an identity.
-- Delivery: queued, batched and retried like events (they share the offline queue), attributed to
-  the latest Clikgate link that opened the app, else the install. Consent works as for events: while
+- Delivery: queued (SQLite, ≤ 1000 / 1 MB), batched (at 20, every 15 s in foreground, on background and on start)
+  and retried (WorkManager offline), attributed to the latest Clikgate link that opened the app, else the install.
+  `goal()` is the only method for what happens in your app. Consent: while
   consent is required and `attribution` is unknown, goals wait on the device (up to 7 days); on deny
   they're dropped.
 - **Private mode** (an organisation setting for banks, insurers, lenders and health): `goal()`
-  works as usual, while the customer ID of `identifyUser()`, event `properties` and event revenue are not sent (labels only when your organisation allows labels in private mode) (one warning
+  works as usual, while the customer ID of `identifyUser()` is not sent (labels only when your organisation allows labels in private mode) (one warning
   in debug builds). Send outcomes and values through `goal()`.
 - Goals completed on your server (a loan disbursed days later) should be sent by your backend
   (`POST /v1/goals/events`) with the click id from `attributionMetadata()`, saved with your own
@@ -522,8 +536,8 @@ val consent = Clikgate.getConsent() // purposes + region + required (null while 
 - Whether consent is **required** comes from the app's consent mode in Clikgate (EEA, UK and
   Switzerland by default) for the device's region (your hint, else the IP country). Before the first
   config only a hint in those regions counts.
-- Required and `attribution` **unknown**: the SDK buffers on the device (up to 7 days or 1,000 events)
-  and sends nothing identifying (no install, open, events; `/config` without the installation id).
+- Required and `attribution` **unknown**: the SDK buffers on the device (up to 7 days or 1,000 goals)
+  and sends nothing identifying (no install, open, goals; `/config` without the installation id).
   Clikgate links still reach `onDeepLink` (delivered locally with their query parameters), and the
   install referrer is kept. **Granted** sends the install and the buffer; **denied** drops it (and, if
   your organisation enabled anonymous counts, sends one identifier-free install count).
@@ -540,14 +554,14 @@ val consent = Clikgate.getConsent() // purposes + region + required (null while 
   passes ad click IDs (dashboard, per network); they reach Clikgate inside the launch / resolved URL and the
   referrer, unchanged.
 - Clikgate tells old SDK versions to update: a deprecated version logs a warning once per launch; a
-  blocked version logs an error and only sends basic events (links then open locally). Calls a blocked
+  blocked version logs an error and only makes basic calls (links then open locally; goals only if Clikgate allows them). Calls a blocked
   version may not make fail with `ClikgateError.SDK_VERSION_BLOCKED`.
 
 ## 8c. Firebase forwarding and sales metadata
 
 ```kotlin
 // On every launch (before or after configure):
-Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions(mirrorEvents = true, eventNameMap = mapOf("purchase" to "purchase")))
+Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions())
 
 // Paystack / Flutterwave checkout: put these in metadata / meta so Clikgate can match the sale.
 val metadata: Map<String, String> = Clikgate.attributionMetadata() // {"cg_click_id": ..., "cg_link_id": ...}
@@ -557,8 +571,7 @@ val metadata: Map<String, String> = Clikgate.attributionMetadata() // {"cg_click
   reflection and has no Firebase dependency), GA4 forwarding switched on for the app in Clikgate, and
   `analytics` consent. Logs `clikgate_attribution` once per install (`cg_source`, `cg_medium`,
   `cg_campaign`, `cg_channel`, `cg_link_id`, `cg_match_type`), sets `cg_first_source` /
-  `cg_first_campaign`, optionally mirrors your `track()` events (Firebase name rules: 1–40 characters,
-  ≤ 25 parameters, string values ≤ 100 characters; revenue becomes `value` + `currency`), and reports
+  `cg_first_campaign`, and reports
   Firebase's app instance id to Clikgate for server-side GA4. Without Firebase it does nothing.
 - `attributionMetadata()` is empty when nothing is attributed, when tracking is off, or when consent
   is required and attribution isn't granted.
@@ -592,7 +605,7 @@ cleartext for that host in a debug network security config).
 ## 11. Sample app
 
 `android/sample` demonstrates direct and deferred deep links, apply code / referred-by (core),
-invite link + WhatsApp share and stats (Engage add-on), events, FCM token forwarding and (1.2.0)
+invite link + WhatsApp share and stats (Engage add-on), goals, the installation ID, FCM token forwarding and (1.2.0)
 consent buttons, an EEA region hint, Firebase forwarding (`firebase-analytics` as a runtime-only
 dependency) and `attributionMetadata()`. Build:
 
@@ -620,7 +633,7 @@ For the recommended backend path (invite link, stats and leaderboards from your 
 1. Remove the dependencies `com.clikgate:clikgate-android` and `com.clikgate:clikgate-engage` (and
    `com.google.android.play:integrity` if you added it only for Clikgate).
 2. Remove `Clikgate.configure(...)` and every `Clikgate.*` / `ClikgateEngage.*` call: `onDeepLink`,
-   `handleIntent` / `handleUrl` in your activities, `track`, `identify`, consent, Firebase forwarding,
+   `handleIntent` / `handleUrl` in your activities, `goal`, `identifyUser`, consent, Firebase forwarding,
    `attributionMetadata`, referral calls.
 3. Remove the manifest entries you added for Clikgate: the `autoVerify` App Link intent filters for your
    Clikgate link domains and the custom-scheme intent filter (if it was only for Clikgate), plus the
@@ -644,10 +657,10 @@ SDK leaves them unused in the app's data directory (delete them on first launch 
 | `Clikgate.handleUrl(uri / url): Boolean` | URLs from other sources (QR codes) |
 | `Clikgate.onDeepLink { }` | single listener, buffered |
 | `Clikgate.attribution { }` / `awaitAttribution()` | |
-| `Clikgate.track(name, revenue?, properties?)` | |
 | `Clikgate.goal(key, value?, currency?, reference?, provider?, isFirst?, onResult?)` | `value` is a `BigDecimal`; `provider` a `Provider`; `onResult` gets a `GoalResult` |
 | `Clikgate.onBrowserHandoff(listener?)` | 1.4.0; another organisation's shared-domain link opened in Custom Tabs |
-| `Clikgate.identifyUser(label?, customerId?, identityToken?)` | customer ID dropped in private mode, label only when allowed |
+| `Clikgate.identifyUser(label?, customerId?, identityToken?)` | customer ID dropped in private mode, label only when allowed; [identify-users](https://clikgate.com/docs/identify-users) |
+| `Clikgate.getInstallationId(): String?` (suspend) / `getInstallationId(listener)` | identity Path B; null when tracking is off |
 | `Clikgate.setTrackingEnabled(Boolean)` | |
 | `Clikgate.setPushToken(token, PushProvider)` / `isClikgateMessage(data)` | |
 | `Clikgate.referrals.applyCode / referredBy` | callbacks + `awaitApplyCode` / `awaitReferredBy` |

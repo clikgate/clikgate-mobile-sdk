@@ -6,7 +6,7 @@ Only the calls the sample needs (see clikgate_api docs/API.md):
   `GET /v1/referral-programs/{id}/referrers/by-user/{customer_user_id}`
 - leaderboards: `GET /v1/leaderboards/{id}`, `/entries`, `/entries/around/{referrer_id}`,
   `/referrers/{referrer_id}`
-- server-side events: `POST /v1/apps/{app_id}/events`
+- goals from the server: `POST /v1/goals/events` (one method, `goal`, for app, website and server)
 """
 
 from typing import Any
@@ -121,12 +121,10 @@ class ClikgateClient:
             params={"period": period},
         )
 
-    # Server-side events
+    # Goals
 
-    async def send_events(self, app_id: str, events: list[dict[str, Any]], *, idempotency_key: str) -> dict[str, Any]:
+    async def send_goal(self, event: dict[str, Any], *, idempotency_key: str) -> dict[str, Any]:
+        """One goal event, deduplicated by `(goal, reference)` (and the `Idempotency-Key` across retries)."""
         return await self._request(
-            "POST",
-            f"/v1/apps/{_seg(app_id)}/events",
-            json={"events": events},
-            headers={"Idempotency-Key": idempotency_key},
+            "POST", "/v1/goals/events", json=event, headers={"Idempotency-Key": idempotency_key}
         )

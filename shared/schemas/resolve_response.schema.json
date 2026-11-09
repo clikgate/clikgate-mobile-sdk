@@ -198,6 +198,9 @@
     },
     "debug_view": {
       "type": "boolean"
+    },
+    "measure_right_screen": {
+      "type": "boolean"
     }
   },
   "additionalProperties": true,

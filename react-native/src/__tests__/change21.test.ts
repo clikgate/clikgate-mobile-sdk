@@ -38,7 +38,8 @@ describe('open payloads', () => {
 
   it('handleUrl passes twclid unchanged', async () => {
     mockModule.handleUrl.mockResolvedValueOnce(true);
-    const url = 'https://inv.myapp.com/p/dress?cg_click_id=clk_1&twclid=2-abcDEF123xyz&li_fat_id=LIFAT1';
+    const url =
+      'https://inv.myapp.com/p/dress?cg_click_id=clk_1&twclid=2-abcDEF123xyz&li_fat_id=LIFAT1';
     await expect(Clikgate.handleUrl(url)).resolves.toBe(true);
     expect(mockModule.handleUrl).toHaveBeenCalledWith({ url });
   });

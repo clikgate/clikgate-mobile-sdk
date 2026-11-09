@@ -109,12 +109,9 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
             result(nil)
             return
         case "enableFirebaseForwarding":
-            let map = (args["eventNameMap"] as? [String: Any] ?? [:]).compactMapValues { $0 as? String }
             sdk.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(
                 logAttributionEvent: args["logAttributionEvent"] as? Bool ?? true,
-                setUserProperties: args["setUserProperties"] as? Bool ?? true,
-                mirrorEvents: args["mirrorEvents"] as? Bool ?? false,
-                eventNameMap: map))
+                setUserProperties: args["setUserProperties"] as? Bool ?? true))
             result(nil)
             return
         case "attributionMetadata":
@@ -143,20 +140,12 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
                 }
             }
 
-        case "track":
-            guard let name = args["name"] as? String else { result(Self.invalidArgument("name is required", param: "name")); return }
-            var revenue: ClikgateMoney?
-            let amount = (args["revenueMinor"] as? NSNumber)?.int64Value
-            let currency = args["currency"] as? String
-            switch (amount, currency) {
-            case let (a?, c?): revenue = ClikgateMoney.ofMinor(a, currency: c)
-            case (nil, nil): revenue = nil
-            default:
-                result(Self.invalidArgument("revenueMinor and currency go together", param: "currency")); return
-            }
-            let properties = args["properties"] as? [String: Any]
-            sdk.track(name, revenue: revenue, properties: properties) { error in
-                result(error.map(Self.flutterError))
+        case "getInstallationId":   // the installation ID for identity; nil when tracking is off
+            sdk.installationId { r in
+                switch r {
+                case .success(let id): result(id)
+                case .failure(let e): result(Self.flutterError(e))
+                }
             }
 
         case "goal":   // the value arrives as a decimal string; answers with the goal's result

@@ -1,7 +1,7 @@
 # Clikgate iOS SDK — integration guide
 
-Deep links (Universal Links and custom schemes), deferred deep links, install attribution, in-app
-events, referee-side referral calls and push-token registration for uninstall tracking — the things
+Deep links (Universal Links and custom schemes), deferred deep links, install attribution, goals,
+identifyUser, referee-side referral calls and push-token registration for uninstall tracking — the things
 that must happen on the device (spec 0.4). Referrer-side features (the user's invite link and stats,
 leaderboards, promo codes, share helpers) are **not** in the core SDK: the recommended path is your
 backend calling the Clikgate control-plane API; apps without a backend can add the optional
@@ -125,9 +125,9 @@ every plan: direct links (App Links / Universal Links / your URI scheme) without
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.clk.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.clk.ng` is your
 app's own subdomain, not the shared domain `clk.ng`, so declare it like `yourapp.ciz.to`; the setup command does.
-Basic install attribution (which link, campaign or creator brought each install), in-app events and goals work on
-every plan within its allowances; re-engagement and the advanced app reports need Growth. Only when attribution is
-switched off for the app does the SDK run in deep-link-only mode: `Clikgate.shared.goal(...)` and `Clikgate.shared.track(...)` then log one warning and do
+Basic install attribution (which link, campaign or creator brought each install) and goals work on every plan, up to
+the plan's allowance; re-engagement and the advanced app reports need Growth. Only when attribution is
+switched off for the app does the SDK run in deep-link-only mode: `Clikgate.shared.goal(...)` then logs one warning and does
 nothing (no error, nothing is sent), and attribution reads `organic`. `Clikgate.shared.isFeatureEnabled(ClikgateFeatures.appAttribution)` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
@@ -262,8 +262,8 @@ let consent = Clikgate.shared.getConsent()            // + region, isRequired (n
 - Whether consent is **required** comes from the app's consent mode in Clikgate (EEA, UK and Switzerland
   by default) for the device's region (your hint, else the IP country). Before the first config, only a
   hint in those regions counts.
-- Required and `attribution` **unknown**: the SDK buffers on the device (up to 7 days or 1,000 events) and
-  sends nothing identifying (no install, open, events; `/config` without the installation id). Clikgate
+- Required and `attribution` **unknown**: the SDK buffers on the device (up to 7 days or 1,000 goals) and
+  sends nothing identifying (no install, open, goals; `/config` without the installation id). Clikgate
   links still open the right screen (delivered locally with their query parameters). **Granted** flushes
   the buffer; **denied** drops it (one anonymous install count if the organisation enabled it).
 - `setTrackingEnabled(false)` still wins over consent.
@@ -277,7 +277,7 @@ let consent = Clikgate.shared.getConsent()            // + region, isRequired (n
 - LinkedIn `li_fat_id`, Snap `ScCid` and X `twclid` arrive in the same Clikgate links when your app passes ad click IDs
   (dashboard, per network); they reach Clikgate inside the launch / resolved URL, unchanged.
 - Clikgate tells old SDK versions to update: a deprecated version logs a warning once per launch; a blocked
-  version logs an error and only sends basic events (links then open locally). Calls a blocked version may
+  version logs an error and only makes basic calls (links then open locally; goals only if Clikgate allows them). Calls a blocked version may
   not make fail with `ClikgateError.sdkVersionBlocked`.
 - Identity checks use App Attest (`attestation: .appAttestIfAvailable`), Apple DeviceCheck tokens and the
   IDFV only, when `analytics` consent allows (or the organisation's basis is fraud prevention) and identity
@@ -287,16 +287,13 @@ let consent = Clikgate.shared.getConsent()            // + region, isRequired (n
 
 ```swift
 // Before or after configure, on every launch:
-Clikgate.shared.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(
-    mirrorEvents: true, eventNameMap: ["purchase": "purchase"]))
+Clikgate.shared.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions())
 ```
 
 - Needs Firebase Analytics in your app (looked up at runtime, no dependency), GA4 forwarding switched on in
   Clikgate, and `analytics` consent. Logs `clikgate_attribution` once per install (`cg_source`,
   `cg_medium`, `cg_campaign`, `cg_channel`, `cg_link_id`, `cg_match_type`), sets `cg_first_source` /
-  `cg_first_campaign`, optionally mirrors your `track()` events (Firebase name rules: 1–40 characters,
-  ≤ 25 parameters, values ≤ 100 characters), and reports Firebase's app instance id to Clikgate for
-  server-side GA4.
+  `cg_first_campaign`, and reports Firebase's app instance id to Clikgate for server-side GA4.
 - Sales tracking (Paystack, Flutterwave): add `Clikgate.shared.attributionMetadata()`
   (`["cg_click_id": …, "cg_link_id": …]`) to the transaction's `metadata` / `meta`. Empty when nothing is
   attributed or consent doesn't allow attribution.
@@ -306,33 +303,47 @@ Clikgate.shared.enableFirebaseForwarding(ClikgateFirebaseForwardingOptions(
   when `adUserData` is denied). You give first-party data to Google's SDK yourself; Clikgate never sends raw
   email or phone numbers.
 
-## 6. Events, identity, opt-out
+## 6. Identify your users, opt-out
+
+Optional: you need it for labels and the person timeline, referrals and leaderboards that need a verified user, and
+"existing customer" checks. Anonymous users are tracked by click or installation without it. The customer ID is your
+own internal user ID (never an email, phone, BVN or NIN), the same on app, website and server. Full guide:
+https://clikgate.com/docs/identify-users
+
+**Path A: identity token (the default).** Your server makes the token in one line with the server SDK (Node
+`createIdentityToken`, Python `create_identity_token`, PHP `\Clikgate\IdentityToken::create`, Java / .NET
+`IdentityTokens.create` / `Create`; the secret is `CLIKGATE_IDENTITY_SECRET`, or `CLIKGATE_IDENTITY_SECRETS` for
+several apps, on the server only) and returns it in the sign-in response and the "current user" response the app
+already calls at open. The app passes the newest token:
 
 ```swift
-Clikgate.shared.track("signup")
-Clikgate.shared.track("purchase", revenue: ClikgateMoney.ofMinor(1_500_000, currency: "NGN"),
-                      properties: ["order_id": "A-1001"]) { error in /* optional: validation errors */ }
-Clikgate.shared.identifyUser(label: "Ada (VIP)", customerId: "user_42", identityToken: tokenFromYourBackend)  // after login
-Clikgate.shared.identifyUser(customerId: nil)                                             // logout
-Clikgate.shared.setTrackingEnabled(false)   // stops everything; tells Clikgate to erase device data
+Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateToken)  // after sign-in, and at app open
+Clikgate.shared.identifyUser(label: "Ada (VIP)")      // just the label (the customer ID is kept; Growth and up)
+Clikgate.shared.identifyUser(customerId: nil)         // sign-out
+Clikgate.shared.setTrackingEnabled(false)             // stops everything; tells Clikgate to erase device data
 ```
 
-Rules:
-- Event names match `^[A-Za-z0-9_.$:-]{1,64}$`; names starting with `$` are reserved.
-- Properties must be JSON and at most 8 KB.
-- Currency is 3 uppercase letters.
+The token is `base64url_nopad(HMAC_SHA256(identity_secret, "<customer_user_id>.<issued_at>")) + "." + issued_at`,
+always made on your server, never in the app. It lasts 30 days by default; no forced refresh.
 
-Events are queued on disk (up to 1,000 events / 1 MB) and sent in batches. They go out:
-- when 20 are queued,
-- every 15 s in the foreground,
-- when the app goes to the background,
-- on launch.
+**Path B: installation ID (no secret, no token).** The app sends this installation's ID with the sign-in request
+(and at every signed-in app open); your server calls the server SDK's
+`identifyUser({appId, installationId, customerId, label?})`:
 
-Events tracked before the first install completes wait in the queue.
+```swift
+let installationId: String? = try await Clikgate.shared.installationId()
+// or: Clikgate.shared.installationId { result in … }   (Result<String?, ClikgateError>, main queue)
+```
 
-**SKAdNetwork / AdAttributionKit.** If your Clikgate app has a conversion value schema, every `track` call
-updates the postback conversion value (AdAttributionKit on iOS 17.4+, SKAdNetwork 4 on 16.1+). Values
-only go up. To get postback copies, add to `Info.plist`:
+`installationId()` returns the random UUID the SDK created at first launch (kept in the Keychain) and sends with every
+call (not personal data; allowed in private mode). Right after `configure` it waits for the first launch's config
+answer (a few seconds at most; offline it answers at once) and never blocks the main thread. A reinstall gets a new ID
+(the previous one goes to Clikgate as `keychain_previous_installation_id`). It returns `nil` when tracking is off
+(`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or deep-link-only mode): your
+server then skips `identifyUser`. It throws `not_configured` before `configure`.
+
+**No SKAdNetwork / AdAttributionKit updates from goals.** The SDK doesn't set postback conversion values. To get
+postback copies, add to `Info.plist`:
 - AdAttributionKit: the `AdAttributionKit` dictionary with `AttributionCopyEndpoint` = `https://<your Clikgate domain>`.
 - SKAdNetwork: `NSAdvertisingAttributionReportEndpoint` = `https://<your Clikgate domain>`.
 
@@ -356,17 +367,20 @@ Clikgate.shared.goal("purchase", reference: transaction.reference, provider: .pa
     switch result.status {
     case .counted: break                      // counted
     case .waiting: break                      // a Payment goal waiting for its confirmation
+    case .received: break                     // stored, not counted: the name isn't ticked in the dashboard yet
     case .refused: print(result.reason ?? "") // e.g. invalid_argument, payment_goal_needs_confirmation
     }
 }
 ```
 
 The completion gets a `ClikgateGoalResult` on the main queue once Clikgate answers: `status`
-(`ClikgateGoalStatus`: `.counted`, `.waiting` or `.refused`), `reason` (nil when counted), `goalKind`
+(`ClikgateGoalStatus`: `.counted`, `.waiting`, `.received` or `.refused`), `reason` (nil when counted), `goalKind`
 (`ClikgateGoalKind`: `.standard` or `.payment`) and `valueIgnored`. Invalid input is refused at once
-(`invalid_argument`). Calling again with the same key and reference while the first call is still queued
+(`invalid_argument`). If the business has switched off "Allow unknown goal names", a name that isn't set up as a goal is refused with `unknown_goal` (an archived goal with `goal_archived`). That refusal is final: it isn't retried or queued again, and debug builds log "Goal `{name}` isn't set up in Clikgate". The SDK never checks names itself: Clikgate decides. Calling again with the same key and reference while the first call is still queued
 completes at once with `.waiting` and reason `already_queued`. Offline, the goal stays queued and the completion waits; if the app quits first the
-completion isn't called, but the goal is still sent on the next launch.
+completion isn't called, but the goal is still sent on the next launch. `.received` (reason `not_counted_yet`, or
+`goal_archived`) is a success: the name is stored and counts once you tick "Count this as a goal" in "Seen from your
+app and website"; it isn't retried.
 
 **Providers.** `ClikgateProvider` lists the payment providers Clikgate knew when this SDK was released
 (`.paystack`, `.flutterwave`, `.monnify`, `.mtnMomo`, `.stripe`, …). For a
@@ -397,12 +411,13 @@ for the event (application number, order id, transaction reference).
   pass your own when you have one. A second goal with the same key and reference is ignored.
 - **isFirst** (optional): your statement that this is the customer's first such event (for
   "click to first purchase"). Clikgate never checks it against an identity.
-- Delivery: queued, batched and retried like events (they share the offline queue), attributed to
-  the latest Clikgate link that opened the app, else the install. Consent works as for events: while
+- Delivery: queued on disk (up to 1,000 / 1 MB), sent in batches (at 20, every 15 s in the foreground, on
+  background and on launch) and retried, attributed to the latest Clikgate link that opened the app, else the
+  install. Goals sent before the first install completes wait in the queue. Consent: while
   consent is required and `attribution` is unknown, goals wait on the device (up to 7 days); on deny
   they're dropped.
 - **Private mode** (an organisation setting for banks, insurers, lenders and health): `goal()`
-  works as usual, while the customer ID of `identifyUser()`, event `properties` and event revenue are not sent (labels only when your organisation allows labels in private mode) (one warning
+  works as usual, while the customer ID of `identifyUser()` is not sent (labels only when your organisation allows labels in private mode) (one warning
   in debug builds). Send outcomes and values through `goal()`.
 - Goals completed on your server (a loan disbursed days later) should be sent by your backend
   (`POST /v1/goals/events`) with the click id from `attributionMetadata()`, saved with your own
@@ -548,9 +563,9 @@ Tokens are re-sent whenever they change.
 
 - The SDK ships `PrivacyInfo.xcprivacy`. Collected data, none of it used for tracking:
   - device ID (installation id, push token)
-  - user ID (if you call `identify`)
-  - product interaction (events)
-  - purchase history (revenue events)
+  - user ID (if you call `identifyUser`)
+  - product interaction (goals)
+  - purchase history (goal values and payment references, when you send them)
 - No required-reason APIs are used.
 - No IDFA. ATT is never prompted. IDFV only for identity checks (§5b) and Apple Ads redownload linking, with consent.
 - Mention the pasteboard read in your privacy policy if you opt in to `.automatic`.
@@ -568,7 +583,7 @@ See [PRIVACY.md](PRIVACY.md).
     WhatsApp or the share sheet) and stats
   - the paste control
   - push registration
-  - events and opt-out
+  - goals, the installation ID and opt-out
   - consent buttons (grant / deny / region hint), Firebase forwarding (enabled at launch; active only when
     the app links Firebase) and `attributionMetadata()`
 - Set your SDK key, link domain and program id in `ios/Sample/Config.xcconfig` (or a git-ignored
@@ -592,7 +607,7 @@ pod lib lint Clikgate.podspec --allow-warnings
 1. Remove the dependency: the `Clikgate` / `ClikgateEngage` package products (Xcode › Package Dependencies), or
    `pod 'Clikgate'` / `pod 'Clikgate/Engage'` and run `pod install`, or the XCFrameworks.
 2. Remove `Clikgate.configure(...)` and every `Clikgate.shared…` / `ClikgateEngage…` call (deep-link handler,
-   `handle(url:)`, `continue(userActivity:)`, `track`, `identify`, consent, Firebase forwarding,
+   `handle(url:)`, `continue(userActivity:)`, `goal`, `identifyUser`, consent, Firebase forwarding,
    `attributionMetadata`, `ClikgatePasteControl`).
 3. Remove the app entries: the `applinks:<domain>` Associated Domains of your Clikgate link domains, the custom
    URL scheme (CFBundleURLTypes) if it was only for Clikgate, and Clikgate keys in Info.plist.

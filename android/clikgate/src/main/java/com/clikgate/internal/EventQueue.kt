@@ -9,8 +9,8 @@ import org.json.JSONObject
 internal class QueuedEvent(val rowId: Long, val payload: JSONObject)
 
 /**
- * Persistent FIFO of serialised `/events` items in SQLite `clikgate_events.db`.
- * Bounded by event count and total bytes; the oldest events are dropped when full.
+ * Persistent FIFO of serialised `/goals` items in SQLite `clikgate_events.db` (name kept from earlier builds).
+ * Bounded by item count and total bytes; the oldest items are dropped when full.
  */
 internal class EventQueue(context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, 1) {

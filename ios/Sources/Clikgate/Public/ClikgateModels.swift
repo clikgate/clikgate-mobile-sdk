@@ -1,22 +1,5 @@
 import Foundation
 
-/// An amount of money in minor units (e.g. kobo, cents) with an ISO 4217 currency code, for `track` revenue.
-/// Create it with `ClikgateMoney.ofMinor(1_500_000, currency: "NGN")` (₦15,000). Goals take normal units instead.
-public struct ClikgateMoney: Sendable, Equatable {
-    public let amountMinor: Int64
-    public let currency: String
-
-    /// `amountMinor` in minor units (kobo, cents): `ofMinor(1_500_000, currency: "NGN")` is ₦15,000.
-    public static func ofMinor(_ amountMinor: Int64, currency: String) -> ClikgateMoney {
-        ClikgateMoney(minor: amountMinor, currency: currency)
-    }
-
-    private init(minor: Int64, currency: String) {
-        self.amountMinor = minor
-        self.currency = currency
-    }
-}
-
 /// The Clikgate link behind a deep link or an attribution.
 public struct ClikgateLink: Sendable {
     public let id: String
@@ -87,7 +70,7 @@ public struct ClikgateDeepLinkResult: Sendable {
     public let matchType: String?
     public let link: ClikgateLink?
     public let referral: ClikgateReferral?
-    /// Change 17: set when the link is blocked here (allowed countries or a block rule): show this text and don't
+    /// Set when the link is blocked here (allowed countries or a block rule): show this text and don't
     /// route; `path`, `clickId` and `link` are nil.
     public internal(set) var blockMessage: String? = nil
 
@@ -191,7 +174,12 @@ public enum ClikgateGoalStatus: Sendable {
     case counted
     /// Recorded, not counted yet: a Payment goal waiting for its confirmation, or a goal waiting for its click.
     case waiting
-    /// Not counted; `reason` says why.
+    /// Stored, not counted: the name isn't ticked as a goal in the dashboard yet (`not_counted_yet`) or the goal is
+    /// archived (`goal_archived`). A success: it isn't retried. It counts once the name is ticked.
+    case received
+    /// Not counted; `reason` says why. Final: never retried or re-queued. When the organisation accepts only goals it
+    /// has set up, a name with no goal behind it is refused with `unknown_goal` (an archived goal with
+    /// `goal_archived`); debug builds log "Goal `name` isn't set up in Clikgate".
     case refused
 }
 
@@ -204,8 +192,8 @@ public enum ClikgateGoalKind: Sendable {
 /// The result of `goal(...)`.
 public struct ClikgateGoalResult: Sendable {
     public let status: ClikgateGoalStatus
-    /// Nil when counted; else a reason code such as `waiting_for_confirmation`, `unattributed`,
-    /// `payment_goal_needs_confirmation` or `invalid_argument`.
+    /// Nil when counted; else a reason code such as `waiting_for_confirmation`, `not_counted_yet`, `goal_archived`,
+    /// `unknown_goal`, `unattributed`, `payment_goal_needs_confirmation` or `invalid_argument`.
     public let reason: String?
     /// The goal's kind; nil when the goal didn't reach Clikgate.
     public let goalKind: ClikgateGoalKind?

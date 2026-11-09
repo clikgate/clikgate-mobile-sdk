@@ -171,6 +171,20 @@ describe('arguments', () => {
   });
 });
 
+describe('identity snippets (Change 22)', () => {
+  it('cover every platform, use identifyUser with a server token and the installation ID getter', async () => {
+    const { IDENTIFY_SNIPPET, INSTALLATION_ID_SNIPPET, GOAL_SNIPPET } = await import('../src/constants');
+    expect(Object.keys(IDENTIFY_SNIPPET).sort()).toEqual(Object.keys(GOAL_SNIPPET).sort());
+    for (const [platform, snippet] of Object.entries(IDENTIFY_SNIPPET)) {
+      expect(snippet, platform).toMatch(/identifyUser\(/);
+      expect(snippet, platform).toMatch(/identityToken/);
+    }
+    for (const [platform, snippet] of Object.entries(INSTALLATION_ID_SNIPPET)) {
+      expect(snippet, platform).toMatch(/[iI]nstallationId\(\)/);
+    }
+  });
+});
+
 describe('goal snippets', () => {
   it('show one goal() call with the Provider enum on every platform, never payment()', async () => {
     const { GOAL_SNIPPET } = await import('../src/constants');

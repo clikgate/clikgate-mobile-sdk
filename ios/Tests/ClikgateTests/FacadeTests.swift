@@ -42,19 +42,30 @@ final class FacadeTests: XCTestCase {
         XCTAssertTrue(sdk.continue(userActivity: ua))
     }
 
-    func testTrackValidationReportsToCompletion() async throws {
+    func testInstallationIdViaFacade() async throws {
+        // Change 22 (I.7, R.26): `try await Clikgate.shared.installationId()`; the completion form for wrappers.
         stubHappyPath()
+        let unconfigured = Clikgate()
+        do { _ = try await unconfigured.installationId(); XCTFail("expected not_configured") } catch let e as ClikgateError {
+            XCTAssertEqual(e.code, ClikgateError.notConfigured)
+        }
         let sdk = make()
-        let errors = ErrorBox()
-        sdk.track("bad name", completion: { errors.set($0) })
-        await eventually { errors.done }
-        XCTAssertEqual(errors.value?.code, ClikgateError.invalidArgument)
-
-        let ok = ErrorBox()
-        sdk.track("purchase", revenue: ClikgateMoney.ofMinor(1_500_000, currency: "NGN"), properties: ["order_id": "A-1001"],
-                  completion: { ok.set($0) })
-        await eventually { ok.done }
-        XCTAssertNil(ok.value)
+        let id = try await sdk.installationId()
+        XCTAssertNotNil(id)
+        let stored = await sdk.currentCore?.currentState().installationId
+        XCTAssertEqual(id, stored, "the ID the SDK sends to Clikgate")
+        let box = ErrorBox()
+        let ids = IdBox()
+        sdk.installationId { r in
+            switch r {
+            case .success(let v): ids.value = v
+            case .failure(let e): box.set(e)
+            }
+            ids.done = true
+        }
+        await eventually { ids.done }
+        XCTAssertNil(box.value)
+        XCTAssertEqual(ids.value, id)
     }
 
     func testAttributionCompletionAndReferralsViaFacade() async throws {
@@ -94,4 +105,9 @@ final class ErrorBox: @unchecked Sendable {
     func set(_ e: ClikgateError?) { lock.lock(); _value = e; _done = true; lock.unlock() }
     var value: ClikgateError? { lock.lock(); defer { lock.unlock() }; return _value }
     var done: Bool { lock.lock(); defer { lock.unlock() }; return _done }
+}
+
+final class IdBox: @unchecked Sendable {
+    var value: String?
+    var done = false
 }

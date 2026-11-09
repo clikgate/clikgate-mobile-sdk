@@ -90,7 +90,7 @@ final class Change20Tests: XCTestCase {
         XCTAssertEqual(reports().map { $0["is_deferred"] as? Bool }, [true, false])
     }
 
-    /// Not metered: never an `/events` or `/goals` item, never queued; sent in deep-link-only and private mode.
+    /// Not metered: never a `/goals` item, never queued; sent in deep-link-only and private mode.
     func testNeverQueuedOrSentAsAnEvent() async throws {
         for config in ["config_response_deep_link_only", "config_response_private_mode"] {
             server.reset()
@@ -105,7 +105,7 @@ final class Change20Tests: XCTestCase {
             await core.flush()
             let queued = await core.queuedEventCount
             XCTAssertEqual(queued, 0, config)
-            let sent = server.requests("POST /v1/sdk/events") + server.requests("POST /v1/sdk/goals")
+            let sent = server.requests("POST /v1/sdk/goals")
             XCTAssertFalse(sent.contains { String(data: $0.body ?? Data(), encoding: .utf8)?.contains("deeplink") ?? false }, config)
             h2.cleanUp()
         }

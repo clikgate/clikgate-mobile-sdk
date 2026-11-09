@@ -6,7 +6,6 @@ import com.clikgate.Attestation
 import com.clikgate.Clikgate
 import com.clikgate.ClikgateError
 import com.clikgate.ClikgateInternalApi
-import com.clikgate.ClikgateMoney
 import com.clikgate.ClikgateOptions
 import com.clikgate.ClikgateResult
 import com.clikgate.ConsentState
@@ -124,21 +123,11 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
     Clikgate.attribution { promise.resolve(BridgeMaps.toWritableMap(BridgeMaps.attribution(it))) }
   }
 
-  @OptIn(ClikgateInternalApi::class)
-  override fun track(args: ReadableMap, promise: Promise) = guard(promise) {
-    val name = args.string("name") ?: return@guard invalid(promise, "name is required", "name")
-    val amount = args.number("revenueMinor")
-    val currency = args.string("currency")
-    if ((amount == null) != (currency == null)) {
-      return@guard invalid(promise, "revenueMinor and currency go together", if (amount == null) "revenueMinor" else "currency")
+  /** Identity Path B. Resolves `{installationId}`; null when tracking is off. */
+  override fun getInstallationId(args: ReadableMap, promise: Promise) = guard(promise) {
+    Clikgate.getInstallationId { id ->
+      promise.resolve(Arguments.createMap().apply { putString("installationId", id) })
     }
-    if (amount != null && amount != Math.floor(amount)) {
-      return@guard invalid(promise, "revenueMinor must be an integer", "revenueMinor")
-    }
-    val revenue = if (amount != null && currency != null) ClikgateMoney.ofMinor(amount.toLong(), currency) else null
-    val properties = if (args.isType("properties", ReadableType.Map)) BridgeMaps.fromReadableMap(args.getMap("properties")) else null
-    val error = Clikgate.trackValidated(name, revenue, properties)
-    if (error != null) reject(promise, error) else promise.resolve(null)
   }
 
   /** The value arrives as a decimal string and becomes a BigDecimal natively; resolves with the goal's result. */
@@ -258,16 +247,10 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
   }
 
   override fun enableFirebaseForwarding(args: ReadableMap, promise: Promise) = guard(promise) {
-    val names = HashMap<String, String>()
-    if (args.isType("eventNameMap", ReadableType.Map)) {
-      BridgeMaps.fromReadableMap(args.getMap("eventNameMap"))?.forEach { (k, v) -> if (v is String) names[k] = v }
-    }
     Clikgate.enableFirebaseForwarding(
       FirebaseForwardingOptions(
         logAttributionEvent = args.bool("logAttributionEvent", true),
         setUserProperties = args.bool("setUserProperties", true),
-        mirrorEvents = args.bool("mirrorEvents", false),
-        eventNameMap = names,
       ),
     )
     promise.resolve(null)

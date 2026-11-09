@@ -41,16 +41,9 @@ public struct ClikgateFirebaseForwardingOptions: Sendable {
     public var logAttributionEvent: Bool
     /// Set the user properties `cg_first_source` and `cg_first_campaign`.
     public var setUserProperties: Bool
-    /// Also log every `track()` event to Firebase.
-    public var mirrorEvents: Bool
-    /// Clikgate event name → Firebase event name for mirrored events.
-    public var eventNameMap: [String: String]
 
-    public init(logAttributionEvent: Bool = true, setUserProperties: Bool = true, mirrorEvents: Bool = false,
-                eventNameMap: [String: String] = [:]) {
+    public init(logAttributionEvent: Bool = true, setUserProperties: Bool = true) {
         self.logAttributionEvent = logAttributionEvent
         self.setUserProperties = setUserProperties
-        self.mirrorEvents = mirrorEvents
-        self.eventNameMap = eventNameMap
     }
 }

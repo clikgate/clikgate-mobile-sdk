@@ -123,21 +123,14 @@ void main() {
       expect(calls.single.arguments, {
         'logAttributionEvent': true,
         'setUserProperties': true,
-        'mirrorEvents': false,
-        'eventNameMap': <String, String>{},
       });
     });
 
     test('options', () async {
-      await Clikgate.enableFirebaseForwarding(
-          mirrorEvents: true,
-          setUserProperties: false,
-          eventNameMap: {'signup': 'sign_up'});
+      await Clikgate.enableFirebaseForwarding(setUserProperties: false);
       expect(calls.single.arguments, {
         'logAttributionEvent': true,
         'setUserProperties': false,
-        'mirrorEvents': true,
-        'eventNameMap': {'signup': 'sign_up'},
       });
     });
   });

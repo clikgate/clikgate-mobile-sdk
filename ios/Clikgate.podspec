@@ -4,7 +4,7 @@ Pod::Spec.new do |s|
   s.summary          = 'Clikgate iOS SDK: deep links, deferred deep links, install attribution, referrals and uninstall tracking.'
   s.description      = <<-DESC
     The Clikgate SDK handles Universal Links and custom-scheme links, deferred deep links
-    (pasteboard / Apple Search Ads), install attribution, in-app events, referral codes (referee side),
+    (pasteboard / Apple Search Ads), install attribution, goals, referral codes (referee side),
     push-token registration for uninstall tracking and SKAdNetwork / AdAttributionKit conversion
     values. No third-party dependencies.
   DESC

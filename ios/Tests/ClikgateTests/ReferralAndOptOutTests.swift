@@ -88,49 +88,6 @@ final class ReferralTests: XCTestCase {
     }
 }
 
-final class ConversionValueTests: XCTestCase {
-    let schema = RemoteConfig(json: Fixtures.json("config_response")).conversionValueSchema
-
-    func testMapping() {
-        let ngn = { (m: Int64) in ClikgateMoney.ofMinor(m, currency: "NGN") }
-        XCTAssertEqual(ConversionValueMapper.update(for: "signup", revenue: nil, schema: schema, lastValue: nil),
-                       .init(fineValue: 1, coarseValue: "low", lockWindow: false))
-        XCTAssertEqual(ConversionValueMapper.update(for: "purchase", revenue: ngn(500_000), schema: schema, lastValue: nil)?.fineValue, 20)
-        XCTAssertNil(ConversionValueMapper.update(for: "purchase", revenue: ngn(499_999), schema: schema, lastValue: nil))
-        XCTAssertNil(ConversionValueMapper.update(for: "purchase", revenue: nil, schema: schema, lastValue: nil))
-        XCTAssertNil(ConversionValueMapper.update(for: "purchase", revenue: ClikgateMoney.ofMinor(9_000_000, currency: "USD"), schema: schema, lastValue: nil))
-        XCTAssertNil(ConversionValueMapper.update(for: "unknown", revenue: nil, schema: schema, lastValue: nil))
-        XCTAssertNil(ConversionValueMapper.update(for: "signup", revenue: nil, schema: nil, lastValue: nil))
-    }
-
-    func testValuesOnlyGoUpAndHighestRuleWins() {
-        var rules = schema!.rules
-        rules.append(.init(fineValue: 63, coarseValue: "high", event: "purchase", minRevenueMinor: 5_000_000, currency: "NGN", lockWindow: true))
-        let s = RemoteConfig.ConversionValueSchema(id: "cvs", version: 3, rules: rules)
-        let big = ClikgateMoney.ofMinor(6_000_000, currency: "NGN")
-        XCTAssertEqual(ConversionValueMapper.update(for: "purchase", revenue: big, schema: s, lastValue: 20),
-                       .init(fineValue: 63, coarseValue: "high", lockWindow: true))
-        XCTAssertNil(ConversionValueMapper.update(for: "signup", revenue: nil, schema: s, lastValue: 20))
-        XCTAssertNil(ConversionValueMapper.update(for: "purchase", revenue: big, schema: s, lastValue: 63))
-    }
-
-    func testTrackUpdatesConversionValueOnce() async throws {
-        StubServer.shared.reset()
-        let h = Harness()
-        defer { h.cleanUp() }
-        stubHappyPath()
-        let core = h.makeCore()
-        await core.start(startTimers: false)
-        await core.track(name: "signup", revenue: nil, properties: nil)
-        await core.track(name: "signup", revenue: nil, properties: nil)
-        await core.track(name: "purchase", revenue: ClikgateMoney.ofMinor(600_000, currency: "NGN"), properties: nil)
-        await core.track(name: "signup", revenue: nil, properties: nil)
-        XCTAssertEqual(h.conversion.updates.map { $0.fineValue }, [1, 20])
-        let last = await core.currentState().skanLastFineValue
-        XCTAssertEqual(last, 20)
-    }
-}
-
 final class OptOutTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
@@ -142,8 +99,8 @@ final class OptOutTests: XCTestCase {
         stubHappyPath()
         let core = h.makeCore()
         await core.start(startTimers: false)
-        server.on("POST /v1/sdk/events", .json("{}", status: 500))
-        await core.track(name: "signup", revenue: nil, properties: nil)
+        server.on("POST /v1/sdk/goals", .json("{}", status: 500))
+        await core.goal("signup", value: nil, currency: nil, reference: nil, isFirst: nil)
         server.reset(); stubHappyPath()
 
         await core.setTrackingEnabled(false)
@@ -151,7 +108,7 @@ final class OptOutTests: XCTestCase {
         XCTAssertEqual(queued, 0)
         XCTAssertEqual(server.requests("POST /v1/sdk/opt-out").first?.json["opt_out"] as? Bool, true)
 
-        await core.track(name: "purchase", revenue: nil, properties: nil)
+        await core.goal("purchase", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.identifyUser(label: nil, customerId: "u", identityToken: nil)
         await core.setPushToken("tok", provider: "fcm")
         await core.resolve(url: URL(string: "https://inv.myapp.com/x")!)
@@ -170,9 +127,9 @@ final class OptOutTests: XCTestCase {
         await again.start(startTimers: false)
         await again.setTrackingEnabled(true)
         XCTAssertEqual(server.requests("POST /v1/sdk/opt-out").last?.json["opt_out"] as? Bool, false)
-        await again.track(name: "signup", revenue: nil, properties: nil)
+        await again.goal("signup", value: nil, currency: nil, reference: nil, isFirst: nil)
         await again.flush()
-        XCTAssertEqual(server.requests("POST /v1/sdk/events").count, 1)
+        XCTAssertEqual(server.requests("POST /v1/sdk/goals").count, 1)
     }
 
     func testOptOutIsRetriedUntilItSucceedsAcrossLaunches() async throws {
@@ -219,12 +176,12 @@ final class OptOutTests: XCTestCase {
         stubHappyPath()
         let core = h.makeCore()
         await core.start(startTimers: false)
-        server.on("POST /v1/sdk/events", .json(#"{"error":{"type":"forbidden","code":"opted_out","message":"opted out"}}"#, status: 403))
-        await core.track(name: "a", revenue: nil, properties: nil)
+        server.on("POST /v1/sdk/goals", .json(#"{"error":{"type":"forbidden","code":"opted_out","message":"opted out"}}"#, status: 403))
+        await core.goal("goal_a", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.flush()
-        await core.track(name: "b", revenue: nil, properties: nil)
+        await core.goal("goal_b", value: nil, currency: nil, reference: nil, isFirst: nil)
         await core.flush()
-        XCTAssertEqual(server.requests("POST /v1/sdk/events").count, 1)
+        XCTAssertEqual(server.requests("POST /v1/sdk/goals").count, 1)
         let enabled = await core.currentState().trackingEnabled
         XCTAssertFalse(enabled)
     }

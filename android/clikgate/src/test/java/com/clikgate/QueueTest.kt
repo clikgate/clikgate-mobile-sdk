@@ -2,7 +2,7 @@ package com.clikgate
 
 import com.clikgate.FakeApi.Companion.errorCode
 import com.clikgate.FakeApi.Companion.ok
-import com.clikgate.internal.Core
+import com.clikgate.internal.Goals
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.SocketPolicy
 import org.json.JSONObject
@@ -10,15 +10,18 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+/**
+ * The persisted queue and its flushing (Change 22: goals only; `track()` and app events were removed), and
+ * identifyUser().
+ */
 @RunWith(RobolectricTestRunner::class)
-class EventsTest {
+class QueueTest {
     private lateinit var env: TestEnv
 
     @Before fun setUp() { env = TestEnv() }
@@ -31,124 +34,89 @@ class EventsTest {
         eventually { env.core().isIdleForTests() }
     }
 
-    private fun sentEvents(): List<JSONObject> = env.api.calls("POST /v1/sdk/events").flatMap { r ->
-        val a = env.api.body(r).getJSONArray("events")
+    private fun sentGoals(): List<JSONObject> = env.api.calls("POST /v1/sdk/goals").flatMap { r ->
+        val a = env.api.body(r).getJSONArray("goals")
         (0 until a.length()).map { a.getJSONObject(it) }
     }
 
+    private fun queuedGoal(key: String) = Goals.build(key, null, null, null, null, null, null, 0)
+
     @Test
-    fun eventPayloadMatchesContract() {
-        val o = Core.buildEvent("purchase", ClikgateMoney.ofMinor(1_500_000, "NGN"), mapOf("order_id" to "A-1001"), false, 1_760_954_561_123L)
-        val fixture = Fixtures.json("events_request").getJSONArray("events").getJSONObject(0)
-        assertTrue(o.getString("event_id").matches(Regex("^[0-9a-f-]{36}$")))
-        for (k in listOf("name", "revenue_minor", "currency")) assertEquals(fixture.get(k).toString(), o.get(k).toString())
-        assertEquals(fixture.getJSONObject("properties").toString(), o.getJSONObject("properties").toString())
-        assertEquals("2025-10-20T10:02:41.123Z", o.getString("occurred_at"))
-        assertEquals(fixture.keys().asSequence().toSet(), o.keys().asSequence().toSet())
+    fun noTrackOrMoneyApi() {
+        // Change 22 (D1): goal() is the only method; there is no track(), trackValidated() or ClikgateMoney.
+        val names = Clikgate::class.java.methods.map { it.name }.toSet()
+        assertFalse(names.any { it.startsWith("track") })
+        assertTrue("goal" in names)
+        assertTrue(runCatching { Class.forName("com.clikgate.ClikgateMoney") }.isFailure)
     }
 
     @Test
-    fun moneyOfMinorIsTheDeprecatedConstructor() {
-        // Change 09 (X.E10): ClikgateMoney.ofMinor is the name on every platform; the constructor stays as an alias.
-        @Suppress("DEPRECATION")
-        val old = ClikgateMoney(1_500_000, "NGN")
-        assertEquals(old, ClikgateMoney.ofMinor(1_500_000, "NGN"))
-        assertEquals(1_500_000L, ClikgateMoney.ofMinor(1_500_000, "NGN").amountMinor)
-    }
-
-    @Test
-    fun localValidation() {
-        fun err(block: () -> Unit): ClikgateError = try {
-            block(); throw AssertionError("expected error")
-        } catch (e: ClikgateError) { e }
-        assertEquals("name", err { Core.buildEvent("bad name", null, null, false, 0) }.param)
-        assertEquals("name", err { Core.buildEvent("x".repeat(65), null, null, false, 0) }.param)
-        assertEquals("name", err { Core.buildEvent("\$identify", null, null, false, 0) }.param)
-        assertEquals("currency", err { Core.buildEvent("purchase", ClikgateMoney.ofMinor(1, "ngn"), null, false, 0) }.param)
-        assertEquals("properties", err { Core.buildEvent("p", null, mapOf("big" to "x".repeat(9000)), false, 0) }.param)
-        assertEquals("properties", err { Core.buildEvent("p", null, mapOf("obj" to Any()), false, 0) }.param)
-        assertEquals(ClikgateError.INVALID_ARGUMENT, err { Core.buildEvent("", null, null, false, 0) }.code)
-        // nested properties are fine; revenue is optional
-        val ok = Core.buildEvent("a.b:c-d_\$", null, mapOf("n" to mapOf("list" to listOf(1, 2.5, true, null))), false, 0)
-        assertFalse(ok.has("revenue_minor"))
-        assertEquals("[1,2.5,true,null]", ok.getJSONObject("properties").getJSONObject("n").getJSONArray("list").toString())
-    }
-
-    @OptIn(ClikgateInternalApi::class)
-    @Test
-    fun trackValidatedReportsErrors() {
+    fun flushesAtTwentyGoals() {
         installed()
-        assertNotNull(Clikgate.trackValidated("bad name", null, null))
-        assertNull(Clikgate.trackValidated("signup", null, null))
-    }
-
-    @Test
-    fun flushesAtTwentyEvents() {
-        installed()
-        repeat(19) { Clikgate.track("e$it") }
+        repeat(19) { Clikgate.goal("g$it") }
         settle(300)
-        assertTrue(env.api.calls("POST /v1/sdk/events").isEmpty())
-        Clikgate.track("e19")
-        eventually { sentEvents().size == 20 }
-        assertEquals((0 until 20).map { "e$it" }, sentEvents().map { it.getString("name") })
-        assertNotNull(env.api.calls("POST /v1/sdk/events").first().getHeader("Idempotency-Key"))
+        assertTrue(env.api.calls("POST /v1/sdk/goals").isEmpty())
+        Clikgate.goal("g19")
+        eventually { sentGoals().size == 20 }
+        assertEquals((0 until 20).map { "g$it" }, sentGoals().map { it.getString("goal") })
+        assertNotNull(env.api.calls("POST /v1/sdk/goals").first().getHeader("Idempotency-Key"))
         eventually { env.queue.count() == 0 }
     }
 
     @Test
     fun flushesOnBackgroundAndOnStart() {
         installed()
-        Clikgate.track("signup")
+        Clikgate.goal("signup")
         settle(200)
-        assertTrue(sentEvents().isEmpty())
+        assertTrue(sentGoals().isEmpty())
         env.core().onBackground()
-        eventually { sentEvents().size == 1 }
+        eventually { sentGoals().size == 1 }
 
         // queued in a previous process, flushed on next start
-        env.api.on("POST /v1/sdk/events", MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
-        Clikgate.track("purchase", ClikgateMoney.ofMinor(100, "NGN"))
+        env.api.on("POST /v1/sdk/goals", MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+        Clikgate.goal("purchase", reference = "T-1")
         env.core().onBackground()
         eventually { env.background.scheduled.get() >= 1 } // offline: WorkManager retry scheduled
         assertEquals(1, env.queue.count())
-        env.api.on("POST /v1/sdk/events", ok(Fixtures.text("events_response")))
+        env.api.on("POST /v1/sdk/goals", ok(Fixtures.text("goals_response")))
         env.relaunch()
-        eventually { sentEvents().any { it.getString("name") == "purchase" } }
+        eventually { sentGoals().any { it.getString("goal") == "purchase" } }
         eventually { env.queue.count() == 0 }
     }
 
     @Test
-    fun eventsBeforeInstallWaitInQueue() {
+    fun goalsBeforeInstallWaitInQueue() {
         env.api.on("POST /v1/sdk/install", MockResponse().setResponseCode(503), MockResponse().setResponseCode(503), ok(Fixtures.text("install_response_organic")))
         env.configure()
-        Clikgate.track("early")
+        Clikgate.goal("early_goal")
         eventually { env.storage.installDone }
-        eventually { sentEvents().size == 1 }
+        env.core().onBackground()
+        eventually { sentGoals().size == 1 }
         val installAt = env.api.requests.indexOfLast { it.path == "/v1/sdk/install" }
-        val eventsAt = env.api.requests.indexOfFirst { it.path == "/v1/sdk/events" }
-        assertTrue(eventsAt > installAt)
+        val goalsAt = env.api.requests.indexOfFirst { it.path == "/v1/sdk/goals" }
+        assertTrue(goalsAt > installAt)
     }
 
     @Test
-    fun retriesServerErrorsThenSucceedsWithSameEventIds() {
+    fun retriesServerErrorsThenSucceedsWithTheSameReference() {
         installed()
-        env.api.on("POST /v1/sdk/events", MockResponse().setResponseCode(500), MockResponse().setResponseCode(503), ok(Fixtures.text("events_response")))
-        Clikgate.track("signup")
+        env.api.on("POST /v1/sdk/goals", MockResponse().setResponseCode(500), MockResponse().setResponseCode(503), ok(Fixtures.text("goals_response")))
+        Clikgate.goal("signup")
         env.core().onBackground()
-        eventually { env.api.calls("POST /v1/sdk/events").size == 3 }
-        val ids = sentEvents().map { it.getString("event_id") }.toSet()
-        assertEquals(1, ids.size)
+        eventually { env.api.calls("POST /v1/sdk/goals").size == 3 }
+        assertEquals(1, sentGoals().map { it.getString("reference") }.toSet().size)
         eventually { env.queue.count() == 0 }
     }
 
     @Test
-    fun givesUpAfterFiveAttemptsAndKeepsEvents() {
+    fun givesUpAfterFiveAttemptsAndKeepsGoals() {
         installed()
-        env.api.on("POST /v1/sdk/events", MockResponse().setResponseCode(500))
-        Clikgate.track("signup")
+        env.api.on("POST /v1/sdk/goals", MockResponse().setResponseCode(500))
+        Clikgate.goal("signup")
         env.core().onBackground()
-        eventually { env.api.calls("POST /v1/sdk/events").size == 5 }
+        eventually { env.api.calls("POST /v1/sdk/goals").size == 5 }
         settle(300)
-        assertEquals(5, env.api.calls("POST /v1/sdk/events").size)
+        assertEquals(5, env.api.calls("POST /v1/sdk/goals").size)
         assertEquals(1, env.queue.count())
         assertTrue(env.background.scheduled.get() >= 1)
     }
@@ -156,56 +124,60 @@ class EventsTest {
     @Test
     fun validationErrorDropsBatch() {
         installed()
-        env.api.on("POST /v1/sdk/events", errorCode(422, "validation_error"))
-        Clikgate.track("signup")
+        env.api.on("POST /v1/sdk/goals", errorCode(422, "validation_error"))
+        Clikgate.goal("signup")
         env.core().onBackground()
         eventually { env.queue.count() == 0 }
-        assertEquals(1, env.api.calls("POST /v1/sdk/events").size)
-    }
-
-    @Test
-    fun rejectedEventsAreDroppedNotRetried() {
-        installed()
-        env.api.on("POST /v1/sdk/events", ok("""{"accepted":1,"duplicates":0,"rejected":[{"event_id":"x","code":"validation_error","message":"m"}]}"""))
-        Clikgate.track("a")
-        Clikgate.track("b")
-        env.core().onBackground()
-        eventually { env.queue.count() == 0 }
-        assertEquals(1, env.api.calls("POST /v1/sdk/events").size)
+        assertEquals(1, env.api.calls("POST /v1/sdk/goals").size)
     }
 
     @Test
     fun queueDropsOldestWhenFull() {
         val q = env.queue
-        repeat(5) { q.add(JSONObject().put("event_id", "id$it").put("name", "e$it"), maxEvents = 3, maxBytes = 1_000_000) }
+        repeat(5) { q.add(JSONObject().put("goal", "g$it"), maxEvents = 3, maxBytes = 1_000_000, key = "k$it") }
         assertEquals(3, q.count())
-        assertEquals(listOf("e2", "e3", "e4"), q.peek(10).map { it.payload.getString("name") })
+        assertEquals(listOf("g2", "g3", "g4"), q.peek(10).map { it.payload.getString("goal") })
         // byte limit
         q.clear()
         val big = "x".repeat(400)
-        repeat(4) { q.add(JSONObject().put("event_id", "id$it").put("p", big), maxEvents = 1000, maxBytes = 1_000) }
+        repeat(4) { q.add(JSONObject().put("goal", "g$it").put("p", big), maxEvents = 1000, maxBytes = 1_000, key = "k$it") }
         assertEquals(2, q.count())
-        assertEquals(listOf("id2", "id3"), q.peek(10).map { it.payload.getString("event_id") })
+        assertEquals(listOf("g2", "g3"), q.peek(10).map { it.payload.getString("goal") })
     }
 
     @Test
     fun batchesAreAtMostOneHundred() {
         installed()
         val q = env.queue
-        repeat(150) { q.add(Core.buildEvent("e$it", null, null, false, 0), 1000, 1_048_576) }
+        repeat(150) { q.add(queuedGoal("g$it"), 1000, 1_048_576, "k$it") }
         env.core().onBackground()
         eventually { env.queue.count() == 0 }
-        val sizes = env.api.calls("POST /v1/sdk/events").map { env.api.body(it).getJSONArray("events").length() }
+        val sizes = env.api.calls("POST /v1/sdk/goals").map { env.api.body(it).getJSONArray("goals").length() }
         assertEquals(listOf(100, 50), sizes)
+    }
+
+    @Test
+    fun appEventsQueuedByAnEarlierBuildAreDroppedWithoutANetworkCall() {
+        // Change 22 (S): the queue is persisted. App events left by an earlier development build are dropped on the
+        // next flush, never sent; the goals around them are sent.
+        installed()
+        val q = env.queue
+        q.add(JSONObject().put("event_id", "e1").put("name", "purchase").put("occurred_at", "2026-11-01T10:00:00.000Z"), 1000, 1_048_576)
+        q.add(queuedGoal("signup"), 1000, 1_048_576, "k1")
+        q.add(JSONObject().put("event_id", "e2").put("name", "level_up").put("occurred_at", "2026-11-01T10:00:01.000Z"), 1000, 1_048_576)
+        env.core().onBackground()
+        eventually { env.queue.count() == 0 }
+        assertEquals(listOf("signup"), sentGoals().map { it.getString("goal") })
+        assertTrue(env.api.requests.none { it.path!!.startsWith("/v1/sdk/events") }) // no-track-guard: 404 test (the removed route is never called)
     }
 
     @Test
     fun flushBlockingForWorker() {
         installed()
-        Clikgate.track("signup")
+        Clikgate.goal("signup")
         settle(100)
         assertTrue(env.core().flushBlocking(5_000))
-        assertEquals(1, sentEvents().size)
+        assertEquals(1, sentGoals().size)
     }
 
     @Test

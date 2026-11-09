@@ -35,7 +35,7 @@ export type {
   Referral,
   ReferredBy,
 } from './models';
-export { ClikgateMoney, GoalKind, GoalStatus } from './models';
+export { GoalKind, GoalStatus } from './models';
 export {
   CLIKGATE_PROVIDERS,
   ClikgateProvider,
