@@ -35,6 +35,12 @@ jobs:
         run: |
           npm ci
           npm ci --prefix example
+      # Engage add-on (pure TypeScript). Reuses the core's node_modules (devlink) instead of a second install.
+      # Linked before the core typecheck: the example app imports the Engage sources, which resolve
+      # `react-native` from react-native-engage/node_modules.
+      - name: "Engage: link toolchain"
+        working-directory: react-native-engage
+        run: npm run devlink
       - name: Typecheck
         run: npm run typecheck
       - name: Lint
@@ -45,10 +51,6 @@ jobs:
         run: |
           npm run build
           npm pack --dry-run
-      # Engage add-on (pure TypeScript). Reuses the core's node_modules (devlink) instead of a second install.
-      - name: "Engage: link toolchain"
-        working-directory: react-native-engage
-        run: npm run devlink
       - name: "Engage: typecheck, lint, unit tests (incl. public-API snapshot), build, pack dry run"
         working-directory: react-native-engage
         run: |
@@ -75,6 +77,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Install
         working-directory: react-native
