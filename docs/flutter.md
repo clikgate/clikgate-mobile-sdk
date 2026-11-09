@@ -469,7 +469,8 @@ uninstall checks (`{"cg": "uc"}`) must never produce a notification.
 4. **minSdk** 21 (the SDK) — `firebase_messaging` needs at least 23 (24 for newer releases).
 
 5. **Backup**: if your app declares `android:fullBackupContent` / `android:dataExtractionRules`,
-   see [android.md §8](android.md#8-privacy-and-opt-out) for the excludes and `tools:replace`.
+   `npx @clikgate/setup` adds Clikgate's excludes and `tools:replace`; by hand, see
+   [android.md §8](android.md#8-privacy-and-opt-out).
 
 6. **Cleartext for a local backend**: `apiBaseUrl: 'http://10.0.2.2:8000'` needs a debug
    network security config allowing cleartext to `10.0.2.2`.

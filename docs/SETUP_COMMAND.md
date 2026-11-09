@@ -77,7 +77,7 @@ The command writes the dependency into the manifest itself, so the diff shows it
 - `package.json`: `@clikgate/react-native: ^2.0.0`, in alphabetical position, then `<pm> install`. Expo uses the same path (see [cli/DECISIONS.md](../cli/DECISIONS.md): `npx expo install` adds nothing for packages outside Expo's bundled list);
 - Gradle: `implementation("com.clikgate:clikgate-android:2.0.0")` (Kotlin DSL), `implementation 'com.clikgate:clikgate-android:2.0.0'` (Groovy), or a version-catalog entry `clikgate-android` plus `implementation(libs.clikgate.android)`;
 - Podfile: `pod 'Clikgate', '~> 2.0'` in the app target.
-- An existing, older constraint is never rewritten: setup lists it as a manual step ("Update clikgate_flutter … to ^1.5.1") and doctor warns (`sdk.version`, minimums Flutter 1.5.1, RN 1.6.1, Android 1.5.1, iOS 1.5.1).
+- An existing, older constraint is never rewritten: setup lists it as a manual step ("Update clikgate_flutter … to ^2.0.0") and doctor warns (`sdk.version`, minimum 2.0.0 for Flutter, React Native, Android and iOS).
 - The SDKs' `platformDomainBrowserFallback` option (default on) is never written.
   - Without a Podfile it prints the Xcode "Add Package Dependencies" steps for `https://github.com/clikgate/clikgate-ios-sdk` as a manual step. It doesn't edit Swift package references in `project.pbxproj`: they are several linked objects, and a partial edit breaks the project.
 
@@ -114,6 +114,11 @@ All edits use real parsers (see [cli/DECISIONS.md](../cli/DECISIONS.md)). Insert
 | Android | main manifest (live) and debug manifest (the test subdomain). Other existing debug-based source sets (e.g. React Native's `debugOptimized`) get it too | `Application.onCreate` after `super.onCreate()`. Without an `Application`, it creates `ClikgateApplication.kt` and registers it in the manifest. `MainActivity`: `Clikgate.handleIntent` in `onCreate` and a new `onNewIntent` |
 | iOS | Release and Debug entitlements as above | SwiftUI `@main App`: `init()` with `Clikgate.configure`, and `.onOpenURL` / `.onContinueUserActivity` on the root view. UIKit: `didFinishLaunching`, plus `SceneDelegate` forwarding (launch options, `scene(_:continue:)`, `scene(_:openURLContexts:)`), or the AppDelegate URL methods without scenes |
 
+**Android backup rules** (Flutter, React Native, Expo with `android/`, Android). The SDK's manifest points `android:fullBackupContent` and `android:dataExtractionRules` at rules that keep Clikgate's installation ID and queue out of Auto Backup and device transfer (a restored app is a new installation). When the app's own `<application>` declares either attribute (every Android Studio template does), the manifest merge would fail, so setup:
+- adds the three excludes (`sharedpref` `clikgate.prefs.xml`, `database` `clikgate_events.db` and `clikgate_events.db-journal`) to the app's `res/xml/<name>.xml`, in `<full-backup-content>` and in both `<cloud-backup>` and `<device-transfer>` of `<data-extraction-rules>` (a missing section is added with only the excludes, which keeps Android's default for everything else; a missing file is created);
+- lists the declared attributes in `tools:replace` on `<application>` (keeping what's there; `xmlns:tools` is added when missing), so the app's files, now with the excludes, are used.
+Excludes already present are left alone, so a second run changes nothing. An attribute that isn't an `@xml/` reference, or a file that doesn't parse, becomes a manual step. Apps that declare neither attribute need nothing: the SDK's rules apply.
+
 The SDK's own `linkDomains` include the test subdomain only in debug builds too: Dart `kDebugMode`, JS `__DEV__`, Android `FLAG_DEBUGGABLE`, Swift `#if DEBUG`. When a project has separate Android and iOS apps with different test keys, the code picks the key per platform (`defaultTargetPlatform` / `Platform.OS`).
 
 ## doctor (S.5)
@@ -129,7 +134,8 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
   - no shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) in any manifest, entitlements file or Expo plugin entry: `android.shared_domains`, `ios.shared_domains`, `expo.shared_domains` warn "remove this: shared domains can't open your app";
   - a Free plan app subdomain (`yourapp.clk.ng`, change 10) passes like `yourapp.ciz.to`: only the bare shared hosts warn;
   - every configuration's `CODE_SIGN_ENTITLEMENTS` file exists and parses;
-  - the Expo plugin entry.
+  - the Expo plugin entry;
+  - `android.backup_rules` (only when the app declares its own `android:fullBackupContent` / `android:dataExtractionRules`): `tools:replace` lists them and each rules file excludes Clikgate's files; it fails otherwise (the manifest merge would fail, or the installation ID would be backed up).
 - **Clikgate:** in a terminal it offers to sign in. It then reads `GET /v1/cli/setup-check` per app and shows a ✓/✗ and a fix for each domain's AASA/assetlinks.
   - Only the file that applies to the app's platform is judged (`applies: true`).
   - `domains[]` holds the app's live and test subdomains plus the custom domains (shared domains are no longer checked), so doctor checks that the app subdomain's AASA / assetlinks contain the app.
@@ -201,7 +207,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
 | `ios-uikit` | hand-made from Xcode 26.3's iOS App template, Storyboard/UIKit, with a Podfile; checked with `xcodebuild -list` |
 | `monorepo` | hand-made pnpm workspace whose `apps/mobile` is a copy of `react-native` |
 
-Fixtures are trimmed to the files the command reads or edits: no build outputs, `node_modules`, images or Gradle wrappers.
+Fixtures are trimmed to the files the command reads or edits: no build outputs, `node_modules`, images or Gradle wrappers. The two Android Studio fixtures keep the template's resources (themes, strings, launcher icons, `backup_rules.xml`, `data_extraction_rules.xml`) because CI builds them.
 
 ## Publishing (owner actions)
 
@@ -224,5 +230,5 @@ All five were free on 2026-10-26. Don't publish the `@clikgate/react-native` pla
 
 **Also before launch:**
 
-- The packages the command installs must be live: `clikgate_flutter` on pub.dev, `clikgate_flutter` 1.5.1 / `@clikgate/react-native` 1.6.1 on npm, `com.clikgate:clikgate-android` 1.5.1 on Maven Central, `Clikgate` 1.5.1, and the `Clikgate` pod / SPM mirror. Until then, use `--no-install` in demos.
+- The packages the command installs must be live: `clikgate_flutter` on pub.dev, `clikgate_flutter` 2.0.0, `@clikgate/react-native` 2.0.0 on npm, `com.clikgate:clikgate-android` 2.0.0 on Maven Central, `Clikgate` 2.0.0, and the `Clikgate` pod / SPM mirror. Until then, use `--no-install` in demos.
 - Run the command once on a real iOS project on a Mac (S.8: iOS isn't build-tested in CI), and once on a device for the "first event" check.
