@@ -223,7 +223,7 @@ export function defaultSetupCheck(app: MockApp, polls: number, customDomains: st
     sdk: {
       first_test_request_at: polls >= 2 ? '2026-10-26T10:00:00Z' : null,
       last_test_request_at: polls >= 2 ? '2026-10-26T10:00:00Z' : null,
-      sdk_version: polls >= 2 ? '1.5.1' : null,
+      sdk_version: polls >= 2 ? '2.0.0' : null,
       platform: polls >= 2 ? app.platform : null,
       warnings: [],
     },

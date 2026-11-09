@@ -22,8 +22,8 @@ backend calling the Clikgate control-plane API; apps without a backend can add t
 
 ```ruby
 platform :ios, '13.0'
-pod 'Clikgate', '~> 1.5'            # core only (the default subspec Clikgate/Core)
-# pod 'Clikgate/Engage', '~> 1.5'   # optional Engage add-on (pulls in Core)
+pod 'Clikgate', '~> 2.0'            # core only (the default subspec Clikgate/Core)
+# pod 'Clikgate/Engage', '~> 2.0'   # optional Engage add-on (pulls in Core)
 ```
 
 With CocoaPods every subspec is compiled into the one `Clikgate` module, so Engage code uses

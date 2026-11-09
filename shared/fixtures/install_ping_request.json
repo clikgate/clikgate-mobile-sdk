@@ -1,7 +1,7 @@
 {
   "platform": "android",
   "app_version": "3.4.1",
-  "sdk_version": "1.5.1",
+  "sdk_version": "2.0.0",
   "consent": {
     "analytics": "unknown",
     "attribution": "denied",
