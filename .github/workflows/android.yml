@@ -27,6 +27,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests, core + Engage (JUnit + Robolectric + MockWebServer)
         run: ./gradlew :clikgate:testDebugUnitTest :clikgate-engage:testDebugUnitTest --stacktrace
@@ -67,6 +70,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Check tag matches VERSION_NAME
         run: |

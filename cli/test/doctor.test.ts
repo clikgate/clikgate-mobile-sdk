@@ -99,13 +99,13 @@ describe('doctor --json', () => {
     expect(JSON.stringify(report)).not.toContain('zyx987');
   });
 
-  it('warns when the SDK constraint is below the minimum (Flutter ^1.3.0 < 1.5.1)', async () => {
+  it('warns when the SDK constraint is below the minimum (Flutter ^1.3.0 < 2.0.0)', async () => {
     const dir = await setUp('flutter');
     const pub = path.join(dir, 'pubspec.yaml');
-    fs.writeFileSync(pub, fs.readFileSync(pub, 'utf8').replace('clikgate_flutter: ^1.5.1', 'clikgate_flutter: ^1.3.0'));
+    fs.writeFileSync(pub, fs.readFileSync(pub, 'utf8').replace('clikgate_flutter: ^2.0.0', 'clikgate_flutter: ^1.3.0'));
     const { code, report } = await doctorJson(dir);
     expect(byId(report, 'sdk.version')).toMatchObject({ status: 'warn', title: 'SDK version ^1.3.0' });
-    expect(byId(report, 'sdk.version')?.detail).toBe('below the minimum 1.5.1');
+    expect(byId(report, 'sdk.version')?.detail).toBe('below the minimum 2.0.0');
     expect(code).toBe(0); // a warning, not a failure
   });
 

@@ -35,6 +35,12 @@ jobs:
         run: |
           npm ci
           npm ci --prefix example
+      # Engage add-on (pure TypeScript). Reuses the core's node_modules (devlink) instead of a second install.
+      # Linked before the core typecheck: the example app imports the Engage sources, which resolve
+      # `react-native` from react-native-engage/node_modules.
+      - name: "Engage: link toolchain"
+        working-directory: react-native-engage
+        run: npm run devlink
       - name: Typecheck
         run: npm run typecheck
       - name: Lint
@@ -45,10 +51,6 @@ jobs:
         run: |
           npm run build
           npm pack --dry-run
-      # Engage add-on (pure TypeScript). Reuses the core's node_modules (devlink) instead of a second install.
-      - name: "Engage: link toolchain"
-        working-directory: react-native-engage
-        run: npm run devlink
       - name: "Engage: typecheck, lint, unit tests (incl. public-API snapshot), build, pack dry run"
         working-directory: react-native-engage
         run: |
@@ -75,6 +77,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Install
         working-directory: react-native
@@ -91,10 +96,12 @@ jobs:
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64 -Pclikgate.linkDomain=inv.example.com
 
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -118,7 +125,10 @@ jobs:
           set -o pipefail
           xcodebuild -workspace ClikgateExample.xcworkspace -scheme ClikgateExample \
             -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO build | tail -50
+            CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || {
+            # The compiler errors, which the last lines of the log don't show.
+            grep -E "error:" -A4 "$RUNNER_TEMP/xcodebuild.log" | head -150; tail -20 "$RUNNER_TEMP/xcodebuild.log"; exit 1; }
+          tail -50 "$RUNNER_TEMP/xcodebuild.log"
 
   # Publishes @clikgate/react-native-engage to npm on react-native-engage-v* tags (same secrets).
   # Public releases are PAUSED (owner 2026-11-08): track() is being removed and no published version may include it.

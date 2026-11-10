@@ -18,7 +18,7 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
   `flutter/` would pick it up. A sibling directory keeps both pub layouts independent and
   valid (`flutter pub publish --dry-run` passes for both: 0 warnings for the plugin; 0 warnings
   and 1 hint for Engage, see below).
-- Engage depends on `clikgate_flutter: ^1.0.0` (hosted constraint, as published). In the
+- Engage depends on `clikgate_flutter: ^2.0.0` (hosted constraint, as published). In the
   monorepo `flutter_engage/pubspec_overrides.yaml` points it at `../flutter`; that file is in
   `.pubignore` and the `release-engage` CI job deletes it before publishing, so the published
   package resolves the hosted core. The dry run reports the override as a hint. The example

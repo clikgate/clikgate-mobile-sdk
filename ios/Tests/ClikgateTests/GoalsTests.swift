@@ -135,7 +135,7 @@ final class GoalsTests: XCTestCase {
         XCTAssertEqual(badProvider, .refused(ClikgateError.invalidArgument))
         await installedThenFlush(sdk)
         let g = sentGoals().first
-        XCTAssertEqual(g?["value"] as? String, "1500.5")
+        XCTAssertEqual(g?["value"] as? String, "1500.5", "sent: \(g ?? [:])")
         XCTAssertEqual(g?["is_first"] as? Bool, false)
         XCTAssertEqual(g?["provider"] as? String, "stripe")
         XCTAssertEqual(sentGoals().count, 1)

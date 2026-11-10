@@ -30,17 +30,20 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: API snapshots, dependency check, size budgets
         run: scripts/check_sdk_boundaries.sh --only android
 
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)" && xcodebuild -version
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
       - name: API snapshots, dependency check, size budgets
         run: scripts/check_sdk_boundaries.sh --only ios
 

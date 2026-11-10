@@ -1,7 +1,7 @@
 {
   "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
   "app_version": "3.4.1",
-  "sdk_version": "1.5.1",
+  "sdk_version": "2.0.0",
   "platform": "android",
   "consent": {
     "analytics": "denied",

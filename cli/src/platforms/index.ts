@@ -23,7 +23,7 @@ import { exists, read, rel } from '../fsutil';
 import { PlanBuilder, type Plan } from '../plan';
 import { findClassFile, type AndroidModule } from '../project/android';
 import { targetSwiftFiles, type IosProject } from '../project/ios';
-import { planAndroidLinks, planIosLinks, type LinkDomains } from './native';
+import { planAndroidBackup, planAndroidLinks, planIosLinks, type LinkDomains } from './native';
 import { which } from '../which';
 import { versionAtLeast } from '../doctor';
 
@@ -110,6 +110,7 @@ function nativeLinks(pb: PlanBuilder, ctx: PlanContext, flutter: boolean): void 
   const hasAny = ctx.links.live.length > 0 || Boolean(ctx.links.test);
   if (ctx.android && hasAny) planAndroidLinks(pb, ctx.android, ctx.links, { flutter });
   else if (ctx.android && flutter) planAndroidLinks(pb, ctx.android, ctx.links, { flutter });
+  if (ctx.android) planAndroidBackup(pb, ctx.android);
   if (ctx.ios && hasAny) planIosLinks(pb, ctx.ios, ctx.links, { flutter });
 }
 

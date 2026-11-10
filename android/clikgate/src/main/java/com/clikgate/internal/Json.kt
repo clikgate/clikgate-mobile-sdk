@@ -145,11 +145,11 @@ internal object Json {
         )
     }
 
-    /** A `/resolve` or `/install` answer for a gated link (Change 17 R.2): `password_required` or `blocked`. */
+    /** A `/resolve` or `/install` answer for a gated link: `password_required` or `blocked`. */
     fun isGated(response: JSONObject): Boolean =
         response.str("status").let { it == "password_required" || it == "blocked" }
 
-    /** A link blocked here (Change 17 R.2): the message, the URL that opened the app, no path, click or link. */
+    /** A link blocked here: the message, the URL that opened the app, no path, click or link. */
     fun blockedDeepLink(url: String, message: String): ClikgateDeepLink =
         ClikgateDeepLink(url, null, emptyMap(), false, null, null, null, null, blockMessage = message)
 

@@ -1,5 +1,5 @@
 group = "com.clikgate.clikgate_flutter"
-version = "1.5.1"
+version = "2.0.0"
 
 buildscript {
     ext.kotlin_version = "2.1.0"
@@ -20,7 +20,7 @@ buildscript {
 //    build and substitutes the module with the :clikgate project (no publishing needed).
 //  - Other apps developing against an unpublished SDK: run `./gradlew :clikgate:publishToMavenLocal`
 //    in android/ and set `clikgate.useMavenLocal=true` in the app's android/gradle.properties.
-def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "1.5.1"
+def clikgateAndroidVersion = project.findProperty("clikgate.androidVersion") ?: "2.0.0"
 
 allprojects {
     repositories {

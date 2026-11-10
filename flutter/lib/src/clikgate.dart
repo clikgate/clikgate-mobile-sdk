@@ -22,7 +22,7 @@ class Clikgate {
   Clikgate._();
 
   /// Version of this Flutter plugin (reported as `Clikgate-SDK-Version: flutter/<version>`).
-  static const String pluginVersion = '1.5.1';
+  static const String pluginVersion = '2.0.0';
 
   static DeepLinkHub _hub = DeepLinkHub();
 

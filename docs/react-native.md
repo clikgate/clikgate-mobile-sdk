@@ -15,7 +15,7 @@ are **not** in the core package (spec v3 §0.4):
 
 Requirements: React Native 0.76+ with the **New Architecture** (the module is a TurboModule; tested with
 0.86.3), Android minSdk 24 (React Native's; the SDK itself supports 21), iOS 15.1 (React Native's; the SDK
-supports 13). Expo: SDK 52+ with a development build / `expo prebuild` (not Expo Go). Old-architecture
+supports 13), Xcode 26 or newer for iOS builds. Expo: SDK 52+ with a development build / `expo prebuild` (not Expo Go). Old-architecture
 apps are not supported.
 
 ## 1. Install

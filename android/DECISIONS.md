@@ -177,8 +177,12 @@ a JSON string.
 
 The library manifest sets `android:fullBackupContent` / `android:dataExtractionRules` to
 resources excluding `clikgate.prefs.xml` and `clikgate_events.db` from cloud backup and device
-transfer. Apps with their own rules get a manifest-merger conflict and must copy the excludes
-and add `tools:replace` (documented in `docs/android.md`).
+transfer. Apps with their own rules get a manifest-merger conflict: the setup command
+(`npx @clikgate/setup`) adds the excludes to the app's rules files (creating a missing file or
+section) and lists the attributes in `tools:replace`, idempotently; `doctor` checks it
+(`android.backup_rules`). By hand, the steps are in `docs/android.md`. The SDK keeps setting
+both attributes, so apps without their own rules need nothing and the installation ID is never
+restored by a backup or a device transfer.
 
 ## Emulator heuristics
 

@@ -27,7 +27,7 @@ internal object SharedDomains {
 internal fun interface BrowserOpener {
     fun open(url: String): Boolean
 
-    /** The browser app itself, no Custom Tabs (password links, Change 17 R.2). */
+    /** The browser app itself, no Custom Tabs (password links). */
     fun openExternal(url: String): Boolean = open(url)
 }
 

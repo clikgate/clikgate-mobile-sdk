@@ -97,7 +97,7 @@ public data class ClikgateDeepLink(
     val link: ClikgateLink?,
     val referral: Referral?,
     /**
-     * Set when the link is blocked here (Change 17: allowed countries or a block rule): show this
+     * Set when the link is blocked here (allowed countries or a block rule): show this
      * text and don't route. `path`, `clickId` and `link` are null.
      */
     val blockMessage: String? = null,

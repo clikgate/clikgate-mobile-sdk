@@ -17,9 +17,9 @@ promo codes and share helpers are **not** in it:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.clikgate:clikgate-android:1.5.1")
+    implementation("com.clikgate:clikgate-android:2.0.0")
     // Optional Engage add-on (apps without a backend; pulls in clikgate-android):
-    // implementation("com.clikgate:clikgate-engage:1.5.1")
+    // implementation("com.clikgate:clikgate-engage:2.0.0")
     // Optional, only if you enable Play Integrity attestation:
     // implementation("com.google.android.play:integrity:1.6.0")
 }
@@ -395,7 +395,7 @@ config is re-fetched in the background.
 ## 6d. Engage add-on (optional, apps without a backend)
 
 ```kotlin
-dependencies { implementation("com.clikgate:clikgate-engage:1.1.0") }   // depends on clikgate-android
+dependencies { implementation("com.clikgate:clikgate-engage:2.0.0") }   // depends on clikgate-android
 ```
 
 `ClikgateEngage` (package `com.clikgate.engage`) calls the same `/v1/sdk/...` endpoints using the
@@ -503,8 +503,9 @@ proof. Not sent when the user opted out. Details: [android/DECISIONS.md](../andr
 
 **Backup.** The SDK's manifest excludes `clikgate.prefs.xml` and `clikgate_events.db` from
 Auto Backup and device transfer (a restored app is a new installation). If your app declares
-its own `android:fullBackupContent` / `android:dataExtractionRules`, add these excludes to your
-files and resolve the merge with `tools:replace`:
+its own `android:fullBackupContent` / `android:dataExtractionRules` (Android Studio's templates
+do), `npx @clikgate/setup` adds these excludes to your files and resolves the merge with
+`tools:replace`; `npx @clikgate/setup doctor` checks it (`android.backup_rules`). By hand:
 
 ```xml
 <application

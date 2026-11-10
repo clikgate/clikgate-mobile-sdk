@@ -55,6 +55,6 @@
 @@ -4,4 +4,5 @@
    "main": "index.ts",
    "dependencies": {
-+    "@clikgate/react-native": "^1.6.1",
++    "@clikgate/react-native": "^2.0.0",
      "expo": "~58.0.19",
      "expo-status-bar": "~58.0.4",

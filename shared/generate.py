@@ -798,7 +798,7 @@ FIXTURES: dict[str, dict] = {
     "install_request_android": {
         "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
         "app_version": "3.4.1",
-        "sdk_version": "1.5.1",
+        "sdk_version": "2.0.0",
         "platform": "android",
         "os_version": "14",
         "device_model": "Pixel 8",
@@ -834,7 +834,7 @@ FIXTURES: dict[str, dict] = {
         "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
         "keychain_previous_installation_id": None,
         "app_version": "3.4.1",
-        "sdk_version": "1.5.1",
+        "sdk_version": "2.0.0",
         "platform": "ios",
         "os_version": "18.1",
         "device_model": "iPhone15,2",
@@ -1098,7 +1098,7 @@ FIXTURES["install_request_ios_signals"] = {
 FIXTURES["install_request_opted_out"] = {
     "installation_id": FIXTURES["install_request_android"]["installation_id"],
     "app_version": "3.4.1",
-    "sdk_version": "1.5.1",
+    "sdk_version": "2.0.0",
     "platform": "android",
     "consent": {
         "analytics": "denied",
@@ -1184,7 +1184,7 @@ FIXTURES["consent_response"] = {"ok": True}
 FIXTURES["install_ping_request"] = {
     "platform": "android",
     "app_version": "3.4.1",
-    "sdk_version": "1.5.1",
+    "sdk_version": "2.0.0",
     "consent": {"analytics": "unknown", "attribution": "denied", "ad_user_data": "denied", "ad_personalization": "denied", "region": "DE", "updated_at": "2026-10-20T10:05:00Z"},
 }
 FIXTURES["install_ping_response"] = {"ok": True}

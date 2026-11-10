@@ -7,7 +7,8 @@ leaderboards, promo codes, share helpers) are **not** in the core SDK: the recom
 backend calling the Clikgate control-plane API; apps without a backend can add the optional
 **Engage add-on** (`ClikgateEngage`, section 7b). See [engage.md](engage.md).
 
-- iOS 13+, Swift 5.9+ (built and tested with Xcode 26 / Swift 6.2; clean under strict concurrency).
+- iOS 13+ devices. Build with **Xcode 26 or newer** (Swift 6.2; clean under strict concurrency): App Store
+  submissions need the iOS 26 SDK, and CI builds and tests only with Xcode 26.
 - No third-party dependencies. Size budgets (arm64, `-Osize`, every public API in use): core
   < 410 KB (measured 400.8 KB in 1.5.0; was 400 KB until 1.5.0), Engage add-on < 80 KB (measured 76 KB); see `ios/DECISIONS.md`.
 - It never shows the ATT prompt or the notification-permission prompt.
@@ -15,15 +16,15 @@ backend calling the Clikgate control-plane API; apps without a backend can add t
 ## 1. Install
 
 **Swift Package Manager**: add `https://github.com/clikgate/clikgate-ios-sdk` (the SPM mirror: `Package.swift`,
-`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `1.5.1`, and link the `Clikgate` product. Link the
+`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.0.0`, and link the `Clikgate` product. Link the
 `ClikgateEngage` product too only if you use the Engage add-on (section 7b).
 
 **CocoaPods**
 
 ```ruby
 platform :ios, '13.0'
-pod 'Clikgate', '~> 1.5'            # core only (the default subspec Clikgate/Core)
-# pod 'Clikgate/Engage', '~> 1.5'   # optional Engage add-on (pulls in Core)
+pod 'Clikgate', '~> 2.0'            # core only (the default subspec Clikgate/Core)
+# pod 'Clikgate/Engage', '~> 2.0'   # optional Engage add-on (pulls in Core)
 ```
 
 With CocoaPods every subspec is compiled into the one `Clikgate` module, so Engage code uses
