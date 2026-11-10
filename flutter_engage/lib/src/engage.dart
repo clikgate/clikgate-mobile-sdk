@@ -74,7 +74,7 @@ class ClikgateEngage {
   final EngageClient _client;
 
   /// Version of this package.
-  static const String version = '1.0.0';
+  static const String version = '2.0.0';
 
   /// Referrer side: the user's link and stats (feature `referrals`).
   final EngageReferrals referrals;

@@ -1,6 +1,9 @@
-## Unreleased: one method, `goal()`; installation ID
+## 2.0.0 (unreleased): one method, `goal()`; installation ID
 
-Nothing has been published, so no public version ever has `track()`. The version stays 1.5.1 until the first public release.
+**Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.
+
+- Requires the native SDKs 2.0.0 (Android default dependency and the iOS pod / Swift package constraint).
+- **Requires Xcode 26 or newer to build** (App Store submissions need the iOS 26 SDK). Devices from iOS 13 are still supported.
 
 - **Removed:** `Clikgate.track(...)`, `ClikgateMoney` and the `track` channel method. `goal()` is the only method; names count once they are ticked in the dashboard.
 - **Removed:** `enableFirebaseForwarding(mirrorEvents:, eventNameMap:)`.

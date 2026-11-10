@@ -12,12 +12,13 @@ and forwards:
 Links that open the app before Dart calls `Clikgate.configure` are kept and handled right after it.
 
 Requirements:
+- Xcode 26 or newer.
 - iOS 13 for the plugin. Firebase (`firebase_messaging` 16) needs iOS 15.
 - CocoaPods (default) or Swift Package Manager (`flutter config --enable-swift-package-manager`).
 
 ## 1. Podfile
 
-Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 1.5.1`) from CocoaPods
+Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.0.0`) from CocoaPods
 trunk. Set the platform to at least what your other plugins need:
 
 ```ruby
@@ -160,5 +161,5 @@ Info.plist entry; when WhatsApp isn't installed the system share sheet is shown 
 
 ## 8. Releasing
 
-The published plugin's podspec depends on `Clikgate ~> 1.5.1` from trunk, so release the iOS SDK
+The published plugin's podspec depends on `Clikgate ~> 2.0.0` from trunk, so release the iOS SDK
 (`ios-v<version>` tag → CocoaPods trunk + SPM mirror) **before** publishing a plugin version that needs it.

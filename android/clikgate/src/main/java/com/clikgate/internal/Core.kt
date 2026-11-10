@@ -857,11 +857,11 @@ internal class Core(
                     // A launch URL that arrived after the request was built goes through /resolve.
                     launchUrl?.let { pendingUrls.add(it); launchUrl = null }
                     handleInstallResponse(r.body, body)
-                    // Change 17 R.2: a gated launch URL (any domain) gets the same handling as a gated
+                    // A gated launch URL (any domain) gets the same handling as a gated
                     // /resolve answer: the password page in the system browser, or the blocked result.
                     // Otherwise a shared-domain launch URL the install didn't match may be another
                     // organisation's link: /resolve it, which hands it to the browser when unmatched.
-                    // Change 21 R.2 (one tap is one click): never when the install matched the launch URL
+                    // One tap is one click: never when the install matched the launch URL
                     // (`status: matched`): /install already recorded its click, and /resolve would record another.
                     if (sentUrl != null && Json.isGated(r.body)) {
                         if (!launchUrlDeliveredLocally) deliverGated(r.body, sentUrl)
@@ -898,7 +898,7 @@ internal class Core(
         installWaiters.toList().forEach { it.complete(true) }
         installWaiters.clear()
 
-        // Change 17 R.2: a gated launch URL never routes into the app, whatever else the answer carries.
+        // A gated launch URL never routes into the app, whatever else the answer carries.
         if (storage.trackingEnabled && !deferredDelivered && !Json.isGated(body)) {
             Json.installDeepLink(body)?.let {
                 deferredDelivered = true
@@ -1049,7 +1049,7 @@ internal class Core(
         }
         send(ApiRequest("POST", "/v1/sdk/resolve", body), maxAttempts = 5) { r ->
             when (r) {
-                // Change 17 R.2: the link gates run in /resolve. A gated answer never routes into the app,
+                // The link gates run in /resolve. A gated answer never routes into the app,
                 // whatever else it carries.
                 is ApiResult.Success -> if (Json.isGated(r.body)) {
                     if (deliver) deliverGated(r.body, url)
@@ -1074,7 +1074,7 @@ internal class Core(
 
     /**
      * `deeplink_handled` (the live check) with the delivered link's path (IDs → `:id`), only with a test
-     * key, while [response] says the dashboard's debug view is open, or (Change 22 R.6, live mode too) when
+     * key, while [response] says the dashboard's debug view is open, or (live mode too) when
      * [response] says the opening click is an App banner tap measuring the right screen (`measure_right_screen`;
      * the click is sent as `click_id`). Never queued, counted or a goal; one retry, then dropped.
      */
@@ -1090,14 +1090,14 @@ internal class Core(
         }
     }
 
-    /** A gated `/resolve` or `/install` answer (Change 17 R.2) for [url], the URL that opened the app. */
+    /** A gated `/resolve` or `/install` answer for [url], the URL that opened the app. */
     private fun deliverGated(response: JSONObject, url: String) {
         if (response.str("status") == "password_required") openPasswordPage(response.str("web_url") ?: url)
         else dispatcher.dispatch(Json.blockedDeepLink(url, response.str("block_message") ?: ""))
     }
 
     /**
-     * A password link (Change 17 R.2): its password page in the system browser (an explicit browser
+     * A password link: its password page in the system browser (an explicit browser
      * package, no Custom Tabs; never an implicit intent, which this app's App Links would catch). No
      * deep link, no handoff event. Logs name the host only.
      */
@@ -1396,7 +1396,7 @@ internal class Core(
             refuseAllGoals("feature_disabled")
             return notifyFlushWaiters(true)
         }
-        // Change 22: goal() is the only method. App events queued by an earlier development build (the queue is
+        // goal() is the only method. App events queued by an earlier development build (the queue is
         // persisted) are dropped without a network call: there is no events endpoint any more.
         val legacy = batch.filterNot { Goals.isGoal(it.payload) }
         if (legacy.isNotEmpty()) {
@@ -1446,7 +1446,7 @@ internal class Core(
     // ------------------------------------------------------------------ installation ID
 
     /**
-     * Change 22 (I.7, R.26): this installation's ID for the app's own server (identity Path B), on the main thread.
+     * This installation's ID for the app's own server (identity Path B), on the main thread.
      * Null when tracking is off: opted out, consent denied (or not given yet) where it's required, or deep-link-only
      * mode. On a first launch it waits for the first config answer (one attempt, so offline it answers at once;
      * at most [INSTALLATION_ID_WAIT_MS]) so the consent and attribution switches are known. Never logged in full.
@@ -1550,7 +1550,7 @@ internal class Core(
                     if (r.body.optString("label_ignored") == "plan" && deps.device.isDebuggableApp) {
                         Log.w("identifyUser: labels need the Growth plan; the label was not stored")
                     }
-                    // Change 22 (R.22): a bad token answers 200 with `verified: false` and a `reason`.
+                    // A bad token answers 200 with `verified: false` and a `reason`.
                     // Absent `verified` = an older server (which answers 422 identity_invalid instead).
                     if (tokenSent && r.body.has("verified") && !r.body.optBoolean("verified", true)) {
                         val reason = if (r.body.isNull("reason")) null else r.body.optString("reason").ifEmpty { null }
@@ -1559,7 +1559,7 @@ internal class Core(
                     true
                 }
                 is ApiResult.Failure -> {
-                    if (r.error.code == "identity_invalid") {   // servers before Change 22
+                    if (r.error.code == "identity_invalid") {   // older servers
                         Log.w("identifyUser: the identity token did not verify (identity_invalid); the customer ID is kept but not verified")
                         true
                     } else if (r.retryable) {
@@ -1744,7 +1744,7 @@ internal class Core(
     }
 
     /**
-     * Change 22 (R.22): a developer warning when a call is refused for the identity token
+     * A developer warning when a call is refused for the identity token
      * (`403 identity_expired`, `422 identity_invalid`). Never logs the token, the secret or the customer ID.
      */
     private fun logIdentityRefusal(code: String, path: String) {
@@ -1885,7 +1885,7 @@ internal class Core(
 
         fun urlEncode(s: String): String = URLEncoder.encode(s, "UTF-8")
 
-        /** Change 22 (R.22): the identify warning for `verified: false`; names the reason, never the token or customer ID. */
+        /** The identify warning for `verified: false`; names the reason, never the token or customer ID. */
         fun identityTokenNotVerifiedMessage(reason: String?): String {
             val why = when (reason) {
                 "expired" -> "expired"

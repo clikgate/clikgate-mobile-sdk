@@ -14,16 +14,21 @@ concurrency:
 
 env:
   LANG: en_US.UTF-8
-  SIMULATOR: "platform=iOS Simulator,name=iPhone 16,OS=latest"
 
 jobs:
   test:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)" && xcodebuild -version
+      - name: Select Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
+      - name: Pick an iPhone simulator on the newest iOS runtime of this image
+        run: |
+          id=$(xcrun simctl list devices available -j | jq -r '[.devices | to_entries[] | select(.key | test("SimRuntime.iOS-")) | {rt: (.key | capture("iOS-(?<v>[0-9-]+)").v | split("-") | map(tonumber)), d: .value[]} | select(.d.name | startswith("iPhone"))] | sort_by(.rt) | last | .d.udid')
+          test -n "$id" && test "$id" != null || { xcrun simctl list devices available; exit 1; }
+          echo "SIMULATOR=platform=iOS Simulator,id=$id" >> "$GITHUB_ENV"
+          xcrun simctl list devices available | grep "$id"
 
       - name: Unit tests, core + Engage (simulator)
         working-directory: ios
@@ -80,7 +85,7 @@ jobs:
   release:
     if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/ios-v')
     needs: test
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     permissions:
       contents: write
@@ -89,7 +94,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Select Xcode
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)"
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
 
       # Core and Engage ship together (one podspec with the Engage subspec, one SPM package with
       # both products), so the tag must match the core version, the Engage version and the podspec.

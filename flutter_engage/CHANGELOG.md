@@ -1,4 +1,6 @@
-## Unreleased
+## 2.0.0 (unreleased)
+
+- **Breaking (from the core): `track()` was removed in favour of `goal()`.** Engage now requires `clikgate_flutter` ^2.0.0 and the native Engage add-ons 2.0.0 (Android `com.clikgate:clikgate-engage`, iOS `Clikgate/Engage`), where `goal()` is the only method for what happens in the app. The version moves to 2.0.0 to match the core. No Engage API change.
 
 ### Share a link, a version per app (Engage)
 - `ClikgateEngage.share.link(...)` and `share.referralLink(...)`: the share menu (or one app) with a Clikgate link; each app gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps the plain link, and the share is recorded with `POST /v1/share-events` (no personal data). `ShareApp` names the apps. Referral links keep the code; `shareUrls` takes the API's `share_urls`. clikgate_engage now has a small Android / iOS plugin (MethodChannel `com.clikgate/engage`, method `shareLink`) over the native Engage add-on; everything else is still Dart. Ships in 1.0.0 if that is still unpublished.

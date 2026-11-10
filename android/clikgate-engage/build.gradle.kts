@@ -90,3 +90,12 @@ mavenPublishing {
         )
     }
 }
+
+// AGP puts src/main/java in both the Java and the Kotlin source sets, so the sources jar listed every
+// file twice: a zip with duplicate entries, which strict readers (and the release scan) reject.
+// (The task is an org.gradle.jvm.tasks.Jar, not the bundling Jar this script imports by default.)
+tasks.withType<org.gradle.jvm.tasks.Jar>().matching { it.name.endsWith("SourcesJar") }.configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // Its two child copy specs (Java and Kotlin dirs) set INCLUDE themselves; the per-file strategy wins.
+    eachFile { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }
+}

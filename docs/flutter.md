@@ -16,13 +16,13 @@ plugin. Two ways to build those screens:
   [`clikgate_engage`](../flutter_engage/README.md) (§5d). See [engage.md](engage.md) for when to
   use which.
 
-Requirements: Flutter 3.24+ (tested with 3.35.4), Android minSdk 21, iOS 13.
+Requirements: Flutter 3.24+ (tested with 3.35.4), Android minSdk 21, iOS 13 (build with Xcode 26 or newer).
 
 ## 1. Install
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^1.0.0
+  clikgate_flutter: ^2.0.0
 ```
 
 ## 2. Configure
@@ -287,8 +287,8 @@ feature: ...)` without a network call (also when the server answers with its
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^1.0.0
-  clikgate_engage: ^1.0.0
+  clikgate_flutter: ^2.0.0
+  clikgate_engage: ^2.0.0
 ```
 
 Pure Dart (package `http`; `share_plus` and `url_launcher` for the share helpers), no native
@@ -469,7 +469,8 @@ uninstall checks (`{"cg": "uc"}`) must never produce a notification.
 4. **minSdk** 21 (the SDK) — `firebase_messaging` needs at least 23 (24 for newer releases).
 
 5. **Backup**: if your app declares `android:fullBackupContent` / `android:dataExtractionRules`,
-   see [android.md §8](android.md#8-privacy-and-opt-out) for the excludes and `tools:replace`.
+   `npx @clikgate/setup` adds Clikgate's excludes and `tools:replace`; by hand, see
+   [android.md §8](android.md#8-privacy-and-opt-out).
 
 6. **Cleartext for a local backend**: `apiBaseUrl: 'http://10.0.2.2:8000'` needs a debug
    network security config allowing cleartext to `10.0.2.2`.

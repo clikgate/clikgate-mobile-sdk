@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased (Change 22)
+## 2.0.0 (unreleased) (Change 22)
 
+- **Breaking: installs the 2.0.0 SDKs, where `track()` was removed in favour of `goal()`.** Android, iOS, Flutter and React Native 2.0.0 (`~> 2.0` for the pod); doctor's minimum versions follow, so projects on 1.x get a warning to upgrade. The setup command never wrote `track()` calls, so no generated code changes. This is the first public release.
+- **Android backup rules are merged.** An app that declares its own `android:fullBackupContent` / `android:dataExtractionRules` (every Android Studio template) no longer fails the manifest merge after setup: Clikgate's excludes go into the app's backup rules files (a missing file or `<cloud-backup>` / `<device-transfer>` section is created) and the attributes are listed in `tools:replace`. Running setup again changes nothing. New doctor check `android.backup_rules`.
 - Next steps add "Identify signed-in users": Path A by default (a token from the server's `createIdentityToken`, then `identifyUser`), Path B mentioned (`getInstallationId()` sent to the business's server), with the guide link https://clikgate.com/docs/identify-users. The generated code never had `track()`; tests now assert it stays out.
 
 ## 1.1.1 (unreleased)

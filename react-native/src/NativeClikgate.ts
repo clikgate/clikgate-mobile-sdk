@@ -68,4 +68,8 @@ export interface Spec extends TurboModule {
 }
 
 /** `null` when the native module isn't linked (web, tests, Expo Go). */
-export default TurboModuleRegistry.get<Spec>('Clikgate');
+// react-native-web has no TurboModuleRegistry: importing this on the web (including Expo Router's
+// server rendering during a release build) must give null, not a crash.
+export default TurboModuleRegistry == null
+  ? null
+  : TurboModuleRegistry.get<Spec>('Clikgate');

@@ -1,6 +1,6 @@
 {
   "name": "@clikgate/react-native",
-  "version": "1.6.1",
+  "version": "2.0.0",
   "description": "Clikgate deep linking, deferred deep links, install attribution, referrals and uninstall tracking for React Native (bridge over the native Clikgate Android and iOS SDKs), with an Expo config plugin.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",

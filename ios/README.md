@@ -1,14 +1,14 @@
 # Clikgate iOS SDK
 
 Deep links, deferred deep links, install attribution, goals, identifyUser, referrals (referee side) and uninstall tracking for
-iOS 13+, in Swift, with no third-party dependencies.
+iOS 13+, in Swift, with no third-party dependencies. Build with Xcode 26 or newer.
 
 ## Install
 
 **Swift Package Manager:** add `https://github.com/clikgate/clikgate-ios-sdk` and link the `Clikgate` product.
 Link `ClikgateEngage` too only if you use the optional Engage add-on.
 
-**CocoaPods:** `pod 'Clikgate', '~> 1.5'` (add `pod 'Clikgate/Engage'` for the Engage add-on).
+**CocoaPods:** `pod 'Clikgate', '~> 2.0'` (add `pod 'Clikgate/Engage'` for the Engage add-on).
 
 ## Use
 

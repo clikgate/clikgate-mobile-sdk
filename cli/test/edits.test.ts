@@ -102,19 +102,19 @@ describe('plist, pbxproj, gradle, pubspec, json', () => {
   it('gradle: brace scanner ignores strings and comments; dependency lines per DSL', () => {
     const g = 'android {\n  defaultConfig { applicationId "a{b" } // }\n}\ndependencies {\n    implementation "x:y:1" /* } */\n}\n';
     expect(blocks(g).filter((b) => b.depth === 0).map((b) => b.name)).toEqual(['android', 'dependencies']);
-    expect(addDependency(g, dependencyLine(false, false))).toContain("    implementation 'com.clikgate:clikgate-android:1.5.1'\n    // clikgate-setup:end\n}\n");
-    expect(dependencyLine(true, false)).toBe('implementation("com.clikgate:clikgate-android:1.5.1")');
-    expect(addCatalogEntries('[versions]\nagp = "8"\n\n[libraries]\nx = { module = "a:b" }\n')).toBe('[versions]\nagp = "8"\nclikgate = "1.5.1"\n\n[libraries]\nx = { module = "a:b" }\nclikgate-android = { group = "com.clikgate", name = "clikgate-android", version.ref = "clikgate" }\n');
+    expect(addDependency(g, dependencyLine(false, false))).toContain("    implementation 'com.clikgate:clikgate-android:2.0.0'\n    // clikgate-setup:end\n}\n");
+    expect(dependencyLine(true, false)).toBe('implementation("com.clikgate:clikgate-android:2.0.0")');
+    expect(addCatalogEntries('[versions]\nagp = "8"\n\n[libraries]\nx = { module = "a:b" }\n')).toBe('[versions]\nagp = "8"\nclikgate = "2.0.0"\n\n[libraries]\nx = { module = "a:b" }\nclikgate-android = { group = "com.clikgate", name = "clikgate-android", version.ref = "clikgate" }\n');
   });
   it('pubspec: keeps comments and adds after the last dependency', () => {
     const y = 'name: a\ndependencies:\n  flutter:\n    sdk: flutter\n  # icons\n  cupertino_icons: ^1.0.8 # keep\n\n# dev\ndev_dependencies:\n  lints: ^5.0.0\n';
-    const out = addPub(y, 'clikgate_flutter', '^1.5.1');
-    expect(out).toBe('name: a\ndependencies:\n  flutter:\n    sdk: flutter\n  # icons\n  cupertino_icons: ^1.0.8 # keep\n  clikgate_flutter: ^1.5.1\n\n# dev\ndev_dependencies:\n  lints: ^5.0.0\n');
-    expect(dependencyConstraint(out, 'clikgate_flutter')).toBe('^1.5.1');
+    const out = addPub(y, 'clikgate_flutter', '^2.0.0');
+    expect(out).toBe('name: a\ndependencies:\n  flutter:\n    sdk: flutter\n  # icons\n  cupertino_icons: ^1.0.8 # keep\n  clikgate_flutter: ^2.0.0\n\n# dev\ndev_dependencies:\n  lints: ^5.0.0\n');
+    expect(dependencyConstraint(out, 'clikgate_flutter')).toBe('^2.0.0');
   });
   it('package.json alphabetical insert; app.json plugin completes existing entries', () => {
     const pkg = '{\n  "dependencies": {\n    "expo": "~58.0.0",\n    "react": "19"\n  }\n}\n';
-    expect(addPackageDependency(pkg, '@clikgate/react-native', '^1.6.1')).toBe('{\n  "dependencies": {\n    "@clikgate/react-native": "^1.6.1",\n    "expo": "~58.0.0",\n    "react": "19"\n  }\n}\n');
+    expect(addPackageDependency(pkg, '@clikgate/react-native', '^2.0.0')).toBe('{\n  "dependencies": {\n    "@clikgate/react-native": "^2.0.0",\n    "expo": "~58.0.0",\n    "react": "19"\n  }\n}\n');
     const app = '{\n  "expo": {\n    "plugins": [\n      ["@clikgate/react-native", { "linkDomains": ["old.acme.com"] }]\n    ]\n  }\n}\n';
     const out = JSON.parse(addExpoPlugin(app, { linkDomains: ['go.acme.com'], testLinkDomain: 'dev.ciz.to' }));
     expect(out.expo.plugins[0]).toEqual(['@clikgate/react-native', { linkDomains: ['old.acme.com', 'go.acme.com'], testLinkDomain: 'dev.ciz.to' }]);

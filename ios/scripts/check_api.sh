@@ -51,7 +51,12 @@ for f in sorted(os.listdir(d)):
         decl = "".join(x["spelling"] for x in s.get("declarationFragments", []))
         path = ".".join(s.get("pathComponents", []))
         ext = f.split("@")[1].split(".")[0] + " " if "@" in f else ""
-        lines.add(("[spi] " if s.get("spi") else "") + ext + path + ": " + " ".join(decl.split()))
+        decl = " ".join(decl.split())
+        # Newer Swift (Xcode 26.4+) prints a main-actor function type as "@MainActor @Sendable";
+        # it was already Sendable (SE-0434), so both spellings are the same API. Any other
+        # @Sendable still shows up.
+        decl = decl.replace("@MainActor @Sendable ", "@MainActor ")
+        lines.add(("[spi] " if s.get("spi") else "") + ext + path + ": " + decl)
 print("\n".join(sorted(lines)))
 PY
 }

@@ -1,6 +1,15 @@
 import * as path from 'node:path';
 import { SHARED_DOMAIN_FIX, SHARED_PLATFORM_DOMAINS, isTestHost } from '../constants';
 import { addAppLinks, addDebugAppLinks, allLinkHosts, newDebugManifest } from '../edit/androidManifest';
+import {
+  FULL_BACKUP_ATTR,
+  addDataExtractionExcludes,
+  addFullBackupExcludes,
+  addToolsReplace,
+  backupDeclarations,
+  newDataExtractionRules,
+  newFullBackupContent,
+} from '../edit/backupRules';
 import { setBuildSetting } from '../edit/pbxproj';
 import { addApplinks, addBoolIfMissing, applinksHosts, newEntitlements } from '../edit/plistEdit';
 import { rel } from '../fsutil';
@@ -91,6 +100,58 @@ export function planAndroidLinks(pb: PlanBuilder, mod: AndroidModule, domains: L
       );
     }
   }
+}
+
+/**
+ * Auto Backup: the SDK's manifest sets android:fullBackupContent / android:dataExtractionRules to
+ * rules that keep Clikgate's installation ID out of backups. When the app declares its own, the
+ * manifest merge fails: add Clikgate's excludes to the app's files (created when missing) and list
+ * the attributes in tools:replace so the app's files are used. Nothing to do when the app declares
+ * neither (the SDK's rules apply).
+ */
+export function planAndroidBackup(pb: PlanBuilder, mod: AndroidModule): void {
+  const root = pb.root;
+  const mainRel = rel(root, mod.mainManifest);
+  const manifest = pb.current(mainRel);
+  if (!manifest) return;
+  const decls = backupDeclarations(manifest);
+  if (decls.length === 0) return;
+  const unusable = decls.filter((d) => !d.resource);
+  if (unusable.length) {
+    pb.manual(
+      'Android backup rules',
+      `${mainRel} sets ${unusable.map((d) => `${d.attr}="${d.value}"`).join(', ')}, which the setup command can't edit. Add Clikgate's excludes (sharedpref clikgate.prefs.xml, database clikgate_events.db and clikgate_events.db-journal) to those rules and add tools:replace="${decls.map((d) => d.attr).join(',')}" to <application>.`
+    );
+    return;
+  }
+  let changed = false;
+  for (const d of decls) {
+    const fileRel = rel(root, path.join(path.dirname(mod.mainManifest), 'res', 'xml', `${d.resource}.xml`));
+    const current = pb.current(fileRel);
+    const full = d.attr === FULL_BACKUP_ATTR;
+    if (current === null) {
+      pb.change(fileRel, full ? newFullBackupContent() : newDataExtractionRules(), 'backup rules without Clikgate\'s installation ID');
+      changed = true;
+      continue;
+    }
+    let edit: { text: string; changed: boolean };
+    try {
+      edit = full ? addFullBackupExcludes(current) : addDataExtractionExcludes(current);
+    } catch (e) {
+      pb.manual(
+        'Android backup rules',
+        `${fileRel} couldn't be edited (${(e as Error).message}). Add Clikgate's excludes to it: sharedpref clikgate.prefs.xml, database clikgate_events.db and clikgate_events.db-journal${full ? '' : ', in both <cloud-backup> and <device-transfer>'}.`
+      );
+      continue;
+    }
+    if (edit.changed) {
+      pb.change(fileRel, edit.text, 'keep Clikgate\'s installation ID out of backups');
+      changed = true;
+    }
+  }
+  const replace = addToolsReplace(manifest, decls.map((d) => d.attr));
+  if (replace.changed) pb.change(mainRel, replace.text, `tools:replace for ${decls.map((d) => d.attr).join(', ')} (your backup rules, with Clikgate's excludes)`);
+  else if (!changed) pb.done('Android: backup rules exclude Clikgate\'s installation ID');
 }
 
 /**

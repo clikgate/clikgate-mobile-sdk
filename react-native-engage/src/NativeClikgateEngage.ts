@@ -11,4 +11,8 @@ export interface Spec extends TurboModule {
   shareLink(args: CodegenTypes.UnsafeObject): Promise<boolean>;
 }
 
-export default TurboModuleRegistry.get<Spec>('ClikgateEngage');
+// react-native-web has no TurboModuleRegistry: importing this on the web (including Expo Router's
+// server rendering during a release build) must give null, not a crash.
+export default TurboModuleRegistry == null
+  ? null
+  : TurboModuleRegistry.get<Spec>('ClikgateEngage');

@@ -4,7 +4,7 @@
  
  target 'UIKitApp' do
 +  # clikgate-setup:start
-+  pod 'Clikgate', '~> 1.5'
++  pod 'Clikgate', '~> 2.0'
 +  # clikgate-setup:end
    # Comment the next line if you don't want to use dynamic frameworks
    use_frameworks!

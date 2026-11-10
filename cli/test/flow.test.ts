@@ -104,7 +104,7 @@ describe('existing dependencies', () => {
     const ui = new ScriptedUI();
     expect(await main(['--cwd', dir, ...OFFLINE], { ui })).toBe(0);
     expect(fs.readFileSync(pub, 'utf8')).toContain('clikgate_flutter: ^1.3.0');
-    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 1.5.1 or newer. Change it to ^1.5.1 and reinstall.');
+    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.0.0 or newer. Change it to ^2.0.0 and reinstall.');
   });
 });
 

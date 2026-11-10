@@ -17,8 +17,8 @@ SDK key, environment, base URL, identity token) of the core plugin.
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^1.0.0
-  clikgate_engage: ^1.0.0
+  clikgate_flutter: ^2.0.0
+  clikgate_engage: ^2.0.0
 ```
 
 Configure the core plugin first (`Clikgate.configure(...)`, see `clikgate_flutter`).

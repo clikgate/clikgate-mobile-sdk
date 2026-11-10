@@ -1,6 +1,6 @@
 name: clikgate_flutter
 description: "Clikgate SDK for Flutter: deep links that open the right screen (even after install), install attribution, goals, referrals and identity for Android and iOS apps."
-version: 1.5.1
+version: 2.0.0
 homepage: https://clikgate.com
 repository: https://github.com/clikgate/clikgate-mobile-sdk/tree/main/flutter
 issue_tracker: https://github.com/clikgate/clikgate-mobile-sdk/issues

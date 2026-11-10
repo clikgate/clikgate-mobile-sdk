@@ -1,6 +1,6 @@
 {
   "name": "@clikgate/react-native-engage",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Clikgate Engage add-on for React Native: referral links and stats, share helpers, leaderboards and promo codes for apps without their own backend. TypeScript over @clikgate/react-native, plus the native Engage share menu.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -62,7 +62,7 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@clikgate/react-native": "^1.0.0",
+    "@clikgate/react-native": "^2.0.0",
     "react-native": ">=0.76.0"
   },
   "devDependencies": {
