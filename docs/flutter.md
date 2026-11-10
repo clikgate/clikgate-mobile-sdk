@@ -16,7 +16,7 @@ plugin. Two ways to build those screens:
   [`clikgate_engage`](../flutter_engage/README.md) (§5d). See [engage.md](engage.md) for when to
   use which.
 
-Requirements: Flutter 3.24+ (tested with 3.35.4), Android minSdk 21, iOS 13.
+Requirements: Flutter 3.24+ (tested with 3.35.4), Android minSdk 21, iOS 13 (build with Xcode 26 or newer).
 
 ## 1. Install
 

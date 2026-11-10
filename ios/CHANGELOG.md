@@ -4,6 +4,7 @@
 
 **Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.
 
+- **Requires Xcode 26 or newer to build** (App Store submissions need the iOS 26 SDK). Devices from iOS 13 are still supported.
 - **Removed:** `Clikgate.shared.track(_:revenue:properties:completion:)` and `ClikgateMoney`. `goal()` is the only method for what happens in the app. Names arrive in the dashboard's "Seen from your app and website" and count once they are ticked.
 - **Removed:** the app-event call and its queue path. App events left in the persisted queue by an earlier development build are dropped on the next flush, without a network call.
 - **Removed:** SKAdNetwork / AdAttributionKit conversion-value updates on the device and the `conversion_value_schema` config (change 22 R.5). The SDK no longer imports StoreKit or AdAttributionKit.
