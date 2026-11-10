@@ -1,7 +1,7 @@
 # Clikgate iOS SDK
 
 Deep links, deferred deep links, install attribution, goals, identifyUser, referrals (referee side) and uninstall tracking for
-iOS 13+, in Swift, with no third-party dependencies.
+iOS 13+, in Swift, with no third-party dependencies. Build with Xcode 26 or newer.
 
 ## Install
 
