@@ -14,6 +14,12 @@
   `ClikgateRN.setPushToken(deviceToken:)` and the Push Notifications capability: the Expo config plugin adds both
   (new prop `automaticPushToken`, default `true`: `aps-environment` and the line in `AppDelegate.swift` /
   `AppDelegate.mm`), and so does `npx @clikgate/setup` for bare apps. A token passed to `setPushToken` always wins.
+- **Fixed:** `pod install` and the Android build failed on React Native 0.76–0.79 (and Expo 52–53) with
+  `UnsupportedGenericParserError: ... Unrecognized generic type 'undefined'`: the TurboModule specs used
+  `CodegenTypes.UnsafeObject`, which `@react-native/codegen` only understands from 0.80. The specs now use a form every
+  codegen from 0.76 on accepts; the generated native interfaces and the JS API are unchanged.
+- **Fixed:** the Android module didn't compile on React Native 0.76 (Kotlin 1.9 and the older `ReactModuleInfo`
+  constructor). It now builds on React Native 0.76 through 0.88 and Expo 52+, iOS and Android.
 
 ## 2.0.0 (unreleased): one method, `goal()`; installation ID
 

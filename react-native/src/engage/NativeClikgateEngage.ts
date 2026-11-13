@@ -1,4 +1,5 @@
-import type { CodegenTypes, TurboModule } from 'react-native';
+import type { TurboModule } from 'react-native';
+import type { UnsafeObject } from '../codegenTypes';
 import { TurboModuleRegistry } from 'react-native';
 
 /**
@@ -8,7 +9,7 @@ import { TurboModuleRegistry } from 'react-native';
  * TypeScript. Resolves `true` when the app itself opened; rejects with `code` and `message`.
  */
 export interface Spec extends TurboModule {
-  shareLink(args: CodegenTypes.UnsafeObject): Promise<boolean>;
+  shareLink(args: UnsafeObject): Promise<boolean>;
 }
 
 // react-native-web has no TurboModuleRegistry: importing this on the web (including Expo Router's

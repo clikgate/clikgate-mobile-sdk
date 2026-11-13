@@ -16,25 +16,27 @@ class ClikgatePackage : BaseReactPackage() {
       else -> null
     }
 
+  // Positional arguments: React Native 0.76 names the constructor parameters `_name`,
+  // `_className`, ... and later versions `name`, `className`, ...
   override fun getReactModuleInfoProvider() = ReactModuleInfoProvider {
     mapOf(
       ClikgateModule.NAME to ReactModuleInfo(
-        name = ClikgateModule.NAME,
-        className = ClikgateModule::class.java.name,
-        canOverrideExistingModule = false,
+        /* name */ ClikgateModule.NAME,
+        /* className */ ClikgateModule::class.java.name,
+        /* canOverrideExistingModule */ false,
         // Created at startup so the launch intent and the native deep-link listener are
         // installed before JS runs (the SDK buffers until configure is called from JS).
-        needsEagerInit = true,
-        isCxxModule = false,
-        isTurboModule = true,
+        /* needsEagerInit */ true,
+        /* isCxxModule */ false,
+        /* isTurboModule */ true,
       ),
       ClikgateEngageModule.NAME to ReactModuleInfo(
-        name = ClikgateEngageModule.NAME,
-        className = ClikgateEngageModule::class.java.name,
-        canOverrideExistingModule = false,
-        needsEagerInit = false,
-        isCxxModule = false,
-        isTurboModule = true,
+        /* name */ ClikgateEngageModule.NAME,
+        /* className */ ClikgateEngageModule::class.java.name,
+        /* canOverrideExistingModule */ false,
+        /* needsEagerInit */ false,
+        /* isCxxModule */ false,
+        /* isTurboModule */ true,
       ),
     )
   }
