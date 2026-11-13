@@ -15,7 +15,7 @@ dependencies:
     path: ../
   # Pinned to releases contemporary with Flutter 3.35 (AGP 8.9 / Kotlin 2.1 toolchain);
   # later FlutterFire releases need newer Kotlin/AGP. Bump together with Flutter.
-  share_plus: '>=12.0.0 <12.1.0'
+  share_plus: '>=12.0.0 <12.1.0' # backend variant's share button (the plugin itself has no share_plus)
   # Backend variant: HTTP calls to samples/backend.
   http: ^1.2.2
   firebase_core: '>=4.1.1 <4.2.0'

@@ -2,7 +2,10 @@
 
 - **The `clikgate_engage` package is merged into `clikgate_flutter`.** Import the Engage features with
   `import 'package:clikgate_flutter/engage.dart';` (same API: `ClikgateEngage`, `ShareApp`, models). The share menu
-  channel is registered by this plugin. New dependencies: `http`, `meta`, `share_plus`, `url_launcher`.
+  channel is registered by this plugin. New dependencies: `http`, `meta`. `share.system` and `share.whatsApp` use the
+  plugin's own native side (Android `ACTION_SEND` chooser / `ACTION_VIEW`, iOS `UIActivityViewController` /
+  `UIApplication.open`), so the plugin does **not** depend on `share_plus` or `url_launcher` and apps keep any version
+  of them (same results and errors as before: `share_unavailable`, `whatsApp` → share sheet returning `false`).
 - Requires the native SDKs 2.1.0 (which contain the native Engage features).
 - **Automatic push token for uninstall tracking.** `Clikgate.configure(automaticPushToken: true)` (default) is
   passed to both native SDKs: when uninstall tracking is on in the dashboard (and tracking and consent allow it)

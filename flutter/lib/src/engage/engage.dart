@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'client.dart';
 import 'errors.dart';
@@ -91,14 +89,18 @@ class ClikgateEngage {
   /// Drops the in-memory read cache (e.g. on pull-to-refresh).
   void clearCache() => _client.clearCache();
 
-  static Future<bool> _defaultOpenUrl(Uri uri) =>
-      launchUrl(uri, mode: LaunchMode.externalApplication);
-
-  static Future<void> _defaultShareText(String text, {String? subject}) async {
-    await SharePlus.instance.share(ShareParams(text: text, subject: subject));
-  }
-
   static const MethodChannel _channel = MethodChannel('com.clikgate/engage');
+
+  // The plugin's own native side (no share_plus / url_launcher): Android ACTION_VIEW (false when no app
+  // handles the URL), iOS UIApplication.open without canOpenURL (its completion result).
+  static Future<bool> _defaultOpenUrl(Uri uri) async =>
+      await _channel.invokeMethod<bool>('openUrl', {'url': uri.toString()}) ?? false;
+
+  // Android ACTION_SEND chooser, iOS UIActivityViewController; errors (share_unavailable) come back as
+  // PlatformException and `share.system` rethrows them as share_unavailable.
+  static Future<void> _defaultShareText(String text, {String? subject}) async {
+    await _channel.invokeMethod<void>('shareText', {'text': text, 'subject': subject});
+  }
 
   static Future<bool> _defaultShareLink(Map<String, Object?> args) async =>
       await _channel.invokeMethod<bool>('shareLink', args) ?? false;
@@ -216,7 +218,7 @@ class EngageShare {
 
   /// Opens WhatsApp with [text] (`whatsapp://send?text=`); if WhatsApp can't
   /// be opened, presents the system share sheet. Returns true when WhatsApp
-  /// itself was opened (url_launcher; no `canOpenURL` check, so no
+  /// itself was opened (the plugin's native side; no `canOpenURL` check, so no
   /// Info.plist entry is required).
   Future<bool> whatsApp({required String text}) async {
     var opened = false;

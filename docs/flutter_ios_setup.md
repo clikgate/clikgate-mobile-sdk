@@ -138,7 +138,7 @@ platform view.
 ### WhatsApp sharing
 
 `ClikgateEngage().share.whatsApp` (`package:clikgate_flutter/engage.dart`) opens `whatsapp://send?text=…` with
-`url_launcher`, which calls `UIApplication.open` without a `canOpenURL` check, so it works without an
+`UIApplication.open` (the plugin's own native side) without a `canOpenURL` check, so it works without an
 Info.plist entry; when WhatsApp isn't installed the system share sheet is shown and the call returns
 `false`. Listing the scheme is still recommended (the native `ClikgateEngage` iOS module checks
 `canOpenURL`, which answers only for listed schemes):
