@@ -1,14 +1,7 @@
 PODS:
-  - Clikgate (1.5.0):
-    - Clikgate/Core (= 1.5.0)
-  - Clikgate/Core (1.5.0)
-  - Clikgate/Engage (1.5.0):
-    - Clikgate/Core
-  - clikgate_engage (1.0.0):
-    - Clikgate/Engage (~> 1.5.0)
-    - Flutter
-  - clikgate_flutter (1.5.0):
-    - Clikgate (~> 1.5.0)
+  - Clikgate (2.1.0)
+  - clikgate_flutter (2.1.0):
+    - Clikgate (~> 2.1.0)
     - Flutter
   - Firebase/CoreOnly (12.2.0):
     - FirebaseCore (~> 12.2.0)
@@ -88,7 +81,6 @@ PODS:
 
 DEPENDENCIES:
   - Clikgate (from `../../../ios`)
-  - clikgate_engage (from `.symlinks/plugins/clikgate_engage/ios`)
   - clikgate_flutter (from `.symlinks/plugins/clikgate_flutter/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
@@ -113,8 +105,6 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Clikgate:
     :path: "../../../ios"
-  clikgate_engage:
-    :path: ".symlinks/plugins/clikgate_engage/ios"
   clikgate_flutter:
     :path: ".symlinks/plugins/clikgate_flutter/ios"
   firebase_core:
@@ -133,9 +123,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  Clikgate: 6e5940b7889d266c14a95954ff2292d6230c1a58
-  clikgate_engage: 46f23880d9ef7184a396ea5d8bda7da938492b63
-  clikgate_flutter: 796a07f40a80b30c57e0875d446cef322d109c18
+  Clikgate: 6439eb2a2d74ae7f4dd6d17ff99e7cc688b29aa0
+  clikgate_flutter: ea02403c10c8abb813877f425f8a450be422ee7a
   Firebase: 26f6f8d460603af3df970ad505b16b15f5e2e9a1
   firebase_core: dfc4bd142bee4bc53a5d482397ca322c2dd3165d
   firebase_messaging: 38c66c1184695b0c87abe51d40fc590718abed1a
