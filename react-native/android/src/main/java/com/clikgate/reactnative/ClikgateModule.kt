@@ -108,6 +108,7 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
       apiBaseUrl = args.string("apiBaseUrl")?.takeIf { it.isNotBlank() } ?: ClikgateOptions.DEFAULT_API_BASE_URL,
       deferredDeepLinkTimeoutMs = args.number("deferredDeepLinkTimeoutMs")?.toLong() ?: 5_000,
       platformDomainBrowserFallback = args.bool("platformDomainBrowserFallback", true),
+      automaticPushToken = args.bool("automaticPushToken", true),
     )
     // pasteboardMode / waitForATT are iOS-only and ignored here.
     if (!Clikgate.isConfigured) {
@@ -265,9 +266,9 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
     promise.resolve(null)
   }
 
-  // ------------------------------------------------------------------ Engage add-on (internal)
+  // ------------------------------------------------------------------ Engage features (internal)
 
-  /** Request context for `@clikgate/react-native-engage`. */
+  /** Request context for the Engage features (src/engage). */
   @OptIn(ClikgateInternalApi::class)
   override fun getRequestContext(args: ReadableMap, promise: Promise) = guard(promise) {
     Clikgate.requestContext { r -> reply(promise, r, null, BridgeMaps::requestContext) }

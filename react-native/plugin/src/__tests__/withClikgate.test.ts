@@ -5,6 +5,10 @@ import path from 'path';
 
 import withClikgate, {
   addApplinksToPlistText,
+  addApsEnvironment,
+  addPushTokenForwardObjc,
+  addPushTokenForwardSwift,
+  forwardsPushToken,
   addDebugAppLink,
   buildVariant,
   debugEntitlementsPath,
@@ -129,6 +133,7 @@ describe('resolveProps', () => {
       uriScheme: 'myapp',
       enableBackgroundRemoteNotifications: true,
       enableWhatsAppSharing: true,
+      automaticPushToken: true,
     });
   });
 
@@ -140,6 +145,7 @@ describe('resolveProps', () => {
       uriScheme: '',
       enableBackgroundRemoteNotifications: true,
       enableWhatsAppSharing: true,
+      automaticPushToken: true,
     });
     expect(
       resolveProps({ enableBackgroundRemoteNotifications: false })
@@ -346,7 +352,11 @@ describe('plugin entry', () => {
     const plugin = require('../../../app.plugin.js');
     expect(typeof plugin).toBe('function');
     const config = plugin(baseConfig(), { linkDomains: ['inv.myapp.com'] });
-    expect(Object.keys(config.mods.ios)).toEqual(['entitlements', 'infoPlist']);
+    expect(Object.keys(config.mods.ios)).toEqual([
+      'entitlements',
+      'appDelegate',
+      'infoPlist',
+    ]);
     expect(Object.keys(config.mods.android)).toEqual(['manifest']);
   });
 
@@ -462,7 +472,7 @@ describe('testLinkDomain (debug / development builds only)', () => {
       testLinkDomain: 'dev.ciz.to',
     });
     const entitlements = await runMod(config, 'ios', 'entitlements', {});
-    expect(entitlements).toEqual({
+    expect(entitlements).toMatchObject({
       'com.apple.developer.associated-domains': ['applinks:go.acme.com'],
     });
     const manifest = await runMod(
@@ -486,7 +496,7 @@ describe('testLinkDomain (debug / development builds only)', () => {
         testLinkDomain: 'dev.ciz.to',
       });
       const entitlements = await runMod(config, 'ios', 'entitlements', {});
-      expect(entitlements).toEqual({
+      expect(entitlements).toMatchObject({
         'com.apple.developer.associated-domains': [
           'applinks:go.acme.com',
           'applinks:dev.ciz.to',
@@ -584,6 +594,122 @@ describe('testLinkDomain (debug / development builds only)', () => {
 
   it('adds no extra mods when testLinkDomain is not set', () => {
     const config = withClikgate(baseConfig(), { linkDomains: ['go.acme.com'] });
+    expect(Object.keys((config.mods as Record<string, object>).ios)).toEqual([
+      'entitlements',
+      'appDelegate',
+      'infoPlist',
+    ]);
+  });
+});
+
+describe('automaticPushToken (iOS uninstall tracking)', () => {
+  const expoSwift = `internal import Expo
+import React
+import ReactAppDependencyProvider
+
+@main
+class AppDelegate: ExpoAppDelegate {
+  var window: UIWindow?
+
+  public override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+  ) -> Bool {
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+}
+
+class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
+  override func bundleURL() -> URL? {
+    return nil
+  }
+}
+`;
+
+  const expoObjc = `#import "AppDelegate.h"
+
+#import <React/RCTBundleURLProvider.h>
+#import <React/RCTLinkingManager.h>
+
+@implementation AppDelegate
+
+// Explicitly define remote notification delegates to ensure compatibility with some third-party libraries
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+  return [super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+
+@end
+`;
+
+  it('adds aps-environment (development) unless the app sets it', async () => {
+    const config = withClikgate(baseConfig(), {});
+    expect(await runMod(config, 'ios', 'entitlements', {})).toEqual({
+      'aps-environment': 'development',
+    });
+    expect(addApsEnvironment({ 'aps-environment': 'production' })).toEqual({
+      'aps-environment': 'production',
+    });
+  });
+
+  it('Swift (ExpoAppDelegate): adds a public override that calls super, once', async () => {
+    const config = withClikgate(baseConfig(), {});
+    const out = await runMod(config, 'ios', 'appDelegate', {
+      language: 'swift',
+      contents: expoSwift,
+      path: 'AppDelegate.swift',
+    });
+    const text = (out as { contents: string }).contents;
+    expect(text).toContain(
+      '  public override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\n    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)\n    ClikgateRN.setPushToken(deviceToken: deviceToken)\n  }'
+    );
+    expect(text).toMatch(/^import ClikgateReactNative$/m);
+    // inside AppDelegate, not ReactNativeDelegate
+    expect(text.indexOf('didRegisterForRemoteNotifications')).toBeLessThan(
+      text.indexOf('class ReactNativeDelegate')
+    );
+    expect(addPushTokenForwardSwift(text)).toBe(text);
+    expect(forwardsPushToken(text)).toBe(true);
+  });
+
+  it('Swift: adds the line to an existing method', () => {
+    const src = `import UIKit\n\nclass AppDelegate: UIResponder, UIApplicationDelegate {\n  func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken token: Data) {\n    Other.register(token)\n  }\n}\n`;
+    const text = addPushTokenForwardSwift(src);
+    expect(text).toContain('ClikgateRN.setPushToken(deviceToken: token)');
+    expect(
+      text.match(/didRegisterForRemoteNotificationsWithDeviceToken/g)
+    ).toHaveLength(1);
+  });
+
+  it('Objective-C (Expo SDK 52 template): adds the line to the existing method and the header', async () => {
+    const config = withClikgate(baseConfig(), {});
+    const out = await runMod(config, 'ios', 'appDelegate', {
+      language: 'objcpp',
+      contents: expoObjc,
+      path: 'AppDelegate.mm',
+    });
+    const text = (out as { contents: string }).contents;
+    expect(text).toContain(
+      '{\n  // @clikgate/react-native:push-token start\n  [ClikgateRN setPushTokenWithDeviceToken:deviceToken];'
+    );
+    expect(text).toContain(
+      '#import <ClikgateReactNative/ClikgateReactNative-Swift.h>'
+    );
+    expect(addPushTokenForwardObjc(text)).toBe(text);
+  });
+
+  it('Objective-C: adds the method before @end when missing', () => {
+    const text = addPushTokenForwardObjc(
+      '#import "AppDelegate.h"\n\n@implementation AppDelegate\n\n@end\n'
+    );
+    expect(text).toContain('instancesRespondToSelector:_cmd');
+    expect(
+      text.indexOf('[ClikgateRN setPushTokenWithDeviceToken:deviceToken];')
+    ).toBeLessThan(text.indexOf('@end'));
+  });
+
+  it('automaticPushToken: false adds neither', () => {
+    const config = withClikgate(baseConfig(), { automaticPushToken: false });
     expect(Object.keys((config.mods as Record<string, object>).ios)).toEqual([
       'entitlements',
       'infoPlist',

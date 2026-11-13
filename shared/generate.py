@@ -432,6 +432,8 @@ SCHEMAS: dict[str, dict] = {
             ),
             "installer_package": {"type": ["string", "null"], "maxLength": 255},
             "pasteboard_token": {"type": ["string", "null"], "pattern": "^cgdl_[0-9A-Za-z]{26}$"},
+            # iOS only: what the first-launch paste step saw; omitted when the paste flow didn't run.
+            "pasteboard_outcome": {"enum": ["token_found", "no_link", "no_token", "denied", "paste_control", None]},
             "push": nullable(PUSH),
             "attestation": nullable(ATTESTATION),
             "apple_search_ads_token": {"type": ["string", "null"], "maxLength": 8192},
@@ -798,7 +800,7 @@ FIXTURES: dict[str, dict] = {
     "install_request_android": {
         "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
         "app_version": "3.4.1",
-        "sdk_version": "2.0.0",
+        "sdk_version": "2.1.0",
         "platform": "android",
         "os_version": "14",
         "device_model": "Pixel 8",
@@ -834,7 +836,7 @@ FIXTURES: dict[str, dict] = {
         "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
         "keychain_previous_installation_id": None,
         "app_version": "3.4.1",
-        "sdk_version": "2.0.0",
+        "sdk_version": "2.1.0",
         "platform": "ios",
         "os_version": "18.1",
         "device_model": "iPhone15,2",
@@ -842,6 +844,7 @@ FIXTURES: dict[str, dict] = {
         "timezone": "Africa/Lagos",
         "launch_url": None,
         "pasteboard_token": "cgdl_9Xk2abcdefghijklmnopqrstuv",
+        "pasteboard_outcome": "token_found",
         "push": {"provider": "apns", "token": "a1b2c3d4", "apns_environment": "production"},
         "consent": {
             "analytics": "granted",
@@ -1084,7 +1087,7 @@ FIXTURES["install_request_android_signals"] = {
 # iOS SDK 1.1.0 sent `is_rooted` (jailbreak heuristics) and `screen`; 1.2.0 sends neither (change 03,
 # S.2). The fixture keeps the 1.1 shape: old SDKs in the field still send it and the schema accepts it.
 FIXTURES["install_request_ios_signals"] = {
-    **{k: v for k, v in FIXTURES["install_request_ios"].items() if k not in ("google_click_ids", "device_check_token", "google_on_device_measurement")},
+    **{k: v for k, v in FIXTURES["install_request_ios"].items() if k not in ("google_click_ids", "device_check_token", "google_on_device_measurement", "pasteboard_outcome")},
     "sdk_version": "1.1.0",
     "consent": {"tracking_allowed": True},
     "screen": {"w": 1179, "h": 2556, "scale": 3},
@@ -1098,7 +1101,7 @@ FIXTURES["install_request_ios_signals"] = {
 FIXTURES["install_request_opted_out"] = {
     "installation_id": FIXTURES["install_request_android"]["installation_id"],
     "app_version": "3.4.1",
-    "sdk_version": "2.0.0",
+    "sdk_version": "2.1.0",
     "platform": "android",
     "consent": {
         "analytics": "denied",
@@ -1184,7 +1187,7 @@ FIXTURES["consent_response"] = {"ok": True}
 FIXTURES["install_ping_request"] = {
     "platform": "android",
     "app_version": "3.4.1",
-    "sdk_version": "2.0.0",
+    "sdk_version": "2.1.0",
     "consent": {"analytics": "unknown", "attribution": "denied", "ad_user_data": "denied", "ad_personalization": "denied", "region": "DE", "updated_at": "2026-10-20T10:05:00Z"},
 }
 FIXTURES["install_ping_response"] = {"ok": True}

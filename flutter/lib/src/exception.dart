@@ -44,7 +44,7 @@ class ClikgateException implements Exception {
   /// `offline_codes`, `referrals`, ...).
   final String? feature;
 
-  /// `clikgate_engage` `codes.redeem` only: the offline touch that was recorded although the
+  /// Engage `codes.redeem` only: the offline touch that was recorded although the
   /// referral could not be created (`self_referral`, `already_referred`, ...).
   final String? offlineTouchId;
 

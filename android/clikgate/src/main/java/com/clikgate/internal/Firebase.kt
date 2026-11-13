@@ -66,43 +66,94 @@ internal class ReflectionFirebaseBridge(private val context: Context) : Firebase
 
     override fun appInstanceId(cb: (String?) -> Unit) {
         val i = instance ?: return cb(null)
-        var done = false
-        fun finish(v: String?) {
-            if (!done) {
-                done = true
-                cb(v)
-            }
-        }
         try {
-            val task = i.javaClass.getMethod("getAppInstanceId").invoke(i) ?: return finish(null)
-            // com.google.android.gms.tasks.Task#addOnCompleteListener(OnCompleteListener), via a proxy.
-            val listenerCls = Class.forName("com.google.android.gms.tasks.OnCompleteListener")
-            val listener = java.lang.reflect.Proxy.newProxyInstance(listenerCls.classLoader, arrayOf(listenerCls)) { proxy, m, args ->
-                when (m.name) {
-                    "hashCode" -> return@newProxyInstance System.identityHashCode(proxy)
-                    "equals" -> return@newProxyInstance proxy === args?.getOrNull(0)
-                    "toString" -> return@newProxyInstance "ClikgateAppInstanceIdListener"
-                }
-                if (m.name == "onComplete") {
-                    val t = args?.getOrNull(0)
-                    val ok = try {
-                        t?.javaClass?.getMethod("isSuccessful")?.invoke(t) == true
-                    } catch (_: Throwable) {
-                        false
-                    }
-                    finish(if (ok) t?.javaClass?.getMethod("getResult")?.invoke(t) as? String else null)
-                }
-                null
-            }
-            task.javaClass.getMethod("addOnCompleteListener", listenerCls).invoke(task, listener)
+            taskResult(i.javaClass.getMethod("getAppInstanceId").invoke(i), cb)
         } catch (t: Throwable) {
             Log.d("Firebase getAppInstanceId failed: ${t.javaClass.simpleName}")
-            finish(null)
+            cb(null)
         }
     }
 
     companion object {
         const val CLASS = "com.google.firebase.analytics.FirebaseAnalytics"
+    }
+}
+
+/**
+ * Calls [cb] once with the String result of a `com.google.android.gms.tasks.Task` (null when it
+ * failed), through an `OnCompleteListener` proxy (no gms dependency).
+ */
+internal fun taskResult(task: Any?, cb: (String?) -> Unit) {
+    var done = false
+    fun finish(v: String?) {
+        if (!done) {
+            done = true
+            cb(v)
+        }
+    }
+    try {
+        if (task == null) return finish(null)
+        val listenerCls = Class.forName("com.google.android.gms.tasks.OnCompleteListener")
+        val listener = java.lang.reflect.Proxy.newProxyInstance(listenerCls.classLoader, arrayOf(listenerCls)) { proxy, m, args ->
+            when (m.name) {
+                "hashCode" -> return@newProxyInstance System.identityHashCode(proxy)
+                "equals" -> return@newProxyInstance proxy === args?.getOrNull(0)
+                "toString" -> return@newProxyInstance "ClikgateTaskListener"
+            }
+            if (m.name == "onComplete") {
+                val t = args?.getOrNull(0)
+                finish(try {
+                    if (t?.javaClass?.getMethod("isSuccessful")?.invoke(t) == true) t.javaClass.getMethod("getResult").invoke(t) as? String else null
+                } catch (_: Throwable) {
+                    null
+                })
+            }
+            null
+        }
+        task.javaClass.getMethod("addOnCompleteListener", listenerCls).invoke(task, listener)
+    } catch (t: Throwable) {
+        Log.d("Firebase task failed: ${t.javaClass.simpleName}")
+        finish(null)
+    }
+}
+
+/**
+ * Firebase Cloud Messaging as seen by the SDK (automatic push token). The live implementation
+ * uses reflection, so the SDK has no Firebase dependency; tests inject a fake.
+ */
+internal interface PushTokenSource {
+    /** True when Firebase Messaging is in the app. */
+    fun isAvailable(): Boolean
+
+    /** Calls [cb] once with the FCM token, or null (not initialised, failed). */
+    fun token(cb: (String?) -> Unit)
+}
+
+internal class ReflectionPushTokenSource : PushTokenSource {
+    private val cls: Class<*>? by lazy {
+        try {
+            Class.forName(CLASS)
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    override fun isAvailable(): Boolean = cls != null
+
+    override fun token(cb: (String?) -> Unit) {
+        val c = cls ?: return cb(null)
+        try {
+            // FirebaseMessaging.getInstance().getToken(): Task<String>
+            val m = c.getMethod("getInstance").invoke(null)
+            taskResult(c.getMethod("getToken").invoke(m), cb)
+        } catch (t: Throwable) {
+            Log.d("FCM token unavailable: ${t.javaClass.simpleName}")
+            cb(null)
+        }
+    }
+
+    companion object {
+        const val CLASS = "com.google.firebase.messaging.FirebaseMessaging"
     }
 }
 

@@ -40,6 +40,7 @@ actor ClikgateCore {
     private var firebaseOptions: ClikgateFirebaseForwardingOptions?
     private var odmEnabled = false
     private var versionPolicyLogged = false
+    private var autoPushDone = false
     /// Test SDK key (`cg_sdk_test_`): goal results get one clear log line; handled deep links are reported.
     let testMode: Bool
     /// `goal()` completions by queue id, settled when Clikgate answers (in memory only).
@@ -103,6 +104,7 @@ actor ClikgateCore {
             await sendOpen(coldStart: true)
         }
         await afterConsentGranted()
+        await registerForPushIfNeeded()
         await reattestIfDue()
         await flush()
         if startTimers && !launchedInBackground { startForegroundTimer() }
@@ -152,6 +154,7 @@ actor ClikgateCore {
         state.lastBackgroundAt = nil
         save()
         await flush()
+        await registerForPushIfNeeded()
         if startTimers { startForegroundTimer() }
     }
 
@@ -300,21 +303,26 @@ actor ClikgateCore {
         guard !state.firstLaunchSignalsCollected else { return }
         state.firstLaunchSignalsCollected = true   // never read the pasteboard again, even if we crash
         save()
-        if let token = await readPasteboardIfAllowed() { state.pasteboardToken = token }
+        let (token, outcome) = await readPasteboardIfAllowed()
+        if let token { state.pasteboardToken = token }
+        state.pasteboardOutcome = outcome
         save()
     }
 
-    private func readPasteboardIfAllowed() async -> String? {
-        guard options.pasteboardMode == .automatic, config.features.pasteboardMatching == "on_interstitial_tap",
-              !isBlocked, gate != .denied else { return nil }
+    /// The token (if any) and the `pasteboard_outcome` (nil when the paste flow doesn't run).
+    private func readPasteboardIfAllowed() async -> (String?, String?) {
+        guard options.pasteboardMode != .off, config.features.pasteboardMatching == "on_interstitial_tap",
+              !isBlocked, gate != .denied else { return (nil, nil) }
+        guard options.pasteboardMode == .automatic else { return (nil, "paste_control") }
         if let likely = await deps.pasteboard.probablyHasWebURL() {
-            guard likely else { return nil }
+            guard likely else { return (nil, "no_link") }
         } else {
-            guard await deps.pasteboard.hasStrings() else { return nil }
+            guard await deps.pasteboard.hasStrings() else { return (nil, "no_link") }
         }
-        let token = PasteboardToken.extract(from: await deps.pasteboard.readString())
+        guard let text = await deps.pasteboard.readString() else { return (nil, "denied") }
+        let token = PasteboardToken.extract(from: text)
         logger.debug(token == nil ? "No Clikgate token on the pasteboard" : "Found a Clikgate pasteboard token")
-        return token
+        return (token, token == nil ? "no_token" : "token_found")
     }
 
     private func waitForATTIfNeeded() async {
@@ -370,6 +378,8 @@ actor ClikgateCore {
         )
         req.consent = state.consent
         if tracking {
+            // A Paste button token that arrives before the first install is sent as found too.
+            req.pasteboardOutcome = state.pasteboardOutcome.map { state.pasteboardToken == nil ? $0 : "token_found" }
             req.googleClickIds = GoogleClickIds.parse(state.launchUrl.flatMap(URL.init(string:)))
             req.appInstanceId = extras.appInstanceId
             req.deviceCheckToken = extras.deviceCheckToken
@@ -458,6 +468,7 @@ actor ClikgateCore {
         state.attribution = attribution
         state.keychainPreviousInstallationId = nil
         if sent.pasteboardToken != nil { state.pasteboardToken = nil }
+        state.pasteboardOutcome = nil
         adServicesToken = nil
         if let h = sent.pushHash { state.lastPushHash = h }
         if sent.attested { state.attestKeyAttested = true; state.lastAttestedAt = deps.clock.now() }
@@ -984,6 +995,25 @@ actor ClikgateCore {
         if state.installDone && isActive && gate == .allowed { await sendPushTokenIfChanged() }
     }
 
+    /// `automaticPushToken`: once per launch, when uninstall tracking is on and tracking/consent allow the push
+    /// token. The token itself comes back through `setPushToken`, so a manual token is never overwritten.
+    func registerForPushIfNeeded() async {
+        guard options.automaticPushToken, !autoPushDone, config.features.uninstallTracking, isActive,
+              gate == .allowed, callAllowed("push_token") else { return }
+        autoPushDone = true
+        if state.autoPushRegistered {
+            if state.pushToken == nil {
+                logger.warning("No push token since the last launch: forward it with setPushToken(deviceToken:) in application(_:didRegisterForRemoteNotificationsWithDeviceToken:) and add the Push Notifications capability")
+            }
+        } else {
+            state.autoPushRegistered = true
+            save()
+            logger.debug("Registered for remote notifications for uninstall checks; forward the token with setPushToken(deviceToken:)")
+        }
+        let r = deps.remoteNotifications
+        await MainActor.run { r.register() }
+    }
+
     private func sendPushTokenIfChanged() async {
         guard let p = currentPushPayload() else { return }
         var body = p.json
@@ -1013,7 +1043,7 @@ actor ClikgateCore {
             state.optOutPending = !enabled
             save()
             await sendOptOut()
-            if enabled && isActive { await flush() }
+            if enabled && isActive { await flush(); await registerForPushIfNeeded() }
         } else {
             // Before the first /install: the install itself says it (every consent purpose denied).
             state.optOutPending = nil
@@ -1172,7 +1202,7 @@ actor ClikgateCore {
         return "identifyUser: the identity token did not verify (\(why)); the customer ID is kept but not verified"
     }
 
-    // MARK: - Engage add-on (internal request context)
+    // MARK: - Engage features (internal request context)
 
     /// The context Engage needs for a `/v1/sdk` call, with the same gates the core's feature calls
     /// use: opted out / invalid key / kill switch, `install_pending` before the first `/install`,
@@ -1370,6 +1400,7 @@ extension ClikgateCore {
             let freshInstall = !state.installDone
             if freshInstall { await runInstall() }
             await afterConsentGranted()
+            await registerForPushIfNeeded()
             if !freshInstall { await flush() }
         }
     }
@@ -1423,6 +1454,7 @@ extension ClikgateCore {
         queue.clear()
         state.keptUrls = []
         state.pasteboardToken = nil
+        state.pasteboardOutcome = nil
         adServicesToken = nil
         state.launchUrl = nil
         state.launchUrlDeliveredLocally = false

@@ -97,6 +97,22 @@ describe('offline mode', () => {
 });
 
 describe('existing dependencies', () => {
+  // `dart run clikgate_flutter` needs the package in pubspec.yaml first (`flutter pub add clikgate_flutter`,
+  // which writes it in sorted order): setup reports the step as already done and leaves pubspec.yaml alone.
+  it.each(['^2.1.0', '^2.3.0'])('clikgate_flutter %s added by `flutter pub add` is already set up, pubspec.yaml unchanged', async (constraint) => {
+    const dir = copyFixture('flutter');
+    const pub = path.join(dir, 'pubspec.yaml');
+    const added = fs.readFileSync(pub, 'utf8').replace('dependencies:\n  flutter:\n    sdk: flutter\n', `dependencies:\n  clikgate_flutter: ${constraint}\n  flutter:\n    sdk: flutter\n`);
+    expect(added).toContain(`clikgate_flutter: ${constraint}`);
+    fs.writeFileSync(pub, added);
+    const ui = new ScriptedUI();
+    expect(await main(['--cwd', dir, ...OFFLINE], { ui })).toBe(0);
+    expect(fs.readFileSync(pub, 'utf8')).toBe(added);
+    expect(ui.text).toMatch(/already set up\s+clikgate_flutter dependency/);
+    expect(ui.text).not.toContain('Update clikgate_flutter');
+    expect(ui.text).not.toContain('pubspec.yaml  (add clikgate_flutter');
+  });
+
   it('an older constraint is kept and reported as a manual step', async () => {
     const dir = copyFixture('flutter');
     const pub = path.join(dir, 'pubspec.yaml');
@@ -104,7 +120,7 @@ describe('existing dependencies', () => {
     const ui = new ScriptedUI();
     expect(await main(['--cwd', dir, ...OFFLINE], { ui })).toBe(0);
     expect(fs.readFileSync(pub, 'utf8')).toContain('clikgate_flutter: ^1.3.0');
-    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.0.0 or newer. Change it to ^2.0.0 and reinstall.');
+    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.1.0 or newer. Change it to ^2.1.0 and reinstall.');
   });
 });
 

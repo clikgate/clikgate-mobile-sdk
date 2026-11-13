@@ -165,6 +165,16 @@
       ],
       "pattern": "^cgdl_[0-9A-Za-z]{26}$"
     },
+    "pasteboard_outcome": {
+      "enum": [
+        "token_found",
+        "no_link",
+        "no_token",
+        "denied",
+        "paste_control",
+        null
+      ]
+    },
     "push": {
       "anyOf": [
         {

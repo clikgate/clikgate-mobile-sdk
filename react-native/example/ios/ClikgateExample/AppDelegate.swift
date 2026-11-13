@@ -30,8 +30,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
-    // Silent uninstall-check pushes need no notification permission, only an APNs token.
-    application.registerForRemoteNotifications()
+    // Uninstall tracking: the SDK registers for remote notifications itself (automaticPushToken,
+    // default on) when it's on in the dashboard; no permission prompt. The token arrives below.
     return true
   }
 
@@ -63,7 +63,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
   ) {
-    // Apps using FCM pass the FCM token from JS instead (Clikgate.setPushToken(token, {provider: 'fcm'})).
+    // The one line uninstall tracking needs. A token passed from JS with Clikgate.setPushToken wins.
     ClikgateRN.setPushToken(deviceToken: deviceToken)
   }
 

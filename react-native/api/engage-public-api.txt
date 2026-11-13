@@ -1,0 +1,51 @@
+export ClikgateEngage
+export EngageErrorCodes
+export MAX_AROUND_ME_RADIUS
+export MAX_LEADERBOARD_LIMIT
+export SHARE_APPS
+export ShareApp
+ClikgateEngage.version
+ClikgateEngage.cacheTtlMs
+engage.callShareLink()
+engage.clearCache()
+engage.referrals.createLink
+engage.referrals.myStats
+engage.share.link
+engage.share.referralLink
+engage.share.system
+engage.share.whatsApp
+engage.leaderboards.aroundMe
+engage.leaderboards.hostedPageUrl
+engage.leaderboards.me
+engage.leaderboards.setOptOut
+engage.leaderboards.top
+engage.codes.redeem
+EngageErrorCodes.codeDisabled
+EngageErrorCodes.codeExpired
+EngageErrorCodes.codeNotFound
+EngageErrorCodes.hostedPageUnavailable
+EngageErrorCodes.identityRequired
+EngageErrorCodes.invalidSegment
+EngageErrorCodes.leaderboardNotFound
+EngageErrorCodes.notIdentified
+EngageErrorCodes.periodNotFound
+EngageErrorCodes.redemptionLimitReached
+EngageErrorCodes.referrerNotFound
+EngageErrorCodes.serverError
+EngageErrorCodes.shareUnavailable
+EngageErrorCodes.validationError
+type ClikgateEngageOptions
+type EngageCore
+type EngageLinkSharer
+type EngageLinking
+type EngageShareSheet
+type FetchLike
+type LeaderboardEntry
+type LeaderboardPage
+type LeaderboardPeriod
+type LeaderboardPeriodSelector
+type MyRank
+type RedeemedCode
+type Redemption
+type ReferralLink
+type ReferralStats

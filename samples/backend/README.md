@@ -6,7 +6,7 @@ Clikgate control-plane API with an API key for everything on the referrer side. 
 the app's identity secret stay on this server; the app never sees them.
 
 The Flutter example's backend variant (`flutter/example`, `CLIKGATE_VARIANT=backend`) talks to
-this service. Apps without a backend use the Engage add-on instead ([docs/engage.md](../../docs/engage.md)).
+this service. Apps without a backend use the SDKs' Engage features instead ([docs/engage.md](../../docs/engage.md)).
 
 ## API (what the app calls)
 

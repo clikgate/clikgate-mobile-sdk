@@ -1,5 +1,7 @@
 # Flutter packages — decisions
 
+> **2.1.0 (2026-11-12): the Engage add-on is merged into this package.** See [docs/DECISIONS.md](../docs/DECISIONS.md) "One package per SDK". Entries below that describe Engage as a separate package, module or subspec are history; the core/Engage boundary and the size budgets they describe still apply.
+
 The plugin's earlier decisions (bridge, composite build, example pins) are recorded in
 `android/DECISIONS.md` ("Flutter plugin ↔ native SDK", "Flutter example") and
 `ios/DECISIONS.md`. This file covers the Flutter-specific parts of the Engage split.
@@ -269,3 +271,16 @@ packages read their `LICENSE`.
   example stays in the repository. A `.pubignore` replaces the directory's `.gitignore` for pub, so it repeats
   those entries; its patterns are unanchored (`**/test/`) so they mean the same to pub and to
   `scripts/scan_release_packages.py`, which reads them relative to the repository root.
+
+## Automatic push token on iOS (2.1.0)
+
+- The plugin was already an application delegate (`registrar.addApplicationDelegate`), so it now forwards
+  `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` to `Clikgate.shared.setPushToken(deviceToken:)`
+  whenever `automaticPushToken` is on (Flutter calls this void delegate method on every plugin, so
+  `firebase_messaging` still gets it; no swizzling). Before 2.1.0 this needed Info.plist `ClikgateForwardAPNsToken`;
+  that key still forces forwarding.
+- "A manual token wins": once Dart calls `setPushToken` (typically the FCM token from `firebase_messaging`), the plugin
+  stores `com.clikgate.flutter.manualPushToken` in `UserDefaults` and stops forwarding the APNs token. It is kept
+  across launches because the APNs callback and the Dart call race on every launch; without it the stored token
+  would flip between the APNs and FCM token and be re-sent twice per launch. Cost: an app that later stops calling
+  `setPushToken` keeps the flag until reinstall (it can set `ClikgateForwardAPNsToken` = YES).

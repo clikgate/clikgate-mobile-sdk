@@ -3,7 +3,7 @@
 Android (Kotlin) and iOS (Swift) implement the same lifecycle. Flutter and React Native
 are thin bridges over them and contain no attribution or referral logic.
 
-## Core SDK vs Engage add-on (spec v3 new edition, 0.4 / 17A)
+## Core SDK vs Engage features (spec v3 new edition, 0.4 / 17A)
 
 The **core SDK** only does what must happen on the device: installation id, first launch /
 reinstall / opens, Play Install Referrer, pasteboard token, deep link delivery, goals with the
@@ -11,13 +11,15 @@ offline queue, `identifyUser` and the installation ID, push token + silent-push 
 Apple Search Ads token, opt-out, feature switches (`isFeatureEnabled`), and the referee-side
 referral calls tied to this installation: `referrals.applyCode` and `referrals.referredBy`.
 
-The optional **Engage add-on** holds the convenience reads and actions for apps without their own
+The **Engage features** hold the convenience reads and actions for apps without their own
 backend: create/get the user's referral link, "my referral stats", leaderboard top / me /
 around-me / opt-out / hosted page URL, promo/offline code redemption, and share helpers (system
-share sheet, WhatsApp). Packages: `com.clikgate:clikgate-engage` (Android), `ClikgateEngage` SPM
-product / `Clikgate/Engage` pod subspec (iOS), `clikgate_engage` (Dart, plus a share-menu plugin over
-the native Engage add-on), and `@clikgate/react-native-engage` (TypeScript, plus a share-menu
-TurboModule over the native Engage add-on).
+share sheet, WhatsApp). Since 2.1.0 (owner decision 2026-11-12) they ship in each core package, in
+their own module or folder that the core code never uses: `com.clikgate.engage` in
+`com.clikgate:clikgate-android`, the `ClikgateEngage` module of the `Clikgate` SPM product (compiled
+into the `Clikgate` module by the pod), `package:clikgate_flutter/engage.dart` (Dart, plus the
+plugin's share-menu channel over the native Engage features), and `ClikgateEngage` exported by
+`@clikgate/react-native` (TypeScript, plus a share-menu TurboModule over the native Engage features).
 
 The recommended path for apps **with** a backend is core SDK + the app's backend calling the
 control-plane API (referrers, referral stats, leaderboards, identity signals, goals from the server) and
@@ -170,6 +172,26 @@ https://clikgate.com/docs/identify-users
 - On every launch, if the stored token's hash differs from the last sent hash, send it.
 - `isClikgateMessage(data)`: true when `data["cg"] == "uc"` or `data["cg"]["t"] == "uc"`.
   The SDK never shows a notification and never requests notification permission.
+- **Automatic push token (2.1.0, `automaticPushToken`, default on).** On each launch, once the config is known
+  (a cached config counts), and again when consent or opt-out changes to allowed, the SDK gets a token by itself
+  when **all** hold: the option is on; `features.uninstall_tracking == true`; not opted out; not blocked (or
+  `push_token` in `allowed_calls`); consent allows the push token (the same gate as `setPushToken`'s send). It never
+  requests notification permission and never shows anything.
+  - iOS: `UIApplication.shared.registerForRemoteNotifications()` on the main thread (skipped in app extensions).
+    The token still arrives in the app's `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`, which
+    forwards it with `setPushToken(deviceToken:)` (Flutter: the plugin receives that callback as an application
+    delegate and forwards it, so apps add nothing; React Native: the app's AppDelegate line). Needs the Push
+    Notifications capability (`aps-environment`); Background Modes is not needed. Debug log once when it
+    registered; if no token reached the SDK by the next qualifying launch, a warning names the missing forward
+    line or capability.
+  - Android: when `com.google.firebase.messaging.FirebaseMessaging` is loadable, `getInstance().getToken()` by
+    reflection (no Firebase dependency) into the same path as `setPushToken(token, FCM)`. Without Firebase: debug
+    log once, nothing else.
+  - A token from `setPushToken` always wins: the automatic one never overwrites a manual token from the same
+    launch (Flutter iOS: once Dart has passed a token, the plugin stops forwarding the APNs token).
+  - Side effect: registering also hands the token to any other push tool in the app (it may count the device as
+    registered); users still see nothing without permission. `automaticPushToken: false` leaves registration to
+    the app.
 
 ## Opt-out
 
@@ -203,6 +225,11 @@ consent is still `unknown` is kept on the device and sent only after `attributio
   re-attributes an install that is still `organic` and less than 1 h old when the token
   is valid (install is otherwise idempotent and returns the stored attribution).
 - `.off`: never touch the pasteboard.
+- `/install` carries `pasteboard_outcome` (API_CONTRACT "Pasteboard tokens (iOS)") whenever the
+  paste flow ran: `token_found`, `no_link`, `no_token`, `denied` or `paste_control`. The SDK keeps it
+  on the device with the token so a retried `/install` sends the same value, clears it after a
+  successful `/install`, drops it with the token on consent deny, and never sends it when the token
+  wouldn't be sent (opted out, blocked).
 
 ## Logging
 
@@ -585,7 +612,7 @@ provider's string to the native SDK, which validates it (a malformed key is refu
 
 `ClikgateEngage.share.link(url, message?, app?, shareUrls?)` and `share.referralLink(link, message?,
 app?)` on all four platforms (Flutter / React Native through the Engage package's native bridge to the
-native Engage add-on, one implementation per OS). Spec: Change 13 S.1; backend: `POST /v1/share-events`
+native Engage features, one implementation per OS). Spec: Change 13 S.1; backend: `POST /v1/share-events`
 (API_CONTRACT.md "Change 13 additions").
 
 - **The link per app.** For each app in the internal table (`shared/share_targets.json`, generated into

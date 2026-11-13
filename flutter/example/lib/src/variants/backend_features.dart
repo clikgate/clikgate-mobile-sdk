@@ -16,7 +16,7 @@ Future<void> _identify(String? id, {String? identityToken}) =>
 
 /// Recommended variant: the app talks to its own backend (`samples/backend`), which calls the
 /// Clikgate control-plane API (referrers, leaderboards, server-side events) with its API key.
-/// The app holds no Clikgate secret and doesn't use `clikgate_engage`.
+/// The app holds no Clikgate secret and doesn't use the Engage features (`package:clikgate_flutter/engage.dart`).
 class BackendFeatures extends ReferralFeatures {
   BackendFeatures({required String baseUrl, http.Client? httpClient, IdentifyFn? identify})
       : _base = baseUrl.replaceFirst(RegExp(r'/+$'), ''),

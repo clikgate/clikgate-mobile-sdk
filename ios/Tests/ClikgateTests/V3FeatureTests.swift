@@ -3,7 +3,7 @@ import UIKit
 @testable @_spi(ClikgateWrapper) @_spi(ClikgateEngage) import Clikgate
 
 /// Spec v3 core surface: feature switches, referee-side referral gating and the internal request
-/// context the Engage add-on uses (leaderboards, codes and share are tested in ClikgateEngageTests).
+/// context the Engage features use (leaderboards, codes and share are tested in ClikgateEngageTests).
 /// Runs through the public API on isolated `Clikgate` instances with the stub server.
 final class V3FeatureTests: XCTestCase {
     var h: Harness!
@@ -177,7 +177,7 @@ final class V3FeatureTests: XCTestCase {
         XCTAssertEqual((e as NSError).userInfo["feature"] as? String, "leaderboards")
     }
 
-    // MARK: Internal request context (Engage add-on)
+    // MARK: Internal request context (Engage features)
 
     func testRequestContextAfterInstallAndIdentify() async throws {
         let sdk = try await installed()

@@ -200,10 +200,11 @@ ClikgateOptions.PasteboardMode.pasteControlOnly: case pasteControlOnly
 ClikgateOptions.PasteboardMode: enum PasteboardMode
 ClikgateOptions.apiBaseUrl: var apiBaseUrl: URL
 ClikgateOptions.attestation: var attestation: ClikgateOptions.Attestation
+ClikgateOptions.automaticPushToken: var automaticPushToken: Bool
 ClikgateOptions.defaultApiBaseUrl: static let defaultApiBaseUrl: URL
 ClikgateOptions.deferredDeepLinkTimeout: var deferredDeepLinkTimeout: TimeInterval
 ClikgateOptions.environment: var environment: ClikgateOptions.Environment
-ClikgateOptions.init(apiBaseUrl:linkDomains:logLevel:environment:pasteboardMode:waitForATT:attestation:deferredDeepLinkTimeout:platformDomainBrowserFallback:): init(apiBaseUrl: URL = ClikgateOptions.defaultApiBaseUrl, linkDomains: [String] = [], logLevel: ClikgateOptions.LogLevel = .warning, environment: ClikgateOptions.Environment = .production, pasteboardMode: ClikgateOptions.PasteboardMode = .off, waitForATT: Bool = false, attestation: ClikgateOptions.Attestation = .off, deferredDeepLinkTimeout: TimeInterval = 5, platformDomainBrowserFallback: Bool = true)
+ClikgateOptions.init(apiBaseUrl:linkDomains:logLevel:environment:pasteboardMode:waitForATT:attestation:deferredDeepLinkTimeout:platformDomainBrowserFallback:automaticPushToken:): init(apiBaseUrl: URL = ClikgateOptions.defaultApiBaseUrl, linkDomains: [String] = [], logLevel: ClikgateOptions.LogLevel = .warning, environment: ClikgateOptions.Environment = .production, pasteboardMode: ClikgateOptions.PasteboardMode = .off, waitForATT: Bool = false, attestation: ClikgateOptions.Attestation = .off, deferredDeepLinkTimeout: TimeInterval = 5, platformDomainBrowserFallback: Bool = true, automaticPushToken: Bool = true)
 ClikgateOptions.linkDomains: var linkDomains: [String]
 ClikgateOptions.logLevel: var logLevel: ClikgateOptions.LogLevel
 ClikgateOptions.pasteboardMode: var pasteboardMode: ClikgateOptions.PasteboardMode

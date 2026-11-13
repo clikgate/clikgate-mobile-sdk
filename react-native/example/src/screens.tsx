@@ -9,25 +9,23 @@ import {
   View,
 } from 'react-native';
 
+// Invite, stats, leaderboard and promo-code screens use the Engage features (ClikgateEngage, apps
+// without a backend). With a backend, fetch these from your server instead (docs/engage.md).
 import {
   Clikgate,
+  ClikgateEngage,
   ClikgateError,
   ClikgateProvider,
+  ShareApp,
   type ClikgateAttribution,
   type ClikgateDeepLink,
-  type ReferredBy,
-} from '@clikgate/react-native';
-// Invite, stats, leaderboard and promo-code screens use the Engage add-on (apps without a
-// backend). With a backend, fetch these from your server instead (docs/engage.md).
-import {
-  ClikgateEngage,
-  ShareApp,
   type LeaderboardEntry,
   type LeaderboardPage,
   type MyRank,
   type ReferralLink,
   type ReferralStats,
-} from '@clikgate/react-native-engage';
+  type ReferredBy,
+} from '@clikgate/react-native';
 
 import type { Route } from './App';
 import { ExampleConfig } from './config';

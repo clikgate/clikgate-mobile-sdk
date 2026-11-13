@@ -12,7 +12,7 @@
 /// Push (optional): FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_MESSAGING_SENDER_ID,
 /// FIREBASE_PROJECT_ID. Without them the app runs without push.
 class ExampleConfig {
-  /// `backend` (recommended path, needs samples/backend) or `engage` (no backend, clikgate_engage).
+  /// `backend` (recommended path, needs samples/backend) or `engage` (no backend, the Engage features of clikgate_flutter).
   static const variant = String.fromEnvironment('CLIKGATE_VARIANT', defaultValue: 'backend');
 
   /// Base URL of the sample backend (backend variant). 10.0.2.2 = the host from the Android emulator.

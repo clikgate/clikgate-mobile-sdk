@@ -3,9 +3,9 @@
 Deep links (direct and deferred), install attribution, goals, identifyUser, the installation ID, referee-side referral calls,
 feature switches and uninstall tracking for React Native — a TurboModule over the native Clikgate
 Android and iOS SDKs, with an Expo config plugin. Referrer-side features (referral links and stats,
-share helpers, leaderboards, promo codes) are in the optional pure-TypeScript add-on
-[`@clikgate/react-native-engage`](../react-native-engage) for apps without a backend; apps with a
-backend call the Clikgate API from their server instead.
+share helpers, leaderboards, promo codes) are the Engage features of this package (`ClikgateEngage`,
+pure TypeScript, since 2.1.0) for apps without a backend; apps with a backend call the Clikgate API
+from their server instead.
 
 ```ts
 import { Clikgate, ClikgateProvider, isClikgateMessage } from '@clikgate/react-native';
@@ -59,8 +59,8 @@ attribution is included in all of them. `goal` does nothing only when app attrib
 
 1. Remove every call: `Clikgate.configure`, `onDeepLink`, `goal`, `identifyUser`, `getInstallationId`, `setConsent`,
    `enableFirebaseForwarding`, `attributionMetadata` (and any Paystack / Flutterwave metadata built
-   from it), `referrals.*`, plus `@clikgate/react-native-engage` if you use it.
-2. Remove the package: `npm uninstall @clikgate/react-native @clikgate/react-native-engage`, then
+   from it), `referrals.*`, and `ClikgateEngage` if you use it.
+2. Remove the package: `npm uninstall @clikgate/react-native`, then
    `cd ios && pod install` (bare apps) or a fresh `npx expo prebuild --clean` (Expo).
 3. Remove the platform entries: the `@clikgate/react-native` entry in `app.json` / `app.config.*`
    `plugins` (Expo), or by hand the `applinks:<your link domains>` Associated Domains, the Android

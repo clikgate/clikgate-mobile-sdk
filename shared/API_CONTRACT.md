@@ -338,7 +338,7 @@ Resolved asynchronously; the result arrives on the next `/install` poll or as th
 ### Referrals
 
 `apply-code` and `referred-by` are called by the **core** SDKs; `link` and `me` only by the
-**Engage add-on** (spec 0.4 / 17A; apps with a backend use the control-plane referrer API instead).
+**Engage features** (spec 0.4 / 17A; apps with a backend use the control-plane referrer API instead).
 
 All referral calls need a successful `/install`. `link` and `me` also need an
 identified installation (`/identify`), and, if the program's
@@ -398,6 +398,23 @@ can check `detectPatterns(for: [.probableWebURL])` without a paste prompt). On f
 `cgdl_[0-9A-Za-z]{26}` found anywhere in the string as `pasteboard_token`. Tokens are
 single-use. Opening that URL in a browser just redirects to the App Store.
 
+`pasteboard_outcome` (optional, iOS only) says what that first-launch paste step saw, so the
+dashboard can measure the iPhone match rate. It is omitted when the paste flow didn't run
+(`pasteboardMode` `off`, `features.pasteboard_matching` not `on_interstitial_tap`, SDK blocked,
+opted out or consent denied), and resent unchanged when `/install` is retried. It is an enum about
+the paste step, never the pasteboard contents.
+
+| value | meaning |
+|---|---|
+| `token_found` | a `cgdl_` token was read and is sent as `pasteboard_token` (also a Paste button token that arrives before the first `/install`) |
+| `no_link` | `detectPatterns` said no web URL is likely (iOS 13: `hasStrings` false), so nothing was read |
+| `no_token` | the pasteboard was read but held no Clikgate token |
+| `denied` | a web URL was likely but reading returned nil (the user tapped "Don't Allow") |
+| `paste_control` | `pasteboardMode` `.pasteControlOnly`: no automatic read; a token may arrive later through the Paste button retry |
+
+Unknown values are rejected with 422. The server also stores `expired` (a token was sent but was not
+redeemable) and sets `token_found` when a `.pasteControlOnly` retry redeems a token.
+
 ## Play Install Referrer (Android)
 
 Clikgate builds the Play URL with
@@ -446,7 +463,7 @@ Feature of each endpoint: `/referrals/*` → `referrals`; `/leaderboards/*` → 
 
 ### Leaderboards (`leaderboards`)
 
-Called only by the Engage add-on (17A).
+Called only by the Engage features (17A).
 
 All need a completed `/install`; `me`/`around-me` also an identified installation (and a verified
 identity when the board's program has `require_identity_token`). Only boards with
@@ -487,7 +504,7 @@ anything about referees are never returned. `pending` is omitted (null) when the
 
 ### Offline / promo codes (`offline_codes`)
 
-`/codes/redeem` is called only by the Engage add-on (17A); backends use `POST /v1/codes/redeem`.
+`/codes/redeem` is called only by the Engage features (17A); backends use `POST /v1/codes/redeem`.
 
 `POST /v1/sdk/codes/redeem` `{"code": "LAGOS50"}` (case-insensitive; spaces and dashes ignored;
 rate limit 5/hour/installation) → `200`:
@@ -510,7 +527,7 @@ Server-to-server only (spec v3 new edition, 9B.3): the customer's pepper must ne
 there is no `/v1/sdk/identity-signals` endpoint and no SDK method. Use `POST /v1/identity-signals`
 from the app's backend (see the backend's `docs/IDENTITY_CHECKS.md`).
 
-### Share helpers (client-only, Engage add-on)
+### Share helpers (client-only, Engage features)
 
 No endpoint. The Engage packages' `share.whatsApp(text)` (the app builds the text, typically from
 `referrals.createLink`'s `url`) opens:
@@ -642,6 +659,7 @@ The SDK never decides "blocked" by itself.
 | `idfv` | string \| null | iOS `UIDevice.identifierForVendor`, under the same condition as `device_check_token`. The only device identifier the iOS SDK sends. |
 | `google_on_device_measurement` | object \| null: `odm_info` (string, required), `sdk_version` | iOS, first install only, when the app called `enableGoogleOnDeviceMeasurement()` and Google's `GoogleAdsOnDeviceConversion` SDK is in the app: the non-empty string from `ConversionManager.sharedInstance.fetchAggregateConversionInfo(for: .installation)`. Not sent when `ad_user_data` is `denied`. Backend: store encrypted, 30-day retention, pass as `odm_info` in Google App Conversion API calls where accepted. |
 | `pasteboard_token` | unchanged | The **clipboard deferred-link token** of B.2: `cgdl_` + 26 base62, copied by the landing page only after "Open in app". From 1.2.0 the iOS SDK reads the pasteboard only when the app opted in (`pasteboardMode` defaults to `off`) and the app's `features.pasteboard_matching` is `on_interstitial_tap` (per-app, default `off`). |
+| `pasteboard_outcome` | new, optional | iOS only: what the first-launch paste step saw (`token_found` \| `no_link` \| `no_token` \| `denied` \| `paste_control`); omitted when the paste flow didn't run. See "Pasteboard tokens (iOS)". |
 
 Removed from iOS requests in 1.2.0 (the schema keeps them for older SDKs): `screen` (only used for
 probabilistic matching) and `is_rooted` (jailbreak heuristics). The backend must never run
@@ -707,7 +725,7 @@ don't keep the request IP beyond rate limiting.
 
 ### SDK-side error codes (Change 03)
 
-Not sent by the server; the SDKs return them to the app (and to the Engage add-on through the
+Not sent by the server; the SDKs return them to the app (and to the Engage features through the
 request context) without a network call:
 
 | `code` | When |

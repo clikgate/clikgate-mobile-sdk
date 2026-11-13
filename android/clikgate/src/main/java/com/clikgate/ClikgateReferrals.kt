@@ -15,7 +15,7 @@ import org.json.JSONObject
  *
  * Referrer-side features (creating the user's link, stats, sharing, leaderboards, promo codes) are
  * not in the core SDK: call the Clikgate API from your backend (recommended), or use the optional
- * Engage add-on `com.clikgate:clikgate-engage` in apps without a backend.
+ * Engage features (`ClikgateEngage`) in apps without a backend.
  *
  * When the `referrals` feature is switched off for the app, every call fails with
  * [ClikgateError.FEATURE_DISABLED] without a network call (or after the server's

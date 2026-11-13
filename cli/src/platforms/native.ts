@@ -11,7 +11,7 @@ import {
   newFullBackupContent,
 } from '../edit/backupRules';
 import { setBuildSetting } from '../edit/pbxproj';
-import { addApplinks, addBoolIfMissing, applinksHosts, newEntitlements } from '../edit/plistEdit';
+import { APS_ENVIRONMENT, addApplinks, addBoolIfMissing, applinksHosts, newEntitlements, setString } from '../edit/plistEdit';
 import { rel } from '../fsutil';
 import type { PlanBuilder } from '../plan';
 import { isDebugSourceSet, type AndroidModule } from '../project/android';
@@ -155,6 +155,52 @@ export function planAndroidBackup(pb: PlanBuilder, mod: AndroidModule): void {
 }
 
 /**
+ * Push Notifications capability (`aps-environment`) for uninstall tracking: the SDK's
+ * `automaticPushToken` registers for remote notifications without asking for permission, which
+ * needs this entitlement. Added always: the CLI can't read whether uninstall tracking is on (its
+ * token doesn't see feature switches), and the entitlement alone shows nothing and asks nothing.
+ * An existing value is kept.
+ */
+function addPush(text: string, env: 'development' | 'production', overwrite = false): string {
+  return setString(text, APS_ENVIRONMENT, env, overwrite);
+}
+const PUSH_SUMMARY = (env: string) => `push notifications for uninstall tracking (aps-environment ${env})`;
+
+/** Signing note shown whenever the setup adds `aps-environment`. */
+export const PUSH_SIGNING_REMINDER =
+  'iOS: the Push Notifications capability (aps-environment) was added for uninstall tracking. Automatic signing updates your provisioning profiles; with manual signing, enable Push Notifications on the App ID and download new profiles.';
+
+/**
+ * Projects without link domains: add `aps-environment` to the entitlements files the build
+ * configurations already use (none: a manual step).
+ */
+export function planIosPushEntitlements(pb: PlanBuilder, ios: IosProject): void {
+  const root = pb.root;
+  const seen = new Set<string>();
+  for (const c of ios.configs) {
+    if (!c.entitlements || seen.has(c.entitlements)) continue;
+    seen.add(c.entitlements);
+    const fileRel = rel(root, path.join(ios.srcRoot, c.entitlements));
+    const t = pb.current(fileRel);
+    if (t === null) continue;
+    const env = c.debug ? 'development' : 'production';
+    let a: string;
+    try {
+      a = addPush(t, env);
+    } catch {
+      continue;
+    }
+    if (a !== t) {
+      pb.change(fileRel, a, PUSH_SUMMARY(env));
+      pb.reminder(PUSH_SIGNING_REMINDER);
+    }
+  }
+  if (seen.size === 0) {
+    pb.manual('iOS Push Notifications capability', 'Uninstall tracking needs the Push Notifications capability: in Xcode, target › Signing & Capabilities › + Capability › Push Notifications.');
+  }
+}
+
+/**
  * iOS Associated Domains per build configuration: Release/Profile entitlements get the live
  * domains; a separate Debug entitlements file also gets the test domain. Both are linked
  * with CODE_SIGN_ENTITLEMENTS.
@@ -168,6 +214,12 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
   const debug = ios.configs.filter((c) => c.debug);
   let pbx = pb.current(pbxRel)!;
   const linked: string[] = [];
+  let pushAdded = false;
+  const withPush = (text: string, env: 'development' | 'production', overwrite = false): string => {
+    const out = addPush(text, env, overwrite);
+    if (out !== text) pushAdded = true;
+    return out;
+  };
 
   // Release-like configurations share one file.
   const existingRelease = release.find((c) => c.entitlements)?.entitlements;
@@ -176,12 +228,14 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
   const releaseText = pb.current(releaseRel);
   let releaseAfter: string;
   if (releaseText === null) {
-    releaseAfter = newEntitlements(domains.live);
-    pb.change(releaseRel, releaseAfter, `associated domains: ${list(domains.live)}`);
+    releaseAfter = withPush(newEntitlements(domains.live), 'production');
+    pb.change(releaseRel, releaseAfter, `associated domains: ${list(domains.live)}; ${PUSH_SUMMARY('production')}`);
   } else {
-    releaseAfter = addApplinks(releaseText, domains.live);
-    if (releaseAfter !== releaseText) pb.change(releaseRel, releaseAfter, `associated domains: ${list(domains.live)}`);
-    else pb.done(`iOS: associated domains in ${releaseFile}`);
+    const linked = addApplinks(releaseText, domains.live);
+    releaseAfter = withPush(linked, 'production');
+    const what = [linked !== releaseText ? `associated domains: ${list(domains.live)}` : '', releaseAfter !== linked ? PUSH_SUMMARY('production') : ''].filter(Boolean).join('; ');
+    if (releaseAfter !== releaseText) pb.change(releaseRel, releaseAfter, what);
+    else pb.done(`iOS: associated domains and push notifications in ${releaseFile}`);
   }
   for (const c of release) {
     if (c.entitlements === releaseFile) continue;
@@ -189,8 +243,8 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
       // Another release-like configuration with its own file: add the live domains there too.
       const t = pb.current(srcRel(c.entitlements));
       if (t !== null) {
-        const a = addApplinks(t, domains.live);
-        if (a !== t) pb.change(srcRel(c.entitlements), a, `associated domains: ${list(domains.live)} (${c.name})`);
+        const a = withPush(addApplinks(t, domains.live), 'production');
+        if (a !== t) pb.change(srcRel(c.entitlements), a, `associated domains: ${list(domains.live)}, push notifications (${c.name})`);
       }
       continue;
     }
@@ -236,11 +290,14 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
     const debugRel = srcRel(debugFile);
     const debugText = pb.current(debugRel);
     if (debugText === null) {
-      // A copy of the release entitlements (so other capabilities match) plus the test domain.
-      pb.change(debugRel, addApplinks(releaseAfter, debugHosts), `adds ${domains.test ?? 'nothing'}, Debug configuration only`);
+      // A copy of the release entitlements (so other capabilities match) plus the test domain,
+      // with the development APNs environment.
+      pb.change(debugRel, withPush(addApplinks(releaseAfter, debugHosts), 'development', true), `adds ${domains.test ?? 'nothing'} and aps-environment development, Debug configuration only`);
     } else {
-      const a = addApplinks(debugText, debugHosts);
-      if (a !== debugText) pb.change(debugRel, a, `associated domains${domains.test ? ` with ${domains.test}` : ''}, Debug configuration only`);
+      const linked = addApplinks(debugText, debugHosts);
+      const a = withPush(linked, 'development');
+      const what = [linked !== debugText ? `associated domains${domains.test ? ` with ${domains.test}` : ''}` : '', a !== linked ? PUSH_SUMMARY('development') : ''].filter(Boolean).join('; ');
+      if (a !== debugText) pb.change(debugRel, a, `${what}, Debug configuration only`);
       else pb.done(`iOS: Debug entitlements (${debugFile})`);
     }
     for (const c of debug) {
@@ -251,6 +308,7 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
   }
   if (linked.length) pb.change(pbxRel, pbx, `link the entitlements files: ${linked.join(', ')}`);
   else pb.done('iOS: entitlements linked per build configuration');
+  if (pushAdded) pb.reminder(PUSH_SIGNING_REMINDER);
 
   if (opts.flutter) {
     const plistFile = ios.configs.find((c) => c.infoPlist)?.infoPlist;

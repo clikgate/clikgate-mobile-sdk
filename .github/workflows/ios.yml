@@ -41,7 +41,7 @@ jobs:
         working-directory: ios
         run: ./scripts/check_api.sh
 
-      - name: Size budgets (core < 400 KB, Engage < 80 KB)
+      - name: Size budgets (core < 410 KB, Engage < 95 KB)
         working-directory: ios
         run: ./scripts/check_size.sh
 
@@ -49,7 +49,6 @@ jobs:
         working-directory: ios
         run: |
           xcodebuild build -scheme Clikgate -destination "generic/platform=iOS" -derivedDataPath build/dd -quiet
-          xcodebuild build -scheme ClikgateEngage -destination "generic/platform=iOS" -derivedDataPath build/dd -quiet
 
       - name: Sample app (simulator, unsigned)
         working-directory: ios/Sample
@@ -58,11 +57,9 @@ jobs:
             -destination "generic/platform=iOS Simulator" -derivedDataPath ../build/sample \
             CODE_SIGNING_ALLOWED=NO -quiet
 
-      - name: CocoaPods lint (Core default subspec and Engage)
+      - name: CocoaPods lint (one pod, core + Engage)
         working-directory: ios
-        run: |
-          pod lib lint Clikgate.podspec --allow-warnings --platforms=ios
-          pod lib lint Clikgate.podspec --allow-warnings --platforms=ios --subspec=Engage
+        run: pod lib lint Clikgate.podspec --allow-warnings --platforms=ios
 
       - name: XCFrameworks (Clikgate + ClikgateEngage) + size report
         working-directory: ios
@@ -96,8 +93,8 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
 
-      # Core and Engage ship together (one podspec with the Engage subspec, one SPM package with
-      # both products), so the tag must match the core version, the Engage version and the podspec.
+      # Core and Engage ship together (one pod, one SPM product with both modules), so the tag must
+      # match the core version, the Engage version and the podspec.
       - name: Check versions match the tag (core, Engage, podspec)
         run: |
           VERSION="${GITHUB_REF_NAME#ios-v}"

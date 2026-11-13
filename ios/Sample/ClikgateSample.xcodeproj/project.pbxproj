@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		13DE558C30A9B672420ED298 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C475A2AF1C2D689A4A9056 /* AppDelegate.swift */; };
 		58770E9251AA7EA9AC6B8B2F /* Clikgate in Frameworks */ = {isa = PBXBuildFile; productRef = CA0F6770FD7F032A67EE9510 /* Clikgate */; };
-		8F4025EFFE7B69F3174790D1 /* ClikgateEngage in Frameworks */ = {isa = PBXBuildFile; productRef = 5581098E5C183524A13E5897 /* ClikgateEngage */; };
 		B3E3E0DC2A9E171CA2B213E2 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141549482CE3B3F05637CE22 /* MainViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -20,7 +19,7 @@
 		D5E35224109E5B603BF7827A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D97A02A2C5D27453CCF47A2C /* ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ios; path = ..; sourceTree = SOURCE_ROOT; };
 		EE185F5FCAF89BD3B9D54858 /* ClikgateSample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ClikgateSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		"TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_E4B144DC-DAAF-4F9F-8EDA-9C58F9FB2C5F" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,7 +28,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				58770E9251AA7EA9AC6B8B2F /* Clikgate in Frameworks */,
-				8F4025EFFE7B69F3174790D1 /* ClikgateEngage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,10 +70,10 @@
 			path = ClikgateSample;
 			sourceTree = "<group>";
 		};
-		"TEMP_3EB01533-E69F-402C-8AA0-626B04595D3F" /* Sample */ = {
+		"TEMP_13B196C2-58F5-42F9-8E98-3EB8EC6308CD" /* Sample */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */,
+				"TEMP_E4B144DC-DAAF-4F9F-8EDA-9C58F9FB2C5F" /* Config.xcconfig */,
 			);
 			path = Sample;
 			sourceTree = "<group>";
@@ -97,7 +95,6 @@
 			name = ClikgateSample;
 			packageProductDependencies = (
 				CA0F6770FD7F032A67EE9510 /* Clikgate */,
-				5581098E5C183524A13E5897 /* ClikgateEngage */,
 			);
 			productName = ClikgateSample;
 			productReference = EE185F5FCAF89BD3B9D54858 /* ClikgateSample.app */;
@@ -174,7 +171,7 @@
 		};
 		A0B7F1717AAB6D82A9111757 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_E4B144DC-DAAF-4F9F-8EDA-9C58F9FB2C5F" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -238,7 +235,7 @@
 		};
 		B02B158091BFB08671990430 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_3F5D1E40-BD19-440A-9C95-464C4A6D1FAF" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_E4B144DC-DAAF-4F9F-8EDA-9C58F9FB2C5F" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -344,10 +341,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		5581098E5C183524A13E5897 /* ClikgateEngage */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ClikgateEngage;
-		};
 		CA0F6770FD7F032A67EE9510 /* Clikgate */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Clikgate;

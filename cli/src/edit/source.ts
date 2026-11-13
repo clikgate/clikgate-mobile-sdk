@@ -595,4 +595,155 @@ export function editUIKitSceneDelegate(text: string, label: string): SourceResul
   return { kind: 'change', text: out };
 }
 
+// ------------------------------------------------- APNs token forward (automaticPushToken, uninstall tracking)
+
+/**
+ * Which SDK receives the APNs token: the native iOS SDK (`Clikgate.shared`) or the React Native
+ * module (`ClikgateRN`, which keeps a token that arrives before `Clikgate.configure` runs in JS).
+ */
+export type PushForwardTarget = 'native' | 'react-native';
+
+/** True when the file already passes the APNs device token to Clikgate. */
+export function hasPushTokenForward(text: string): boolean {
+  return /setPushToken\s*\(\s*deviceToken\s*:/.test(text) || /setPushTokenWithDeviceToken\s*:/.test(text);
+}
+
+/** The one forward line, per language and target. `token` is the method's parameter name. */
+export function pushForwardLine(lang: 'swift' | 'objc', target: PushForwardTarget, token = 'deviceToken'): string {
+  if (lang === 'swift') return target === 'native' ? `Clikgate.shared.setPushToken(deviceToken: ${token})` : `ClikgateRN.setPushToken(deviceToken: ${token})`;
+  return target === 'native' ? `[Clikgate.shared setPushTokenWithDeviceToken:${token}];` : `[ClikgateRN setPushTokenWithDeviceToken:${token}];`;
+}
+
+/** Manual-step snippet (SwiftUI apps without an AppDelegate, or files the setup can't edit). */
+export function pushForwardSnippet(lang: 'swift' | 'objc', target: PushForwardTarget, swiftUI = false): string {
+  if (lang === 'objc') {
+    return [
+      '- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {',
+      `  ${pushForwardLine('objc', target)}`,
+      '}',
+    ].join('\n');
+  }
+  const method = [
+    'func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {',
+    `    ${pushForwardLine('swift', target)}`,
+    '}',
+  ];
+  if (!swiftUI) return method.join('\n');
+  return [
+    'import Clikgate',
+    '',
+    'final class AppDelegate: NSObject, UIApplicationDelegate {',
+    ...method.map((l) => '    ' + l),
+    '}',
+    '',
+    '// in your @main App struct:',
+    '@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate',
+  ].join('\n');
+}
+
+function addSwiftModuleImport(text: string, module: string): string {
+  if (new RegExp(`^(?:@_exported\\s+|internal\\s+|public\\s+)?import\\s+${module}\\s*$`, 'm').test(text)) return text;
+  const after = afterLastImport(text, /^(?:@_exported\s+|internal\s+|public\s+|@testable\s+)?import\s+[A-Za-z]/gm);
+  const block = [S, `import ${module}`, E].join('\n');
+  if (after < 0) return block + '\n\n' + text;
+  return text.slice(0, after) + '\n' + block + text.slice(after);
+}
+
+/**
+ * UIKit AppDelegate (Swift): pass the APNs token to Clikgate in
+ * `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`. Adds the line to an existing
+ * method, or adds the method (an `override` that calls `super` for Expo's `ExpoAppDelegate`).
+ * Idempotent: a file that already forwards the token is left alone.
+ */
+export function editSwiftPushForward(text: string, target: PushForwardTarget, label: string): SourceResult {
+  if (hasPushTokenForward(text)) return { kind: 'done' };
+  const unit = unitOf(text);
+  const manual = (reason: string): SourceResult => ({ kind: 'manual', reason: `${label}: ${reason}`, snippet: pushForwardSnippet('swift', target) });
+  const module = target === 'native' ? 'Clikgate' : 'ClikgateReactNative';
+  const all = blocks(text);
+  const fn = /func\s+application\s*\(\s*_\s+([A-Za-z0-9_]+)\s*:\s*UIApplication\s*,\s*didRegisterForRemoteNotificationsWithDeviceToken\s+([A-Za-z0-9_]+)\s*:\s*Data\s*\)\s*\{/.exec(text);
+  let out: string;
+  if (fn) {
+    const open = fn.index + fn[0].length - 1;
+    if (!all.find((b) => b.open === open && b.close >= 0)) return manual('couldn\'t read application(_:didRegisterForRemoteNotificationsWithDeviceToken:)');
+    if (out_hasOnSameLine(text, open)) return manual('the method body starts on the same line');
+    const indent = bodyIndent(text, open, indentAt(text, fn.index) + unit);
+    const lineEnd = lineEndAt(text, open);
+    out = text.slice(0, lineEnd) + '\n' + indentLines([S, pushForwardLine('swift', target, fn[2]), E], indent) + text.slice(lineEnd);
+  } else {
+    const cls = /class\s+[A-Za-z0-9_]+\s*:([^{]*)\{/g;
+    let m: RegExpExecArray | null;
+    let found: RegExpExecArray | undefined;
+    while ((m = cls.exec(text))) {
+      if (/\b(UIApplicationDelegate|ExpoAppDelegate|RCTAppDelegate)\b/.test(m[1])) {
+        found = m;
+        break;
+      }
+    }
+    if (!found) return manual('no AppDelegate class found');
+    const clsBlock = all.find((b) => b.open === found!.index + found![0].length - 1);
+    if (!clsBlock || clsBlock.close < 0) return manual('couldn\'t read the AppDelegate class');
+    const expo = /\bExpoAppDelegate\b/.test(found[1]);
+    const method = [
+      S,
+      `${expo ? 'public override ' : ''}func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {`,
+      ...(expo ? [`${unit}super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)`] : []),
+      `${unit}${pushForwardLine('swift', target)}`,
+      '}',
+      E,
+    ];
+    const memberIndent = indentAt(text, found.index) + unit;
+    out = insertBeforeLine(text, lineStartAt(text, clsBlock.close), indentLines(method, memberIndent));
+  }
+  out = addSwiftModuleImport(out, module);
+  return { kind: 'change', text: out };
+}
+
+/**
+ * UIKit AppDelegate (Objective-C, `.m` / `.mm`): the same forward. Imports the module's generated
+ * Swift header with `#import` (works in Objective-C++ too, where `@import` needs -fcxx-modules).
+ */
+export function editObjcPushForward(text: string, target: PushForwardTarget, label: string): SourceResult {
+  if (hasPushTokenForward(text)) return { kind: 'done' };
+  const manual = (reason: string): SourceResult => ({ kind: 'manual', reason: `${label}: ${reason}`, snippet: pushForwardSnippet('objc', target) });
+  const unit = unitOf(text);
+  const all = blocks(text);
+  const fn = /-\s*\(\s*void\s*\)\s*application\s*:\s*\(\s*UIApplication\s*\*\s*\)\s*[A-Za-z0-9_]+\s+didRegisterForRemoteNotificationsWithDeviceToken\s*:\s*\(\s*NSData\s*\*\s*\)\s*([A-Za-z0-9_]+)\s*\{/.exec(text);
+  let out: string;
+  if (fn) {
+    const open = fn.index + fn[0].length - 1;
+    if (!all.find((b) => b.open === open && b.close >= 0)) return manual('couldn\'t read application:didRegisterForRemoteNotificationsWithDeviceToken:');
+    if (out_hasOnSameLine(text, open)) return manual('the method body starts on the same line');
+    const indent = bodyIndent(text, open, unit);
+    const lineEnd = lineEndAt(text, open);
+    out = text.slice(0, lineEnd) + '\n' + indentLines([S, pushForwardLine('objc', target, fn[1]), E], indent) + text.slice(lineEnd);
+  } else {
+    const impl = /^@implementation\s+([A-Za-z0-9_]*AppDelegate)\b.*$/m.exec(text);
+    if (!impl) return manual('no @implementation …AppDelegate found');
+    const end = /^@end\b/m.exec(text.slice(impl.index));
+    if (!end) return manual('the @implementation has no @end');
+    const endAt = impl.index + end.index;
+    const method = [
+      S,
+      '- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken',
+      '{',
+      `${unit}if ([[self superclass] instancesRespondToSelector:_cmd]) {`,
+      `${unit}${unit}[super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];`,
+      `${unit}}`,
+      `${unit}${pushForwardLine('objc', target)}`,
+      '}',
+      E,
+    ];
+    out = insertBeforeLine(text, endAt, method.join('\n'));
+  }
+  const header = target === 'native' ? 'Clikgate/Clikgate-Swift.h' : 'ClikgateReactNative/ClikgateReactNative-Swift.h';
+  const fallback = target === 'native' ? 'Clikgate-Swift.h' : 'ClikgateReactNative-Swift.h';
+  if (!out.includes(fallback)) {
+    const imports = [S, `#if __has_include(<${header}>)`, `#import <${header}>`, '#else', `#import "${fallback}"`, '#endif', E].join('\n');
+    const after = afterLastImport(out, /^#import\s+[<"]/gm);
+    out = after < 0 ? imports + '\n\n' + out : out.slice(0, after) + '\n' + imports + out.slice(after);
+  }
+  return { kind: 'change', text: out };
+}
+
 export { TEST_LINK_DOMAIN };

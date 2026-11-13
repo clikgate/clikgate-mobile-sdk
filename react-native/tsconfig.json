@@ -2,8 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "@clikgate/react-native": ["./src/index"],
-      "@clikgate/react-native-engage": ["../react-native-engage/src/index"]
+      "@clikgate/react-native": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

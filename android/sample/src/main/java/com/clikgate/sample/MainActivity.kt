@@ -87,7 +87,7 @@ class MainActivity : Activity() {
             show("identifyUser sent")
         })
 
-        // Invite link + stats use the optional Engage add-on (no backend). Apps with a backend should
+        // Invite link + stats use the Engage features (no backend). Apps with a backend should
         // get the link and stats from their server (Clikgate control-plane API) instead.
         // share.referralLink gives each app its own version of the link, so Clikgate knows where it was shared.
         root.addView(button("Share invite link") {

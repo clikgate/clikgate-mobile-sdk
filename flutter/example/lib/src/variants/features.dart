@@ -5,8 +5,8 @@ import 'package:flutter/widgets.dart';
 ///
 /// - [BackendFeatures] (`CLIKGATE_VARIANT=backend`, the recommended path): the app's own
 ///   backend (`samples/backend`) calls the Clikgate control-plane API with its API key.
-/// - [EngageFeatures] (`CLIKGATE_VARIANT=engage`): no backend, the optional `clikgate_engage`
-///   add-on calls the `/v1/sdk/*` Engage endpoints.
+/// - [EngageFeatures] (`CLIKGATE_VARIANT=engage`): no backend; the Engage features
+///   (`package:clikgate_flutter/engage.dart`) call the `/v1/sdk/*` Engage endpoints.
 ///
 /// Core SDK features (deep links, attribution, apply code, referred-by, push) are the same in
 /// both variants and use `clikgate_flutter` directly.

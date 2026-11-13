@@ -1,11 +1,11 @@
-import 'package:clikgate_engage/clikgate_engage.dart';
+import 'package:clikgate_flutter/engage.dart';
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/material.dart';
 
 import 'screens.dart' show describeError;
 
 /// Promo / offline code redemption (a code from a poster, flyer, agent or
-/// USSD menu), with the Engage add-on (Engage variant only; a backend would
+/// USSD menu), with the Engage features (Engage variant only; a backend would
 /// call `POST /v1/codes/redeem` server-side instead).
 class PromoCodeScreen extends StatefulWidget {
   const PromoCodeScreen({super.key, required this.engage});

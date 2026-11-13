@@ -12,7 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/** The internal request context the Engage add-on uses, and its error report-back. */
+/** The internal request context the Engage features use, and its error report-back. */
 @OptIn(ClikgateInternalApi::class)
 @RunWith(RobolectricTestRunner::class)
 class RequestContextTest {

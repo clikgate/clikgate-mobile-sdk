@@ -3,9 +3,9 @@ import { addAppLinks, addDebugAppLinks, setApplicationName, verifiedHosts } from
 import { addCatalogEntries, addDependency, blocks, dependencyLine } from '../src/edit/gradle';
 import { addExpoPlugin, addPackageDependency } from '../src/edit/json';
 import { addBuildSetting, appTargets, replaceBuildSetting, setting } from '../src/edit/pbxproj';
-import { addApplinks, applinksHosts } from '../src/edit/plistEdit';
+import { APS_ENVIRONMENT, addApplinks, applinksHosts, apsEnvironment, setString } from '../src/edit/plistEdit';
 import { addDependency as addPub, dependencyConstraint } from '../src/edit/pubspec';
-import { editDartMain, editJsRoot, editKotlinActivity, editKotlinApplication, editSwiftUIApp, editUIKitAppDelegate, editUIKitSceneDelegate } from '../src/edit/source';
+import { editDartMain, editJsRoot, editKotlinActivity, editKotlinApplication, editObjcPushForward, editSwiftPushForward, editSwiftUIApp, editUIKitAppDelegate, editUIKitSceneDelegate, pushForwardSnippet } from '../src/edit/source';
 import { parseArgs, UsageError } from '../src/args';
 
 const cfg = { sdkKey: 'cg_sdk_test_k', liveDomains: ['go.acme.com'], testDomain: 'dev.ciz.to' };
@@ -102,9 +102,9 @@ describe('plist, pbxproj, gradle, pubspec, json', () => {
   it('gradle: brace scanner ignores strings and comments; dependency lines per DSL', () => {
     const g = 'android {\n  defaultConfig { applicationId "a{b" } // }\n}\ndependencies {\n    implementation "x:y:1" /* } */\n}\n';
     expect(blocks(g).filter((b) => b.depth === 0).map((b) => b.name)).toEqual(['android', 'dependencies']);
-    expect(addDependency(g, dependencyLine(false, false))).toContain("    implementation 'com.clikgate:clikgate-android:2.0.0'\n    // clikgate-setup:end\n}\n");
-    expect(dependencyLine(true, false)).toBe('implementation("com.clikgate:clikgate-android:2.0.0")');
-    expect(addCatalogEntries('[versions]\nagp = "8"\n\n[libraries]\nx = { module = "a:b" }\n')).toBe('[versions]\nagp = "8"\nclikgate = "2.0.0"\n\n[libraries]\nx = { module = "a:b" }\nclikgate-android = { group = "com.clikgate", name = "clikgate-android", version.ref = "clikgate" }\n');
+    expect(addDependency(g, dependencyLine(false, false))).toContain("    implementation 'com.clikgate:clikgate-android:2.1.0'\n    // clikgate-setup:end\n}\n");
+    expect(dependencyLine(true, false)).toBe('implementation("com.clikgate:clikgate-android:2.1.0")');
+    expect(addCatalogEntries('[versions]\nagp = "8"\n\n[libraries]\nx = { module = "a:b" }\n')).toBe('[versions]\nagp = "8"\nclikgate = "2.1.0"\n\n[libraries]\nx = { module = "a:b" }\nclikgate-android = { group = "com.clikgate", name = "clikgate-android", version.ref = "clikgate" }\n');
   });
   it('pubspec: keeps comments and adds after the last dependency', () => {
     const y = 'name: a\ndependencies:\n  flutter:\n    sdk: flutter\n  # icons\n  cupertino_icons: ^1.0.8 # keep\n\n# dev\ndev_dependencies:\n  lints: ^5.0.0\n';
@@ -193,5 +193,74 @@ describe('goal snippets', () => {
       expect(snippet, platform).toMatch(/Provider\.PAYSTACK|\.paystack|Provider\.Paystack/);
       expect(snippet, platform).not.toContain('payment(');
     }
+  });
+});
+
+describe('uninstall tracking: aps-environment and the APNs token forward line', () => {
+  const ent = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+\t<key>com.apple.developer.associated-domains</key>
+\t<array>
+\t\t<string>applinks:go.acme.com</string>
+\t</array>
+</dict>
+</plist>
+`;
+
+  it('adds aps-environment once, keeps an existing value unless asked to overwrite', () => {
+    const a = setString(ent, APS_ENVIRONMENT, 'production');
+    expect(apsEnvironment(a)).toBe('production');
+    expect(a).toContain('\t<key>aps-environment</key>\n\t<string>production</string>');
+    expect(setString(a, APS_ENVIRONMENT, 'development')).toBe(a);
+    expect(apsEnvironment(setString(a, APS_ENVIRONMENT, 'development', true))).toBe('development');
+    expect(applinksHosts(setString(a, APS_ENVIRONMENT, 'development', true))).toEqual(['go.acme.com']);
+  });
+
+  it('Swift: adds the method to a UIKit AppDelegate, idempotent', () => {
+    const app = `import UIKit\n\n@main\nclass AppDelegate: UIResponder, UIApplicationDelegate {\n    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {\n        return true\n    }\n}\n`;
+    const r = editSwiftPushForward(app, 'native', 'AppDelegate.swift');
+    expect(r.kind).toBe('change');
+    const text = (r as { text: string }).text;
+    expect(text).toContain('    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\n        Clikgate.shared.setPushToken(deviceToken: deviceToken)\n    }');
+    expect(text).toMatch(/^import Clikgate$/m);
+    expect(editSwiftPushForward(text, 'native', 'AppDelegate.swift').kind).toBe('done');
+  });
+
+  it('Swift: adds the line to an existing method, using its parameter name', () => {
+    const app = `import UIKit\nimport ClikgateReactNative\n\nclass AppDelegate: UIResponder, UIApplicationDelegate {\n  func application(_ app: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken token: Data) {\n    Other.register(token)\n  }\n}\n`;
+    const r = editSwiftPushForward(app, 'react-native', 'AppDelegate.swift') as { kind: string; text: string };
+    expect(r.kind).toBe('change');
+    expect(r.text).toContain('{\n    // clikgate-setup:start\n    ClikgateRN.setPushToken(deviceToken: token)\n    // clikgate-setup:end\n    Other.register(token)');
+    expect(r.text.match(/import ClikgateReactNative/g)).toHaveLength(1);
+  });
+
+  it('Swift: Expo AppDelegate gets a public override that calls super', () => {
+    const app = `internal import Expo\n\n@main\nclass AppDelegate: ExpoAppDelegate {\n  public override func application(\n    _ application: UIApplication,\n    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil\n  ) -> Bool {\n    return super.application(application, didFinishLaunchingWithOptions: launchOptions)\n  }\n}\n`;
+    const r = editSwiftPushForward(app, 'react-native', 'AppDelegate.swift') as { text: string };
+    expect(r.text).toContain('public override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\n    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)\n    ClikgateRN.setPushToken(deviceToken: deviceToken)');
+  });
+
+  it('Swift: no AppDelegate class is a manual step with the snippet', () => {
+    const r = editSwiftPushForward('import SwiftUI\n', 'native', 'MyApp.swift');
+    expect(r.kind).toBe('manual');
+    expect((r as { snippet: string }).snippet).toContain('Clikgate.shared.setPushToken(deviceToken: deviceToken)');
+    expect(pushForwardSnippet('swift', 'native', true)).toContain('@UIApplicationDelegateAdaptor');
+  });
+
+  it('Objective-C: Expo/RN template method gets the line; a new method calls super only when it exists', () => {
+    const mm = `#import "AppDelegate.h"\n#import <React/RCTBundleURLProvider.h>\n\n@implementation AppDelegate\n\n- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken\n{\n  return [super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];\n}\n\n@end\n`;
+    const r = editObjcPushForward(mm, 'react-native', 'AppDelegate.mm') as { kind: string; text: string };
+    expect(r.kind).toBe('change');
+    expect(r.text).toContain('{\n  // clikgate-setup:start\n  [ClikgateRN setPushTokenWithDeviceToken:deviceToken];\n  // clikgate-setup:end\n  return [super');
+    expect(r.text).toContain('#import <ClikgateReactNative/ClikgateReactNative-Swift.h>');
+    expect(editObjcPushForward(r.text, 'react-native', 'AppDelegate.mm').kind).toBe('done');
+
+    const m = `#import "AppDelegate.h"\n\n@implementation AppDelegate\n\n- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {\n  return YES;\n}\n\n@end\n`;
+    const n = editObjcPushForward(m, 'native', 'AppDelegate.m') as { text: string };
+    expect(n.text).toContain('[Clikgate.shared setPushTokenWithDeviceToken:deviceToken];');
+    expect(n.text).toContain('instancesRespondToSelector:_cmd');
+    expect(n.text.indexOf('didRegisterForRemoteNotificationsWithDeviceToken')).toBeLessThan(n.text.indexOf('@end'));
+    expect(n.text).toContain('#import <Clikgate/Clikgate-Swift.h>');
   });
 });

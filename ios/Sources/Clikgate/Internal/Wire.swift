@@ -201,6 +201,7 @@ struct InstallRequest: Sendable {
     var timezone: String?
     var launchUrl: String?
     var pasteboardToken: String?
+    var pasteboardOutcome: String?
     var push: PushPayload?
     var attestation: AttestationPayload?
     var appleSearchAdsToken: String?
@@ -229,6 +230,7 @@ struct InstallRequest: Sendable {
         b.set("timezone", timezone)
         b.set("launch_url", launchUrl)
         b.set("pasteboard_token", pasteboardToken)
+        b.set("pasteboard_outcome", pasteboardOutcome)
         b.set("push", push?.json)
         b.set("attestation", attestation?.json)
         b.set("apple_search_ads_token", appleSearchAdsToken)

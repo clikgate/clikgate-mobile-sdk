@@ -4,36 +4,35 @@ Deep links (Universal Links and custom schemes), deferred deep links, install at
 identifyUser, referee-side referral calls and push-token registration for uninstall tracking — the things
 that must happen on the device (spec 0.4). Referrer-side features (the user's invite link and stats,
 leaderboards, promo codes, share helpers) are **not** in the core SDK: the recommended path is your
-backend calling the Clikgate control-plane API; apps without a backend can add the optional
-**Engage add-on** (`ClikgateEngage`, section 7b). See [engage.md](engage.md).
+backend calling the Clikgate control-plane API; apps without a backend can use the **Engage
+features** (`ClikgateEngage`, section 7b), which ship in the same package. See [engage.md](engage.md).
 
 - iOS 13+ devices. Build with **Xcode 26 or newer** (Swift 6.2; clean under strict concurrency): App Store
   submissions need the iOS 26 SDK, and CI builds and tests only with Xcode 26.
 - No third-party dependencies. Size budgets (arm64, `-Osize`, every public API in use): core
-  < 410 KB (measured 400.8 KB in 1.5.0; was 400 KB until 1.5.0), Engage add-on < 80 KB (measured 76 KB); see `ios/DECISIONS.md`.
+  < 410 KB (measured 385.4 KB in 2.1.0), Engage features < 95 KB (measured 92.4 KB), each measured on its own module; see `ios/DECISIONS.md`.
 - It never shows the ATT prompt or the notification-permission prompt.
 
 ## 1. Install
 
 **Swift Package Manager**: add `https://github.com/clikgate/clikgate-ios-sdk` (the SPM mirror: `Package.swift`,
-`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.0.0`, and link the `Clikgate` product. Link the
-`ClikgateEngage` product too only if you use the Engage add-on (section 7b).
+`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.1.0`, and link the `Clikgate` product. It contains two modules: `Clikgate` (core) and
+`ClikgateEngage` (the Engage features, section 7b; `import ClikgateEngage` only if you use them).
 
 **CocoaPods**
 
 ```ruby
 platform :ios, '13.0'
-pod 'Clikgate', '~> 2.0'            # core only (the default subspec Clikgate/Core)
-# pod 'Clikgate/Engage', '~> 2.0'   # optional Engage add-on (pulls in Core)
+pod 'Clikgate', '~> 2.1'   # core and the Engage features
 ```
 
-With CocoaPods every subspec is compiled into the one `Clikgate` module, so Engage code uses
-`import Clikgate`; with SPM it is `import ClikgateEngage`.
+With CocoaPods the core and the Engage sources are compiled into the one `Clikgate` module, so Engage
+code uses `import Clikgate`; with SPM it is `import ClikgateEngage`.
 
 **XCFramework**: download `Clikgate-<version>.xcframework.zip` from the GitHub release (or build it with
 `ios/scripts/build_xcframework.sh`) and embed it. It's a static framework that includes `PrivacyInfo.xcprivacy`.
-For the Engage add-on, also add `ClikgateEngage-<version>.xcframework.zip` (Engage code only; it needs
-`Clikgate.xcframework` next to it) and `import ClikgateEngage`.
+For the Engage features, also add `ClikgateEngage-<version>.xcframework.zip` (Engage code only; it needs
+`Clikgate.xcframework` next to it) and `import ClikgateEngage`. Both are built from the one package.
 
 ## 2. Configure
 
@@ -55,8 +54,7 @@ func application(_ application: UIApplication,
         if let referral = result.referral { showWelcome(invitedBy: referral.referrerDisplayName) }
         router.open(path: result.path ?? "/", data: result.data)
     }
-    application.registerForRemoteNotifications()   // no permission prompt needed for silent pushes
-    return true
+    return true   // the SDK registers for remote notifications itself (automaticPushToken, §8)
 }
 ```
 
@@ -73,6 +71,7 @@ are delivered when you register it. Links that arrive before `configure` are han
 | `waitForATT` | `false` | Waits up to 30 s for *your* ATT prompt before the first `/install`. |
 | `attestation` | `.off` | App Attest, when the device supports it and your app's settings enable it. |
 | `deferredDeepLinkTimeout` | `5` s | How long `attribution()` waits on the first launch. |
+| `automaticPushToken` | `true` | While uninstall tracking is on, calls `registerForRemoteNotifications()` on each launch (no prompt). See §8. |
 
 ## 3. Universal Links and URL schemes
 
@@ -175,7 +174,7 @@ app side is a small swap:
 | Firebase Dynamic Links | Clikgate |
 |---|---|
 | `page.link` or your domain in the app's associated domains | your app's link subdomain (and verified custom domains) in the app's associated domains |
-| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage add-on's referral links |
+| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage features' referral links |
 | read `link` from the received dynamic link | read `path` and `data` from the Clikgate deep link (`url` is the link that opened the app) |
 | deferred link on first launch through the same callback | the same: the deferred link arrives on `onDeepLink` with `isDeferred` set |
 | `utm_*` and `st` / `sd` / `si` link parameters | the link's tags and preview, set when the link is created (the import maps them) |
@@ -248,6 +247,21 @@ paste.onPaste = { found in if !found { showNoInviteFound() } }
 view.addSubview(paste)
 ```
 - `.off`: the SDK never touches the pasteboard.
+
+**What the dashboard measures.** When the paste flow runs, the first `/install` also says what the paste
+step saw (`pasteboard_outcome`; never the pasteboard contents), so the dashboard can show the app's iPhone
+match rate:
+
+- **Token found**: the link the landing page copied was on the pasteboard.
+- **Didn't tap Open in app** (`no_link`): no link was on the pasteboard, so nothing was read.
+- **Something else was copied** (`no_token`): the pasteboard held something, but not a Clikgate link.
+- **Declined paste** (`denied`): the user tapped **Don't Allow** on the paste prompt.
+- **Paste button** (`paste_control`): `.pasteControlOnly`, no automatic read; a tap on the Paste button can
+  still match later.
+- **Token expired** (worked out by the server): a token was sent but had expired or was already used.
+
+Nothing is sent with `.off`, when the dashboard setting is off, or when the user opted out or denied
+consent. How it works end to end: https://clikgate.com/docs/deferred-deep-links-iphone
 
 ## 5a. Consent (1.2.0)
 
@@ -445,7 +459,7 @@ completion-handler variant. Errors are `ClikgateError` with `code`, `message`, `
   - `invalid_argument`
 
 Creating the user's own invite link, "my referral stats", leaderboards and promo codes are referrer-side
-features. Do them from your backend with the control-plane API (recommended), or with the Engage add-on
+features. Do them from your backend with the control-plane API (recommended), or with the Engage features
 (section 7b) if the app has no backend. Identity-check signals are server-to-server only: there is no SDK
 API for them (the hashing pepper must never ship in an app).
 
@@ -466,10 +480,13 @@ if Clikgate.shared.isFeatureEnabled(ClikgateFeatures.referrals) { showEnterCodeF
 - If the cached config is out of date, the server answers `feature_disabled` and the SDK reports the same
   error, treats the feature as off and refreshes the config in the background.
 
-## 7b. Engage add-on (optional, apps without a backend)
+## 7b. Engage features (apps without a backend)
+
+Nothing extra to install: the Engage features are in the `Clikgate` package (since 2.1.0; there is no
+separate Engage product or subspec).
 
 ```swift
-import ClikgateEngage   // SPM; with CocoaPods (pod 'Clikgate/Engage') it's part of `import Clikgate`
+import ClikgateEngage   // SPM; with CocoaPods it's part of `import Clikgate`
 
 let link = try await ClikgateEngage.referrals.createLink(programId: "rpg_...", displayName: "Ada")  // code, url, shortUrl
 let stats = try await ClikgateEngage.referrals.myStats(programId: "rpg_...")     // clicks, installs, qualified, …
@@ -534,8 +551,14 @@ Details:
 
 ## 8. Push tokens and uninstall tracking
 
-1. **Signing & Capabilities → Push Notifications**, and **Background Modes → Remote notifications**.
-2. Register the token:
+1. Turn on uninstall tracking in the dashboard.
+2. **Signing & Capabilities → Push Notifications** (the `aps-environment` entitlement; `npx @clikgate/setup`
+   adds it). Background Modes → Remote notifications is not needed: the check reads APNs' reply, not delivery.
+3. Keep the one forward line. Users don't have to allow notifications: with `automaticPushToken` (default
+   `true`) the SDK calls `registerForRemoteNotifications()` on every launch while uninstall tracking is on, tracking
+   isn't opted out, the SDK version isn't blocked and consent allows it. It never asks for notification permission
+   and never shows anything. A debug log says when it registered; if no token has reached the SDK by the next
+   launch, a warning names the missing forward line or the missing Push Notifications capability.
 
 ```swift
 func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -545,7 +568,7 @@ func application(_ application: UIApplication, didRegisterForRemoteNotifications
 // Clikgate.shared.setPushToken(fcmToken: token)
 ```
 
-3. Let Clikgate swallow its silent checks:
+4. Let Clikgate swallow its silent checks:
 
 ```swift
 func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any],
@@ -558,7 +581,12 @@ func application(_ application: UIApplication, didReceiveRemoteNotification user
 Clikgate's silent pushes are `{"aps":{"content-available":1},"cg":{"t":"uc"}}` (APNs), or a data message
 `{"cg":"uc"}` (FCM). `Clikgate.isClikgateMessage(_:)` is a pure check you can use anywhere, including a
 notification service extension. The SDK reads the APNs environment from the embedded provisioning profile.
-Tokens are re-sent whenever they change.
+Tokens are re-sent whenever they change. A token you pass to `setPushToken` always wins.
+
+**Side effect.** Registering early also hands the APNs token to any other push tool in your app, which may count
+the device as registered. Users still see no notifications without permission. To control push registration
+timing yourself, set `ClikgateOptions(automaticPushToken: false)`, call `registerForRemoteNotifications()` when you
+choose, and keep forwarding the token with `setPushToken`.
 
 ## 9. Privacy
 
@@ -580,7 +608,7 @@ See [PRIVACY.md](PRIVACY.md).
 
 - `ios/Sample` is a UIKit sample covering:
   - direct and deferred deep links (`/products/…` links open a product screen)
-  - apply code, a referred-by banner at launch, `identify` with an optional identity token (core), and, through the Engage add-on, the invite link (shared to
+  - apply code, a referred-by banner at launch, `identify` with an optional identity token (core), and, through the Engage features, the invite link (shared to
     WhatsApp or the share sheet) and stats
   - the paste control
   - push registration
@@ -605,8 +633,8 @@ pod lib lint Clikgate.podspec --allow-warnings
 
 ## 11. Removing the SDK
 
-1. Remove the dependency: the `Clikgate` / `ClikgateEngage` package products (Xcode › Package Dependencies), or
-   `pod 'Clikgate'` / `pod 'Clikgate/Engage'` and run `pod install`, or the XCFrameworks.
+1. Remove the dependency: the `Clikgate` package product (Xcode › Package Dependencies), or
+   `pod 'Clikgate'` and run `pod install`, or the XCFrameworks.
 2. Remove `Clikgate.configure(...)` and every `Clikgate.shared…` / `ClikgateEngage…` call (deep-link handler,
    `handle(url:)`, `continue(userActivity:)`, `goal`, `identifyUser`, consent, Firebase forwarding,
    `attributionMetadata`, `ClikgatePasteControl`).

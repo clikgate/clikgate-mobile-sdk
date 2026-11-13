@@ -55,7 +55,7 @@ function goalValueString(value: unknown): string | null {
  * Clikgate (core): deep links, install attribution, goals, identifyUser, referee-side referral
  * calls, uninstall tracking and feature switches. A thin bridge over the native Android and iOS
  * SDKs (no attribution or referral logic in JS). Referral links/stats, leaderboards, promo codes
- * and share helpers live in `@clikgate/react-native-engage` (apps without a backend) or, the
+ * and share helpers are the Engage features (`ClikgateEngage`, apps without a backend) or, the
  * recommended path, in your backend via the Clikgate API.
  */
 export const Clikgate = {
@@ -103,6 +103,7 @@ export const Clikgate = {
       deferredDeepLinkTimeoutMs: config.deferredDeepLinkTimeoutMs ?? 5000,
       platformDomainBrowserFallback:
         config.platformDomainBrowserFallback ?? true,
+      automaticPushToken: config.automaticPushToken ?? true,
       wrapperVersion: VERSION,
     });
   },
@@ -261,7 +262,7 @@ export const Clikgate = {
   },
 
   /**
-   * @internal Used by `@clikgate/react-native-engage`; not part of the app-facing API.
+   * @internal Used by the Engage features (src/engage); not part of the app-facing API.
    *
    * The request context (installation id, SDK key, environment, base URL, identity token, user
    * id, version headers) for a `/v1/sdk/...` call, once the first install was recorded and a
@@ -275,7 +276,7 @@ export const Clikgate = {
   },
 
   /**
-   * @internal Used by `@clikgate/react-native-engage`; not part of the app-facing API.
+   * @internal Used by the Engage features (src/engage); not part of the app-facing API.
    *
    * Reports an error code a `/v1/sdk/...` call made with the request context got:
    * `feature_disabled` (with `feature`) switches the feature off until the next config fetch;

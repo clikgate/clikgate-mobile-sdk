@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { main } from '../src/index';
 import { allLinkHosts, verifiedHosts } from '../src/edit/androidManifest';
 import { appTargets, setting } from '../src/edit/pbxproj';
-import { applinksHosts, readPlist } from '../src/edit/plistEdit';
+import { applinksHosts, apsEnvironment, readPlist } from '../src/edit/plistEdit';
 import { findXcodeProjects } from '../src/project/ios';
 import { isDebugSourceSet } from '../src/project/android';
 import { FIXTURE_NAMES, OFFLINE, ScriptedUI, copyFixture, snapshotTree, treeDiff } from './helpers';
@@ -33,9 +33,9 @@ function manifests(root: string): { debug: string[]; release: string[] } {
   return out;
 }
 
-function iosConfigs(root: string): { name: string; debug: boolean; hosts: string[] }[] {
+function iosConfigs(root: string): { name: string; debug: boolean; hosts: string[]; aps?: string }[] {
   const dirs = [root, path.join(root, 'ios')].filter((d) => fs.existsSync(d));
-  const out: { name: string; debug: boolean; hosts: string[] }[] = [];
+  const out: { name: string; debug: boolean; hosts: string[]; aps?: string }[] = [];
   for (const d of dirs) {
     for (const xp of findXcodeProjects(d)) {
       for (const t of appTargets(fs.readFileSync(path.join(xp, 'project.pbxproj'), 'utf8'))) {
@@ -46,7 +46,7 @@ function iosConfigs(root: string): { name: string; debug: boolean; hosts: string
           expect(fs.existsSync(file), `${ent} exists`).toBe(true);
           const text = fs.readFileSync(file, 'utf8');
           readPlist(text); // parses
-          out.push({ name: c.name, debug: /debug/i.test(c.name), hosts: applinksHosts(text) });
+          out.push({ name: c.name, debug: /debug/i.test(c.name), hosts: applinksHosts(text), aps: apsEnvironment(text) });
         }
       }
     }
@@ -62,6 +62,10 @@ describe.each(FIXTURE_NAMES)('offline setup on %s', (fixture) => {
     expect(code, ui.text).toBe(0);
     expect(ui.text).toContain('Clikgate sees every click. Setup complete.');
     await expect(treeDiff(fixture, dir)).toMatchFileSnapshot(`__snapshots__/${fixture}.diff`);
+    // Uninstall tracking: SwiftUI apps without an AppDelegate get the forward line as a manual step;
+    // every iOS project gets aps-environment and the signing note.
+    if (fixture === 'ios-swiftui') expect(ui.text).toContain('Forward the APNs token');
+    if (fs.existsSync(path.join(projectRoot(fixture, dir), 'ios')) || fixture.startsWith('ios-')) expect(ui.text).toContain('Push Notifications capability (aps-environment) was added');
 
     const root = projectRoot(fixture, dir);
     // Android: the app's test subdomain only in debug source sets; live domains in main; no shared domain.
@@ -78,6 +82,7 @@ describe.each(FIXTURE_NAMES)('offline setup on %s', (fixture) => {
       expect(c.hosts).toEqual(expect.arrayContaining(['acme.ciz.to', 'go.acme.com']));
       for (const shared of ['ciz.to', 'clk.ng', 'clkg.to', 'dev.ciz.to']) expect(c.hosts).not.toContain(shared);
       expect(c.hosts.includes(TEST), `${c.name}`).toBe(c.debug);
+      expect(c.aps, `${c.name} aps-environment`).toBe(c.debug ? 'development' : 'production');
     }
     // Expo: the plugin keeps the test domain apart from linkDomains.
     const appJson = path.join(root, 'app.json');

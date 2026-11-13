@@ -8,11 +8,15 @@
 //   cli SDK.flutter   name / version (constraint ^x.y.z)         flutter/pubspec.yaml
 //   cli SDK.reactNative name / version (constraint ^x.y.z)       react-native/package.json
 //   cli CLI_VERSION                                              cli/package.json version
+//   cli CLI_VERSION   setupVersion   flutter/lib/src/setup_runner/setup_binaries.g.dart (dart run clikgate_flutter)
+//   setupBinarySha256 / setupArchiveSha256 in that file   the binaries and .gz files in cli/dist/bin, when present
+//                                    (scripts/build_setup_binaries.sh builds them and writes the file)
 //
 // Usage: node scripts/check_cli_sdk_versions.mjs   (Node 18+, no dependencies)
 // When an SDK version changes, update cli/src/constants.ts (and the CLI's snapshots, docs and
 // CHANGELOG) in the same change. The AI guides in clikgate_sdks check their versions.json against
 // the same constants.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -78,6 +82,36 @@ if (sdk.reactNative) {
 }
 expect('CLI version', cliVersion, JSON.parse(read('cli/package.json')).version, 'cli/package.json version');
 
+// `dart run clikgate_flutter` downloads the setup command binaries by version and checks them against the
+// hashes the pub package carries.
+const genRel = 'flutter/lib/src/setup_runner/setup_binaries.g.dart';
+const gen = read(genRel);
+const setupVersion = match(gen, /const String setupVersion = '([^']+)';/, genRel);
+expect('Flutter setup command version', cliVersion, setupVersion, `${genRel} setupVersion (run scripts/build_setup_binaries.sh)`);
+// Each map: `const Map<String, String> <name> = { 'platform': 'sha256', ... };`
+const hashMap = (name) => {
+  const body = match(gen, new RegExp(`const Map<String, String> ${name} = \\{([\\s\\S]*?)\\};`), genRel);
+  return Object.fromEntries([...body.matchAll(/'([\w-]+)': '([0-9a-f]{64})'/g)].map((m) => [m[1], m[2]]));
+};
+const platforms = ['darwin-arm64', 'darwin-x64', 'linux-x64', 'linux-arm64', 'windows-x64'];
+const binDir = path.join(root, 'cli/dist/bin');
+let files = 0;
+let entries = 0;
+for (const [name, suffix] of [['setupBinarySha256', ''], ['setupArchiveSha256', '.gz']]) {
+  const hashes = hashMap(name);
+  entries += Object.keys(hashes).length;
+  const missing = platforms.filter((p) => !hashes[p]);
+  if (missing.length) errors.push(`${genRel} ${name}: no sha256 for ${missing.join(', ')} (run scripts/build_setup_binaries.sh without --only)`);
+  for (const [platform, hash] of Object.entries(hashes)) {
+    const asset = `clikgate-setup-${setupVersion}-${platform}${platform.startsWith('windows-') ? '.exe' : ''}${suffix}`;
+    const file = path.join(binDir, asset);
+    if (!fs.existsSync(file)) continue;
+    files++;
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+    if (actual !== hash) errors.push(`${genRel} ${name}: sha256 for ${platform} is ${hash}, cli/dist/bin/${asset} is ${actual} (run scripts/build_setup_binaries.sh)`);
+  }
+}
+
 if (errors.length) {
   console.error('The setup command and the SDKs have drifted apart:');
   for (const e of errors) console.error(`  - ${e}`);
@@ -85,5 +119,6 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `cli/src/constants.ts matches the SDKs: android ${sdk.android.version}, ios ${sdk.ios.version}, flutter ${sdk.flutter.minimum}, react-native ${sdk.reactNative.minimum} (cli ${cliVersion}).`,
+  `cli/src/constants.ts matches the SDKs: android ${sdk.android.version}, ios ${sdk.ios.version}, flutter ${sdk.flutter.minimum}, react-native ${sdk.reactNative.minimum} (cli ${cliVersion}).` +
+    ` Flutter setup command ${setupVersion}: ${entries} checksums (binaries and .gz), ${files ? `${files} match cli/dist/bin` : 'binaries not built here (not checked)'}.`,
 );

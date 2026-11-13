@@ -9,6 +9,8 @@ import { addDependency as addPubDependency, dependencyConstraint } from '../edit
 import {
   editDartMain,
   editJsRoot,
+  editObjcPushForward,
+  editSwiftPushForward,
   editKotlinActivity,
   editKotlinApplication,
   editSwiftUIApp,
@@ -16,6 +18,8 @@ import {
   editUIKitSceneDelegate,
   jsConfigureLines,
   newKotlinApplication,
+  pushForwardSnippet,
+  type PushForwardTarget,
   type SourceResult,
   type StartupConfig,
 } from '../edit/source';
@@ -23,7 +27,7 @@ import { exists, read, rel } from '../fsutil';
 import { PlanBuilder, type Plan } from '../plan';
 import { findClassFile, type AndroidModule } from '../project/android';
 import { targetSwiftFiles, type IosProject } from '../project/ios';
-import { planAndroidBackup, planAndroidLinks, planIosLinks, type LinkDomains } from './native';
+import { planAndroidBackup, planAndroidLinks, planIosLinks, planIosPushEntitlements, type LinkDomains } from './native';
 import { which } from '../which';
 import { versionAtLeast } from '../doctor';
 
@@ -112,6 +116,36 @@ function nativeLinks(pb: PlanBuilder, ctx: PlanContext, flutter: boolean): void 
   else if (ctx.android && flutter) planAndroidLinks(pb, ctx.android, ctx.links, { flutter });
   if (ctx.android) planAndroidBackup(pb, ctx.android);
   if (ctx.ios && hasAny) planIosLinks(pb, ctx.ios, ctx.links, { flutter });
+  else if (ctx.ios) planIosPushEntitlements(pb, ctx.ios);
+}
+
+/** Objective-C AppDelegates of the app target (React Native before 0.77, older Expo, ObjC apps). */
+function objcAppDelegates(ios: IosProject): string[] {
+  return ['AppDelegate.mm', 'AppDelegate.m'].map((n) => path.join(ios.srcRoot, ios.target, n)).filter(exists);
+}
+
+/**
+ * The one line that hands the APNs token to Clikgate (`automaticPushToken` registers for remote
+ * notifications; the token arrives in the AppDelegate). Added to a UIKit AppDelegate (Swift or
+ * Objective-C) when missing; Flutter needs nothing (the plugin is an application delegate).
+ */
+function planIosPushForward(pb: PlanBuilder, ios: IosProject, target: PushForwardTarget, swiftUIApp = false): void {
+  const swift = targetSwiftFiles(ios).find((f) => /class\s+\w+\s*:[^{]*\b(UIApplicationDelegate|ExpoAppDelegate|RCTAppDelegate)\b/.test(read(f)));
+  const file = swift ?? objcAppDelegates(ios)[0];
+  const doneLabel = 'iOS: APNs token forwarded to Clikgate (uninstall tracking)';
+  if (!file) {
+    pb.manual(
+      'Forward the APNs token',
+      swiftUIApp
+        ? 'Uninstall tracking: your SwiftUI app has no AppDelegate. Add one with @UIApplicationDelegateAdaptor and forward the APNs token (the SDK registers for it itself; users are never asked for notification permission).'
+        : `Uninstall tracking: no AppDelegate found in ${ios.target}/. Forward the APNs token in application(_:didRegisterForRemoteNotificationsWithDeviceToken:).`,
+      pushForwardSnippet('swift', target, swiftUIApp)
+    );
+    return;
+  }
+  const r = rel(pb.root, file);
+  const result = file.endsWith('.swift') ? editSwiftPushForward(pb.current(r)!, target, r) : editObjcPushForward(pb.current(r)!, target, r);
+  source(pb, r, result, 'forward the APNs token to Clikgate (uninstall tracking)', doneLabel);
 }
 
 // ------------------------------------------------------------------------------------ Flutter
@@ -145,6 +179,7 @@ function planReactNative(pb: PlanBuilder, ctx: PlanContext): void {
   addJsDependency(pb);
   nativeLinks(pb, ctx, false);
   if (ctx.ios) rnIosForwarding(pb, ctx.ios);
+  if (ctx.ios) planIosPushForward(pb, ctx.ios, 'react-native');
   const file = jsRootFile(ctx.root, ['App.tsx', 'App.jsx', 'App.js', 'src/App.tsx', 'src/App.js']);
   if (!file) pb.manual('Start Clikgate', 'No App.tsx / App.js found. Call Clikgate.configure once at start-up and subscribe to onDeepLink in your root component.', jsConfigureLines(ctx.startup).join('\n'));
   else source(pb, file, editJsRoot(pb.current(file)!, ctx.startup, file), 'start Clikgate', `React Native: start-up code in ${file}`);
@@ -176,6 +211,8 @@ function planExpo(pb: PlanBuilder, ctx: PlanContext): void {
   }
   if (ctx.android || ctx.ios) nativeLinks(pb, ctx, false);
   if (ctx.ios) rnIosForwarding(pb, ctx.ios);
+  // ios/ checked in: edit it like bare React Native (the config plugin does the same on prebuild).
+  if (ctx.ios) planIosPushForward(pb, ctx.ios, 'react-native');
   const pkg = parseJsonc<{ main?: string }>(pb.current('package.json') ?? '{}');
   const router = pkg.main === 'expo-router/entry';
   const file = router
@@ -291,6 +328,7 @@ function planIos(pb: PlanBuilder, ctx: PlanContext): void {
   } else {
     pb.manual('Start Clikgate', `No SwiftUI App or UIKit AppDelegate found in ${ios.target}/. Call Clikgate.configure at launch and forward URLs (see docs).`);
   }
+  if (appDelegate || swiftUI || objcAppDelegates(ios).length) planIosPushForward(pb, ios, 'native', Boolean(swiftUI));
 }
 
 export function buildPlan(ctx: PlanContext): Plan {

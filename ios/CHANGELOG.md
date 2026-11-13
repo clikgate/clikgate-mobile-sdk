@@ -1,5 +1,25 @@
 # Changelog — Clikgate iOS SDK
 
+## 2.1.0 (unreleased): Engage is part of the SDK
+
+- **The Engage add-on is merged into the SDK.** The `Clikgate` Swift package product now contains both modules,
+  `Clikgate` and `ClikgateEngage` (`import ClikgateEngage` for referral links and stats, leaderboards, promo codes and
+  share helpers); there is no separate `ClikgateEngage` product. The pod is one pod with no subspecs (no
+  `Clikgate/Engage`); with CocoaPods Engage stays part of `import Clikgate`. APIs are unchanged.
+- **Added:** `/install` sends `pasteboard_outcome` when the clipboard deferred-link flow runs (`token_found`,
+  `no_link`, `no_token`, `denied`, `paste_control`), so the dashboard can show the app's iPhone match rate. It
+  describes the paste step, never the pasteboard contents; it's kept on the device so a retried `/install`
+  sends the same value, and isn't sent with `pasteboardMode` `.off`, the dashboard setting off, or when the
+  user opted out or denied consent. No public API change. Guide: https://clikgate.com/docs/deferred-deep-links-iphone
+- **Added:** `ClikgateOptions.automaticPushToken` (default `true`). While uninstall tracking is on in the dashboard,
+  tracking isn't opted out, the SDK version isn't blocked and consent allows it, the SDK calls
+  `UIApplication.registerForRemoteNotifications()` once per launch (also after consent or opt-in becomes allowed), so
+  installs whose users never allow notifications are still checked. It never asks for permission and shows nothing.
+  The app keeps the one `setPushToken(deviceToken:)` forward line; a manual token always wins. Logs once at debug
+  when it registers, and warns on the next launch if no token arrived (missing forward line or Push Notifications
+  capability). Side effect: other push tools in the app also get the token. `false` restores the previous behaviour.
+- Size: core 389.0 KB (-Osize; 386.3 KB before automaticPushToken, 385.4 KB before pasteboard_outcome; ceiling 410 KB).
+
 ## 2.0.0 (unreleased): one method, `goal()`; installation ID (Change 22)
 
 **Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.
