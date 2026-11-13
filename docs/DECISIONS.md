@@ -27,7 +27,10 @@ with its Engage features inside; nothing was published, so there are no shims or
   module now, and the core keeps its null checks), so it is close to its budget: trim before adding to it.
 - **Apps that don't use Engage don't ship it.** R8, the iOS linker (static) and Dart tree-shaking drop the unused code;
   React Native bundles every exported module, but Engage there is small plain TypeScript.
-- **Flutter now depends on `http`, `meta`, `share_plus` and `url_launcher`** (Engage's dependencies), for every app.
+- **Flutter now depends on `http` and `meta`** (Engage's dependencies), for every app. Engage's `share_plus` and
+  `url_launcher` were dropped before 2.1.0 shipped: as hard dependencies of every Flutter app they blocked apps on
+  `share_plus` 13 and broke fresh-template release builds (`:url_launcher_android:lintVitalAnalyzeRelease`). The
+  plugin's `com.clikgate/engage` channel does `shareText` / `openUrl` natively instead (flutter/DECISIONS.md).
 - **React Native `VERSION`**: the main entry exports the core `VERSION` only (Engage's was the same number);
   `ClikgateEngage.version` stays.
 - **iOS test scheme.** With one product Xcode no longer generates the `Clikgate-Package` scheme, so a shared one is

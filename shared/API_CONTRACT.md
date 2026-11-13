@@ -535,8 +535,9 @@ No endpoint. The Engage packages' `share.whatsApp(text)` (the app builds the tex
   else the system chooser.
 - iOS: `whatsapp://send?text=<urlencoded>` if `canOpenURL` (app must list `whatsapp` in
   `LSApplicationQueriesSchemes`), else the share sheet.
-- Flutter (pure Dart) / React Native (pure TS): `whatsapp://send?text=<urlencoded>` through
-  `url_launcher` / `Linking`, else the share sheet (`share_plus` / `Share`).
+- Flutter / React Native (pure TS): `whatsapp://send?text=<urlencoded>` through the plugin's
+  `com.clikgate/engage` channel (`openUrl`: Android `ACTION_VIEW`, iOS `UIApplication.open`) /
+  `Linking`, else the share sheet (the channel's `shareText` / `Share`).
 Returns/resolves `true` when WhatsApp itself was opened, `false` when the fallback share sheet was used.
 `share.system(text)` always uses the share sheet. (The former core `referrals.shareToWhatsApp`
 is removed.)

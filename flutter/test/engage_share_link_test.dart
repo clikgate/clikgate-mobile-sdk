@@ -80,4 +80,48 @@ void main() {
     expect(seen.single['app'], 'whatsapp');
     expect(calls, isEmpty);
   });
+
+  // 2.1.0: share.system / share.whatsApp use the plugin's own channel (no share_plus / url_launcher).
+  group('default share.system / share.whatsApp go to the plugin channel', () {
+    test('system sends shareText with the text and subject', () async {
+      reply = null;
+      await ClikgateEngage().share.system(text: 'Join me https://inv.myapp.com/summer', subject: 'MyApp');
+      expect(calls.single.method, 'shareText');
+      expect(calls.single.arguments, {'text': 'Join me https://inv.myapp.com/summer', 'subject': 'MyApp'});
+    });
+
+    test('system: a native error is share_unavailable', () async {
+      reply = PlatformException(code: 'share_unavailable', message: 'No view controller');
+      await expectLater(ClikgateEngage().share.system(text: 'hi'),
+          throwsA(isA<ClikgateException>().having((e) => e.code, 'code', ClikgateEngageErrors.shareUnavailable)));
+    });
+
+    test('whatsApp opens whatsapp://send and returns true when it opened', () async {
+      reply = true;
+      expect(await ClikgateEngage().share.whatsApp(text: 'a&b c'), isTrue);
+      expect(calls.single.method, 'openUrl');
+      expect(calls.single.arguments, {'url': 'whatsapp://send?text=a%26b%20c'});
+    });
+
+    test('whatsApp falls back to the share sheet and returns false', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        if (call.method == 'openUrl') return false;
+        return null;
+      });
+      expect(await ClikgateEngage().share.whatsApp(text: 'hi'), isFalse);
+      expect(calls.map((c) => c.method), ['openUrl', 'shareText']);
+      expect(calls.last.arguments, {'text': 'hi', 'subject': null});
+    });
+
+    test('whatsApp: an openUrl error also falls back', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        if (call.method == 'openUrl') throw PlatformException(code: 'error');
+        return null;
+      });
+      expect(await ClikgateEngage().share.whatsApp(text: 'hi'), isFalse);
+      expect(calls.map((c) => c.method), ['openUrl', 'shareText']);
+    });
+  });
 }

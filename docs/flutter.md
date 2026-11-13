@@ -310,8 +310,9 @@ separate `clikgate_engage` package). Import them with
 `import 'package:clikgate_flutter/engage.dart';`. Apps that never import it don't ship it
 (tree-shaking).
 
-Pure Dart (package `http`; `share_plus` and `url_launcher` for the share helpers), apart from the
-share menu (below). It calls the same `/v1/sdk/*` endpoints with the core plugin's request context
+Pure Dart (package `http`), apart from the share helpers, which use the plugin's own native side
+(channel `com.clikgate/engage`; no `share_plus` / `url_launcher`, so apps keep any version of them).
+It calls the same `/v1/sdk/*` endpoints with the core plugin's request context
 (installation id, SDK key, environment, base URL, identity token), obtained through the core's
 internal `Clikgate.getRequestContext()`; it keeps no attribution state.
 
@@ -371,13 +372,13 @@ needed; the monorepo example substitutes the native SDK from `../../android`.
 Share helper setup:
 
 - **iOS:** listing `whatsapp` in `LSApplicationQueriesSchemes` (`ios/Runner/Info.plist`) is
-  recommended (the native SDKs and docs use it), but the Dart helper doesn't depend on it:
-  `url_launcher` opens the URL with `UIApplication.open` (no `canOpenURL`), and a failed open
-  falls back to the share sheet.
-- **Android:** nothing required. `whatsapp://send?text=` is opened with
-  `url_launcher.launchUrl`, which needs no `<queries>` entry (only `canLaunchUrl` would); if no
-  app handles it, the share sheet (`share_plus`) is used. Unlike the native Android Engage
-  module, the Dart helper can't target WhatsApp Business by package name.
+  recommended (the native SDKs and docs use it), but the helper doesn't depend on it: the
+  plugin opens the URL with `UIApplication.open` (no `canOpenURL`), and a failed open
+  falls back to the share sheet (`UIActivityViewController`).
+- **Android:** nothing required. `whatsapp://send?text=` is opened with an `ACTION_VIEW` intent,
+  which needs no `<queries>` entry; if no app handles it, the share sheet (`ACTION_SEND`
+  chooser) is used. Unlike the native Android Engage `whatsApp`, the helper opens the
+  `whatsapp://` link rather than targeting WhatsApp Business by package name.
 
 ## 5e. Consent, Firebase forwarding and sales metadata (1.2.0, change 03)
 
