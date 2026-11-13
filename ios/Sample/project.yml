@@ -20,8 +20,6 @@ targets:
     dependencies:
       - package: Clikgate
         product: Clikgate
-      - package: Clikgate
-        product: ClikgateEngage
     entitlements:
       path: ClikgateSample/ClikgateSample.entitlements
       properties:

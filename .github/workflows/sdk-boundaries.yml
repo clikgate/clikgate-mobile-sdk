@@ -3,7 +3,7 @@ name: SDK boundaries (core vs Engage)
 # Spec v3 new edition, 0.4 / section 20: per core SDK a public-API snapshot check that also asserts
 # core has no leaderboard / referral-stats / link-creation / code / share / identity-signal API,
 # a dependency check (core never depends on Engage) and the size budgets
-# (core Android < 150 KB, Engage Android < 40 KB, core iOS < 410 KB, Engage iOS < 80 KB), plus (Change 12) the generated Provider types check and the release scan of each package's published sources.
+# (core Android < 150 KB, Engage Android < 44 KB, core iOS < 410 KB, Engage iOS < 95 KB; since 2.1.0 Engage ships inside each core package, measured separately), plus (Change 12) the generated Provider types check and the release scan of each package's published sources.
 # Same checks locally: scripts/check_sdk_boundaries.sh
 
 # Changes that touch only the setup command (cli/, its workflows and its version check) can't

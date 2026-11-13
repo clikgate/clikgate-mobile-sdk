@@ -10,8 +10,8 @@ are **not** in the core package (spec v3 §0.4):
 
 - **Recommended:** your backend calls the Clikgate control-plane API (referrers, referral stats,
   leaderboards, identity signals, goals from your server) and your app renders its own screens from it.
-- **Apps without a backend:** the optional Engage add-on `@clikgate/react-native-engage` (pure TypeScript,
-  section 5b). See [engage.md](engage.md) for when to use which.
+- **Apps without a backend:** the Engage features (`ClikgateEngage`, pure TypeScript) in the same
+  package `@clikgate/react-native` (section 5b). See [engage.md](engage.md) for when to use which.
 
 Requirements: React Native 0.76+ with the **New Architecture** (the module is a TurboModule; tested with
 0.86.3), Android minSdk 24 (React Native's; the SDK itself supports 21), iOS 15.1 (React Native's; the SDK
@@ -46,6 +46,7 @@ Clikgate.configure({
   // pasteboardMode: 'off',                  // iOS only: 'off' (default since 1.2.0) | 'automatic' | 'pasteControlOnly'
   // waitForATT: false,                      // iOS only
   // deferredDeepLinkTimeoutMs: 5000,
+  // automaticPushToken: false,              // default true: push token for uninstall checks (section 6)
 }).catch(console.warn);
 ```
 
@@ -118,7 +119,7 @@ app side is a small swap:
 | Firebase Dynamic Links | Clikgate |
 |---|---|
 | `page.link` or your domain in the app's associated domains | your app's link subdomain (and verified custom domains) in the app's associated domains |
-| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage add-on's referral links |
+| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage features' referral links |
 | read `link` from the received dynamic link | read `path` and `data` from the Clikgate deep link (`url` is the link that opened the app) |
 | deferred link on first launch through the same callback | the same: the deferred link arrives on `onDeepLink` with `isDeferred` set |
 | `utm_*` and `st` / `sd` / `si` link parameters | the link's tags and preview, set when the link is created (the import maps them) |
@@ -323,19 +324,17 @@ the config.
 There is no identity-signal API in any SDK: identity checks are server-to-server only
 (`POST /v1/identity-signals` from your backend; the pepper must never ship in an app).
 
-## 5b. Engage add-on (apps without a backend)
+## 5b. Engage features (apps without a backend)
 
-```sh
-npm install @clikgate/react-native-engage   # needs @clikgate/react-native
-```
+Nothing extra to install: `ClikgateEngage` is exported by `@clikgate/react-native` (since 2.1.0; there is
+no separate `@clikgate/react-native-engage` package).
 
-Pure TypeScript (no native code, no extra pod / Gradle module). It calls the same `/v1/sdk/...` endpoints
+Pure TypeScript apart from the share menu (below). It calls the same `/v1/sdk/...` endpoints
 with the core SDK's request context (`Clikgate.getRequestContext()`, internal) and keeps no attribution
 state. No UI components: render your own screens.
 
 ```ts
-import { Clikgate } from '@clikgate/react-native';
-import { ClikgateEngage } from '@clikgate/react-native-engage';
+import { Clikgate, ClikgateEngage } from '@clikgate/react-native';
 
 const engage = new ClikgateEngage(); // keep one instance (it holds the 60 s read cache)
 
@@ -381,9 +380,9 @@ Rules (spec 17A.3):
 
 **Share a link (Change 13).** `share.link(url, {message?, app?, shareUrls?})` and
 `share.referralLink(link, {message?, app?})`: each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They go through the package's
-`ClikgateEngage` TurboModule (one method, over the native Engage add-on `com.clikgate:clikgate-engage` /
-`Clikgate/Engage`), so rebuild the app after installing the package; without the native module they
-fail with `share_unavailable`. Behaviour as on [Android](android.md) and [iOS](ios.md).
+`ClikgateEngage` TurboModule (one method, over the native SDK's Engage features: `com.clikgate.engage` on
+Android, `ClikgateEngage` in the `Clikgate` pod on iOS); without the native module they fail with
+`share_unavailable`. Behaviour as on [Android](android.md) and [iOS](ios.md).
 
 **Share helpers.** `share.system({text, title?})` uses React Native `Share`. `share.whatsApp({text})`
 calls `Linking.openURL('whatsapp://send?text=<RFC 3986-encoded text>')` and, when that rejects (WhatsApp
@@ -443,7 +442,36 @@ then shows "“<App>” would like to paste from “<App>”" (Allow Paste / Don
 
 ## 6. Push token and uninstall tracking
 
-With `@react-native-firebase/messaging` (FCM, Android and iOS):
+1. Turn on uninstall tracking in the dashboard.
+2. iOS: add the Push Notifications capability (the `aps-environment` entitlement) and keep the one forward line
+   in your AppDelegate (below). `npx @clikgate/setup` adds both; on Expo the config plugin adds both on prebuild
+   (section 7).
+3. Android: nothing, when Firebase Messaging (`@react-native-firebase/messaging`) is in the app.
+
+Users don't have to allow notifications. With `automaticPushToken` (default `true`), while uninstall tracking is
+on, tracking isn't opted out, the SDK version isn't blocked and consent allows it, the native SDK gets a push token
+on every launch: on iOS it calls `registerForRemoteNotifications()` and the token arrives in your AppDelegate; on
+Android it fetches the FCM token when Firebase Messaging is in the app. It never asks for notification permission
+and never shows anything. A token you pass to `Clikgate.setPushToken` always wins.
+
+The forward line (iOS), in `AppDelegate.swift`:
+
+```swift
+import ClikgateReactNative
+
+func application(_ application: UIApplication,
+                 didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+  ClikgateRN.setPushToken(deviceToken: deviceToken)   // kept until configure if early
+}
+// Expo (class AppDelegate: ExpoAppDelegate): `public override func …` and call super first.
+```
+
+Objective-C (`AppDelegate.mm`): `#import <ClikgateReactNative/ClikgateReactNative-Swift.h>`, then
+`[ClikgateRN setPushTokenWithDeviceToken:deviceToken];` in
+`application:didRegisterForRemoteNotificationsWithDeviceToken:`.
+
+Clikgate's silent uninstall checks (`{"cg": "uc"}`, APNs `cg.t == "uc"`) must never produce a notification. With
+`@react-native-firebase/messaging`, filter them in your handlers:
 
 ```ts
 import messaging from '@react-native-firebase/messaging';
@@ -460,13 +488,16 @@ messaging().onMessage(async (message) => {
   // your handling
 });
 
-await Clikgate.setPushToken(await messaging().getToken(), { provider: 'fcm' });
-messaging().onTokenRefresh((t) => Clikgate.setPushToken(t, { provider: 'fcm' }));
+// Optional: send the FCM token yourself (it wins over the automatic one).
+// await Clikgate.setPushToken(await messaging().getToken(), { provider: 'fcm' });
+// messaging().onTokenRefresh((t) => Clikgate.setPushToken(t, { provider: 'fcm' }));
 ```
 
-iOS without FCM: forward the APNs token and silent pushes natively (section 8). A token can also be passed
-from JS as hex with `{ provider: 'apns' }`. Clikgate's silent uninstall checks (`{"cg": "uc"}`, APNs
-`cg.t == "uc"`) must never produce a notification; the SDK never requests notification permission.
+**Side effect.** Registering early also hands the push token to any other push tool in your app, which may count
+the device as registered. Users still see no notifications without permission. To control push registration
+timing yourself, pass `automaticPushToken: false` to `Clikgate.configure` and call `setPushToken` (an FCM token, or
+the hex APNs token with `{ provider: 'apns' }`) when you choose; on iOS keep forwarding the token after your own
+`registerForRemoteNotifications()`.
 
 ## 7. Expo config plugin
 
@@ -481,7 +512,8 @@ from JS as hex with `{ provider: 'apns' }`. Clikgate's silent uninstall checks (
           "testLinkDomain": "myapp.dev.ciz.to",
           "uriScheme": "myapp",
           "enableBackgroundRemoteNotifications": true,
-          "enableWhatsAppSharing": true
+          "enableWhatsAppSharing": true,
+          "automaticPushToken": true
         }
       ]
     ]
@@ -496,6 +528,7 @@ from JS as hex with `{ provider: 'apns' }`. Clikgate's silent uninstall checks (
 | `testVariants` (default `["development", "preview"]`) | Builds whose variant (`APP_VARIANT`, else EAS Build's `EAS_BUILD_PROFILE`) is listed get `testLinkDomain` in **every** configuration, so internal preview (Release) builds open test links too | same |
 | `uriScheme` | `CFBundleURLTypes` entry | `VIEW` intent filter for the scheme (skipped if Expo's `scheme` already declares it) |
 | `enableBackgroundRemoteNotifications` (default `true`) | `UIBackgroundModes` += `remote-notification` | — |
+| `automaticPushToken` (default `true`, 2.1.0) | Uninstall tracking: `aps-environment` = `development` unless already set (as expo-notifications does; Xcode writes the distribution value on export), and the forward line in the AppDelegate (`AppDelegate.swift`: a `public override` of `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` that calls `super`; `AppDelegate.mm`: the line in the existing method). Idempotent; `false` adds neither | — |
 | `enableWhatsAppSharing` (default `true`) | `LSApplicationQueriesSchemes` += `whatsapp` (only needed if your app calls `Linking.canOpenURL('whatsapp://…')`; Engage's `share.whatsApp` works without it) | — |
 
 **Test link domain.** Your app's test subdomain (`myapp.dev.ciz.to`, Clikgate's test links) must never reach a
@@ -511,17 +544,17 @@ Without a variant (local `npx expo run:*`, `production`), only Debug builds get 
 changing the plugin props, make a new development build: Expo Go and existing builds keep their old
 entitlements and intent filters. `npx @clikgate/setup` adds this entry for you.
 
-Existing entries are kept and nothing is duplicated. The plugin does **not** modify the AppDelegate: the
+Existing entries are kept and nothing is duplicated. For links the plugin doesn't touch the AppDelegate: the
 Expo AppDelegate already forwards links to `RCTLinkingManager`, and the module picks them up from its
-`RCTOpenURLNotification` automatically. Forwarding silent APNs pushes / APNs tokens natively (only for apps
-not using FCM from JS) is a manual step (section 8).
+`RCTOpenURLNotification` automatically. Its only AppDelegate edit is the APNs token forward line
+(`automaticPushToken`). Answering silent APNs pushes natively is a manual step (section 8).
 
 ## 8. iOS setup (bare React Native)
 
 1. **Associated Domains**: Xcode → target → Signing & Capabilities → + Associated Domains →
    `applinks:inv.myapp.com`, one entry for **every** domain of your Clikgate domain group (aliases such as
-   `ybr.ng` and `go.yourbrand.com` serve the same links; list them all in `linkDomains` too). **Background Modes** → Remote notifications. **URL Types** → your scheme
-   (for the interstitial's "Open in app").
+   `ybr.ng` and `go.yourbrand.com` serve the same links; list them all in `linkDomains` too). **Push
+   Notifications** (uninstall tracking). **URL Types** → your scheme (for the interstitial's "Open in app").
 2. **AppDelegate** — React Native apps own it. Forward links (keeps `Linking` working too):
 
    ```swift
@@ -547,11 +580,10 @@ not using FCM from JS) is a manual step (section 8).
    right after it. Apps with a custom `UISceneDelegate` must forward `scene(_:continue:)` and
    `scene(_:openURLContexts:)` the same way.
 
-3. **Push without FCM** (APNs):
+3. **Push (uninstall tracking)**: the SDK registers for remote notifications itself (section 6); forward the
+   token, and answer Clikgate's silent checks:
 
    ```swift
-   application.registerForRemoteNotifications()   // in didFinishLaunching; no permission prompt needed
-
    func application(_ application: UIApplication,
                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
      ClikgateRN.setPushToken(deviceToken: deviceToken)   // kept until configure if early
@@ -564,8 +596,8 @@ not using FCM from JS) is a manual step (section 8).
    }
    ```
 
-   Add the Push Notifications capability (`aps-environment`). Apps using
-   `@react-native-firebase/messaging` don't need this (section 6).
+   Add the Push Notifications capability (`aps-environment`). `npx @clikgate/setup` adds the capability and
+   the forward line.
 
 4. **WhatsApp** (Engage `share.whatsApp`): nothing to add. Add `whatsapp` to
    `LSApplicationQueriesSchemes` only if your own code calls `Linking.canOpenURL('whatsapp://…')`.
@@ -620,11 +652,10 @@ Pasteboard modes, App Attest and the privacy manifest are covered in [ios.md](io
 
 `react-native/example` (bare React Native 0.86.3): product deep link screen, apply-code screen,
 referred-by banner, push-token hook (APNs natively on iOS; FCM wiring shown in `src/push.ts`, no Firebase
-needed to build) — core — and, through `@clikgate/react-native-engage`, referral invite (create link,
+needed to build) — core — and, through the Engage features (`ClikgateEngage`), referral invite (create link,
 `Share`, share to WhatsApp, stats), weekly leaderboard (top 10, my rank, around me, hide-me toggle;
-`CLIKGATE_LEADERBOARD_ID`) and promo-code redemption. Metro resolves the Engage package from
-`../../react-native-engage/src` (see `example/metro.config.js`); TypeScript via `paths` in
-`example/tsconfig.json`.
+`CLIKGATE_LEADERBOARD_ID`) and promo-code redemption. Metro resolves `@clikgate/react-native` (core and Engage) from `../src`
+(see `example/metro.config.js`); TypeScript via `paths` in `example/tsconfig.json`.
 
 ```sh
 cd react-native && npm install && cd example && npm install
@@ -645,22 +676,17 @@ cd ios && pod install && cd .. && npx react-native run-ios
 
 ```sh
 cd react-native
-npm test          # Jest: TS layer with a mocked native module + Expo plugin mods
+npm test          # Jest: TS layer with a mocked native module, Engage (rules, cache, retry, errors, share;
+                  # fixtures from ../shared) and the Expo plugin mods
 npm run typecheck
 npm run lint
 npm run build     # lib/ (bob) + plugin/build
-
-cd ../react-native-engage
-npm run devlink   # links node_modules -> ../react-native/node_modules (no second install)
-npm test          # Jest: rules, cache, retry, errors, share, API snapshot (fixtures from ../shared)
-npm run typecheck
-npm run lint
-npm run build     # lib/ (bob); needs the core's lib/typescript (`npm run build:lib` in ../react-native)
 ```
 
-Both packages have a public-API snapshot test (`api/public-api.txt`, `src/__tests__/publicApi.test.ts`).
+The core and the Engage features each have a public-API snapshot test (`api/public-api.txt` /
+`src/__tests__/publicApi.test.ts`, `api/engage-public-api.txt` / `src/__tests__/engage/publicApi.test.ts`).
 The core one also fails on any leaderboard / referral-stats / link-creation / code / share /
-identity-signal API and on any dependency on, or import of, `@clikgate/react-native-engage`. After an
+identity-signal API outside `src/engage` and on any core import of `src/engage`. After an
 intended API change: `UPDATE_API_SNAPSHOT=1 npx jest publicApi`.
 
 ## 12. Removing the SDK

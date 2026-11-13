@@ -1,7 +1,11 @@
 export { default } from './withClikgate';
 export {
   addAndroidIntentFilters,
+  addApsEnvironment,
   addAssociatedDomains,
+  addPushTokenForwardObjc,
+  addPushTokenForwardSwift,
+  forwardsPushToken,
   addQueriesScheme,
   addRemoteNotificationBackgroundMode,
   addUrlScheme,

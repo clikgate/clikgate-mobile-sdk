@@ -1,5 +1,0 @@
-# Monorepo development only: use the core plugin from ../flutter. Ignored when the package is
-# published (listed in .pubignore); published versions resolve clikgate_flutter from pub.dev.
-dependency_overrides:
-  clikgate_flutter:
-    path: ../flutter

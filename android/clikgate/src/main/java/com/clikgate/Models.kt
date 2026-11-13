@@ -251,7 +251,7 @@ public fun interface AttributionListener {
 
 /**
  * Marks APIs meant for Clikgate's own packages (the Flutter / React Native wrappers and the
- * Engage add-on `com.clikgate:clikgate-engage`). They may change without notice; apps shouldn't
+ * Engage features (`ClikgateEngage`)). They may change without notice; apps shouldn't
  * use them.
  */
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR, message = "Internal Clikgate wrapper API.")
@@ -260,7 +260,7 @@ public fun interface AttributionListener {
 public annotation class ClikgateInternalApi
 
 /**
- * Internal request context for the Engage add-on (`com.clikgate:clikgate-engage`) and the
+ * Internal request context for the Engage features (`ClikgateEngage`) and the
  * wrappers: what a `/v1/sdk/...` call needs to act for this installation. Obtained from
  * [Clikgate.requestContext] once the first `/install` succeeded. A snapshot: get a fresh one per
  * call (the identity token changes with [Clikgate.identifyUser]).

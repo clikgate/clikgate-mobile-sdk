@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:clikgate_engage/clikgate_engage.dart';
+import 'package:clikgate_flutter/engage.dart';
 import 'package:clikgate_flutter_example/src/leaderboard.dart';
 import 'package:clikgate_flutter_example/src/promo_code.dart';
 import 'package:clikgate_flutter_example/src/screens.dart';

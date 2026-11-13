@@ -71,7 +71,7 @@ internal object BridgeMaps {
     "referral" to r.referral?.let(::referral),
   )
 
-  /** Engage add-on request context. */
+  /** Engage features request context. */
   @OptIn(ClikgateInternalApi::class)
   fun requestContext(c: ClikgateRequestContext): Map<String, Any?> = mapOf(
     "installationId" to c.installationId,

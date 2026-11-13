@@ -84,9 +84,29 @@
  				CURRENT_PROJECT_VERSION = 1;
  				INFOPLIST_FILE = RnApp/Info.plist;
 
+--- a/apps/mobile/ios/RnApp/AppDelegate.swift
++++ b/apps/mobile/ios/RnApp/AppDelegate.swift
+@@ -1,3 +1,6 @@
+ import UIKit
++// clikgate-setup:start
++import ClikgateReactNative
++// clikgate-setup:end
+ 
+ @main
+@@ -9,3 +12,9 @@
+     true
+   }
++
++  // clikgate-setup:start
++  func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
++    ClikgateRN.setPushToken(deviceToken: deviceToken)
++  }
++  // clikgate-setup:end
+ }
+
 --- /dev/null
 +++ b/apps/mobile/ios/RnApp/RnApp.entitlements
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,13 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -96,12 +116,14 @@
 +		<string>applinks:acme.ciz.to</string>
 +		<string>applinks:go.acme.com</string>
 +	</array>
++	<key>aps-environment</key>
++	<string>production</string>
 +</dict>
 +</plist>
 
 --- /dev/null
 +++ b/apps/mobile/ios/RnApp/RnAppDebug.entitlements
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -112,6 +134,8 @@
 +		<string>applinks:go.acme.com</string>
 +		<string>applinks:acme.dev.ciz.to</string>
 +	</array>
++	<key>aps-environment</key>
++	<string>development</string>
 +</dict>
 +</plist>
 
@@ -120,6 +144,6 @@
 @@ -11,4 +11,5 @@
    },
    "dependencies": {
-+    "@clikgate/react-native": "^2.0.0",
++    "@clikgate/react-native": "^2.1.0",
      "react": "19.3.0",
      "react-native": "0.88.0",

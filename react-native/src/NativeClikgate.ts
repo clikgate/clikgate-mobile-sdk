@@ -10,8 +10,8 @@ import { TurboModuleRegistry } from 'react-native';
  *
  * The contract's `referrals.*` method names contain a dot, which is not a valid TurboModule
  * method name, so they are exposed as `referralsApplyCode` and `referralsReferredBy`.
- * `getRequestContext` / `reportServerError` are the internal methods the Engage add-on
- * (`@clikgate/react-native-engage`) uses.
+ * `getRequestContext` / `reportServerError` are the internal methods the Engage features
+ * (src/engage) use.
  *
  * Deep links are emitted as `ClikgateDeepLink` events (`NativeEventEmitter`), hence
  * `addListener` / `removeListeners`.
@@ -57,7 +57,7 @@ export interface Spec extends TurboModule {
     args: CodegenTypes.UnsafeObject
   ): Promise<CodegenTypes.UnsafeObject>;
 
-  // Engage add-on (internal)
+  // Engage features (internal)
   getRequestContext(
     args: CodegenTypes.UnsafeObject
   ): Promise<CodegenTypes.UnsafeObject>;

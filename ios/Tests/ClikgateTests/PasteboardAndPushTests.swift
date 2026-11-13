@@ -98,6 +98,119 @@ final class PasteboardTests: XCTestCase {
     }
 }
 
+/// `pasteboard_outcome` on /install (iOS only; omitted when the paste flow didn't run).
+final class PasteboardOutcomeTests: XCTestCase {
+    let server = StubServer.shared
+    let token = "cgdl_9Xk2abcdefghijklmnopqrstuv"
+
+    override func setUp() { super.setUp(); server.reset() }
+
+    private func installBody(_ pasteboard: FakePasteboard, mode: ClikgateOptions.PasteboardMode = .automatic,
+                             feature: String = "on_interstitial_tap", optOut: Bool = false) async throws -> [String: Any] {
+        let h = Harness(pasteboard: pasteboard)
+        defer { h.cleanUp() }
+        stubHappyPath()
+        var config = Fixtures.json("config_response")
+        var features = config["features"] as! [String: Any]
+        features["pasteboard_matching"] = feature
+        config["features"] = features
+        server.on("GET /v1/sdk/config", StubResponse(status: 200, body: try JSONSerialization.data(withJSONObject: config)))
+        let core = h.makeCore(options: ClikgateOptions(linkDomains: ["inv.myapp.com"], logLevel: .none, pasteboardMode: mode))
+        if optOut { await core.setTrackingEnabled(false) }
+        await core.start(startTimers: false)
+        return try XCTUnwrap(server.requests("POST /v1/sdk/install").first).json
+    }
+
+    func testEveryOutcome() async throws {
+        let url = "https://inv.myapp.com/_cg/p/\(token)"
+        let cases: [(FakePasteboard, ClikgateOptions.PasteboardMode, String)] = [
+            (FakePasteboard(detect: true, text: url), .automatic, "token_found"),
+            (FakePasteboard(detect: false, text: url), .automatic, "no_link"),
+            (FakePasteboard(detect: nil, hasStrings: false, text: url), .automatic, "no_link"),
+            (FakePasteboard(detect: true, text: "https://example.com/other"), .automatic, "no_token"),
+            (FakePasteboard(detect: true, text: nil), .automatic, "denied"),
+            (FakePasteboard(detect: true, text: url), .pasteControlOnly, "paste_control"),
+        ]
+        for (pasteboard, mode, expected) in cases {
+            server.reset()
+            let body = try await installBody(pasteboard, mode: mode)
+            XCTAssertEqual(body["pasteboard_outcome"] as? String, expected)
+            XCTAssertEqual(body["pasteboard_token"] as? String, expected == "token_found" ? token : nil, expected)
+        }
+    }
+
+    func testNotSentWhenThePasteFlowDidNotRun() async throws {
+        let url = "https://inv.myapp.com/_cg/p/\(token)"
+        let off = try await installBody(FakePasteboard(detect: true, text: url), mode: .off)
+        XCTAssertNil(off["pasteboard_outcome"], "mode off")
+        for mode in [ClikgateOptions.PasteboardMode.automatic, .pasteControlOnly] {
+            server.reset()
+            var body = try await installBody(FakePasteboard(detect: true, text: url), mode: mode, feature: "off")
+            XCTAssertNil(body["pasteboard_outcome"], "feature off")
+            server.reset()
+            body = try await installBody(FakePasteboard(detect: true, text: url), mode: mode, optOut: true)
+            XCTAssertNil(body["pasteboard_outcome"], "opted out")
+            XCTAssertNil(body["pasteboard_token"])
+        }
+    }
+
+    func testRetriedInstallSendsTheSameOutcomeThenClearsIt() async throws {
+        let pasteboard = FakePasteboard(detect: true, text: "https://example.com/other")
+        let h = Harness(pasteboard: pasteboard)
+        defer { h.cleanUp() }
+        stubHappyPath()
+        server.on("POST /v1/sdk/install", .offline(), .json("{}", status: 503), .fixture("install_response_organic"))
+        let core = h.makeCore()
+        await core.start(startTimers: false)
+        let installs = server.requests("POST /v1/sdk/install")
+        XCTAssertEqual(installs.count, 3)
+        XCTAssertEqual(installs.map { $0.json["pasteboard_outcome"] as? String }, Array(repeating: "no_token", count: 3))
+        XCTAssertEqual(pasteboard.reads, 1, "read once, the outcome is kept for retries")
+        let st = await core.currentState()
+        XCTAssertNil(st.pasteboardOutcome, "cleared after a successful install")
+    }
+
+    func testOutcomeIsPersisted() {
+        let st = PersistedState(json: [:])
+        st.pasteboardOutcome = "denied"
+        XCTAssertEqual(PersistedState(json: st.json).pasteboardOutcome, "denied")
+    }
+
+    func testPasteButtonTokenBeforeFirstInstallIsSentAsFound() async throws {
+        let h = Harness()
+        defer { h.cleanUp() }
+        stubHappyPath()
+        server.on("GET /v1/sdk/config", .fixture("config_response_consent_required"))
+        let core = h.makeCore(options: ClikgateOptions(linkDomains: ["inv.myapp.com"], logLevel: .none, pasteboardMode: .pasteControlOnly))
+        await core.start(startTimers: false)
+        var st = await core.currentState()
+        XCTAssertEqual(st.pasteboardOutcome, "paste_control", "kept on the device while consent is unknown")
+        let ok = await core.applyPastedText("https://inv.myapp.com/_cg/p/\(token)")
+        XCTAssertTrue(ok)
+        await core.setConsent(analytics: .granted, attribution: .granted, adUserData: nil, adPersonalization: nil)
+        let body = try XCTUnwrap(server.requests("POST /v1/sdk/install").first).json
+        XCTAssertEqual(body["pasteboard_outcome"] as? String, "token_found")
+        XCTAssertEqual(body["pasteboard_token"] as? String, token)
+        st = await core.currentState()
+        XCTAssertNil(st.pasteboardOutcome)
+    }
+
+    func testConsentDenyDropsTheOutcome() async throws {
+        let h = Harness(pasteboard: FakePasteboard(detect: false))
+        defer { h.cleanUp() }
+        stubHappyPath()
+        server.on("GET /v1/sdk/config", .fixture("config_response_consent_required"))
+        let core = h.makeCore()
+        await core.start(startTimers: false)
+        var st = await core.currentState()
+        XCTAssertEqual(st.pasteboardOutcome, "no_link")
+        await core.setConsent(analytics: .denied, attribution: .denied, adUserData: .denied, adPersonalization: .denied)
+        st = await core.currentState()
+        XCTAssertNil(st.pasteboardOutcome)
+        XCTAssertTrue(server.requests("POST /v1/sdk/install").isEmpty)
+    }
+}
+
 final class PushTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared

@@ -6,8 +6,8 @@ The primary Clikgate demo, in two variants (spec 17A.4) selected with
 - **backend** (recommended path): sign-in, invite link, stats, weekly leaderboard / "my rank"
   and purchases go through the sample backend in [`samples/backend`](../../samples/backend),
   which calls the Clikgate control-plane API. The app uses only `clikgate_flutter`.
-- **engage** (no backend): the same screens plus promo codes via the optional
-  [`clikgate_engage`](../../flutter_engage) add-on.
+- **engage** (no backend): the same screens plus promo codes via the Engage features of
+  `clikgate_flutter` (`package:clikgate_flutter/engage.dart`).
 
 Both: product deep links (direct and deferred), referral welcome screen, apply-code screen,
 referred-by banner, optional FCM token registration for uninstall tracking. Details and the
@@ -53,7 +53,7 @@ The integration tests are skipped unless `CLIKGATE_API_BASE_URL` is defined.
 
 - `lib/main.dart`: configure, pick the variant, route deep links.
 - `lib/src/variants/features.dart`: the `ReferralFeatures` interface the screens use;
-  `backend_features.dart` (HTTP to the sample backend) and `engage_features.dart` (`clikgate_engage`).
+  `backend_features.dart` (HTTP to the sample backend) and `engage_features.dart` (`package:clikgate_flutter/engage.dart`).
 - `lib/src/screens.dart` (home, sign-in, invite, apply code, product, welcome),
   `leaderboard.dart`, `promo_code.dart` (Engage only), `push.dart` (`firebase_messaging`).
 

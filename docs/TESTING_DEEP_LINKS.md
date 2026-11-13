@@ -74,14 +74,30 @@ curl -s https://sdk.clikgate.com/v1/sdk/install -H "Clikgate-SDK-Key: $SDK_KEY" 
   "app_version": "1.0", "sdk_version": "1.0.0", "install_referrer": {"referrer": "cg_click_id=clk_...&cg_link=lnk_..."}}'
 ```
 
-**iOS (pasteboard).** With `pasteboard_matching = on_interstitial_tap` (default): open the link in
-Safari without the app installed → interstitial → tap "Get" (copies a `https://<domain>/_cg/p/cgdl_...`
-link) → install (TestFlight / Xcode) → first launch. On iOS 16+ the system asks to allow paste
-(or use `ClikgatePasteControl`, which needs no prompt). Expect `matchType = pasteboard`.
+**iOS (pasteboard).** Needs `pasteboardMode: .automatic` or `.pasteControlOnly` in the app **and**
+the app's dashboard setting `pasteboard_matching = on_interstitial_tap` (off by default). Open the
+link in Safari without the app installed → interstitial → tap "Open in app" (copies a
+`https://<domain>/_cg/p/cgdl_...` link) → install (TestFlight / Xcode) → first launch. On iOS 16+ the
+system asks to allow paste (or use `ClikgatePasteControl`, which needs no prompt). Expect
+`matchType = pasteboard`.
 
-**iOS (probabilistic)** — only if an org owner enabled it (see [PRIVACY.md](PRIVACY.md)): open the
-link on the device, install within the window from the **same network**, open the app. Expect
-`matchType = probabilistic` with a confidence score.
+The first `/install` carries `pasteboard_outcome`, which feeds the dashboard's iPhone match rate.
+To see each one (delete the app between runs; the paste step runs on the first launch only):
+
+| Outcome | How to get it |
+|---|---|
+| `token_found` | the flow above, tapping **Allow Paste** |
+| `denied` | the flow above, tapping **Don't Allow** |
+| `no_link` | don't tap "Open in app" (or copy nothing) before the first launch |
+| `no_token` | copy some other web URL (e.g. `https://example.com`) before the first launch |
+| `paste_control` | `pasteboardMode: .pasteControlOnly`; tapping the Paste button afterwards can still match |
+| `expired` (server) | wait past the app's install lookback window, or reuse a token that already matched |
+| (not sent) | `pasteboardMode: .off`, the dashboard setting off, or tracking/consent denied |
+
+**iOS never uses probabilistic matching.** The redirect collects no iOS signals and the
+probabilistic setting is rejected (422) for iOS apps. Without a Universal Link, Apple Search Ads, a
+pasteboard token or a code, an iOS install is organic and the app opens on its home screen.
+Probabilistic matching is Android only, opt-in and consented (see [PRIVACY.md](PRIVACY.md)).
 
 **Organic**: install without clicking anything: `attribution.status = organic`, no deep link.
 
@@ -91,7 +107,7 @@ link on the device, install within the window from the **same network**, open th
    such as `["/r/{code}"]` and the qualification steps you want to test (use small
    `within_days` / `hold.days` values on a sandbox app).
 2. On device A: sign in, `identifyUser(customerId: userId, identityToken)`, get the user's link (from your
-   backend via `/v1/referral-programs/{id}/referrers`, or with the Engage add-on's
+   backend via `/v1/referral-programs/{id}/referrers`, or with the Engage features'
    `referrals.createLink(programId)`), share the link. With the samples: run
    [`samples/backend`](../samples/backend/README.md) and the Flutter example's backend variant
    (sign in → "Invite friends"), or the Engage variant without a backend (section 7).

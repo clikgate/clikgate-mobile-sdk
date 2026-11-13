@@ -7,7 +7,7 @@ import 'models.dart';
 /// Referrer-side features (the user's own link, stats, sharing,
 /// leaderboards, promo codes) are not in the core plugin: call the Clikgate
 /// API from your backend (recommended), or use the optional
-/// `clikgate_engage` package in apps without a backend.
+/// Engage features (`package:clikgate_flutter/engage.dart`) in apps without a backend.
 ///
 /// Errors are thrown as `ClikgateException` with the backend code
 /// (`code_not_found`, `already_referred`, `window_expired`, `self_referral`,

@@ -1,9 +1,0 @@
-# What `dart pub publish` leaves out. This file replaces flutter_engage/.gitignore for pub, so its
-# entries are repeated here.
-pubspec_overrides.yaml
-build/
-.dart_tool/
-/pubspec.lock
-.flutter-plugins
-.flutter-plugins-dependencies
-**/test/

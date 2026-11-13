@@ -46,6 +46,7 @@ describe('configure', () => {
       waitForATT: false,
       deferredDeepLinkTimeoutMs: 5000,
       platformDomainBrowserFallback: true,
+      automaticPushToken: true,
       wrapperVersion: VERSION,
     });
   });
@@ -72,6 +73,7 @@ describe('configure', () => {
       waitForATT: true,
       deferredDeepLinkTimeoutMs: 2500,
       platformDomainBrowserFallback: false,
+      automaticPushToken: false,
     });
     expect(mockModule.configure.mock.calls[0]?.[0]).toMatchObject({
       apiBaseUrl: 'http://10.0.2.2:8000',
@@ -82,6 +84,7 @@ describe('configure', () => {
       waitForATT: true,
       deferredDeepLinkTimeoutMs: 2500,
       platformDomainBrowserFallback: false,
+      automaticPushToken: false,
     });
   });
 

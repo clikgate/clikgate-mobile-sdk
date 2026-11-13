@@ -21,7 +21,6 @@ if (new File(clikgateAndroidSdk, "settings.gradle.kts").exists() &&
   includeBuild(clikgateAndroidSdk) {
     dependencySubstitution {
       substitute(module("com.clikgate:clikgate-android")).using(project(":clikgate"))
-      substitute(module("com.clikgate:clikgate-engage")).using(project(":clikgate-engage"))
     }
   }
 }

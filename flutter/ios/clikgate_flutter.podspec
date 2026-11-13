@@ -6,7 +6,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'clikgate_flutter'
-  s.version          = '2.0.0'
+  s.version          = '2.1.0'
   s.summary          = 'Clikgate deep linking, install attribution, referrals and uninstall tracking for Flutter (iOS).'
   s.description      = <<-DESC
 Flutter plugin bridging to the Clikgate iOS SDK: Universal Links, deferred deep links,
@@ -19,7 +19,7 @@ attribution, events, referrals and push-token registration for uninstall trackin
   s.source_files     = 'clikgate_flutter/Sources/clikgate_flutter/**/*.swift'
   s.resource_bundles = { 'clikgate_flutter_privacy' => ['clikgate_flutter/Sources/clikgate_flutter/PrivacyInfo.xcprivacy'] }
   s.dependency 'Flutter'
-  s.dependency 'Clikgate', '~> 2.0.0'
+  s.dependency 'Clikgate', '~> 2.1.0'
   s.platform = :ios, '13.0'
 
   # Flutter.framework does not contain a i386 slice.

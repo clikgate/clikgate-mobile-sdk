@@ -60,8 +60,7 @@ kotlin {
 
 dependencies {
     implementation(project(":clikgate"))
-    // Optional Engage add-on: invite link, stats and WhatsApp share without a backend.
-    implementation(project(":clikgate-engage"))
+    // Includes the Engage features (com.clikgate.engage): invite link, stats and WhatsApp share without a backend.
     // FCM without the google-services plugin: the app builds and runs without
     // google-services.json; push registration is skipped when Firebase isn't configured.
     implementation(platform(libs.firebase.bom))

@@ -30,7 +30,7 @@ class RunnerTests: XCTestCase {
   }
 
   /// Core methods incl. the internal Engage ones (`getRequestContext`, `reportServerError`).
-  /// Referral links/stats, leaderboards, codes and sharing are in clikgate_engage (pure Dart).
+  /// Referral links/stats, leaderboards, codes and sharing are in the Engage features (package:clikgate_flutter/engage.dart, pure Dart).
   func testCoreMethodsAreRoutedAndNeedConfigure() {
     let methods: [(String, [String: Any])] = [
       ("referrals.applyCode", ["programId": "rpg_1", "code": "ADA42"]),
@@ -59,5 +59,21 @@ class RunnerTests: XCTestCase {
     XCTAssertEqual(rd?["offlineTouchId"] as? String, "oft_1")
     XCTAssertEqual(rd?["status"] as? Int, 409)
     XCTAssertNil(rd?["feature"])
+  }
+
+  /// `automaticPushToken`: the APNs token from the app delegate callback goes to the SDK unless the option is
+  /// off or Dart passed its own token (e.g. FCM from firebase_messaging).
+  func testAPNsTokenForwardingFollowsAutomaticPushTokenAndManualTokens() {
+    XCTAssertTrue(ClikgateFlutterPlugin.forwardsAPNsToken(automatic: true, manualToken: false))
+    XCTAssertFalse(ClikgateFlutterPlugin.forwardsAPNsToken(automatic: false, manualToken: false))
+    XCTAssertFalse(ClikgateFlutterPlugin.forwardsAPNsToken(automatic: true, manualToken: true))
+  }
+
+  /// The plugin is an application delegate so it receives
+  /// `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`; before configure it does nothing.
+  func testDeviceTokenCallbackBeforeConfigureIsIgnored() {
+    let plugin = ClikgateFlutterPlugin()
+    plugin.application(UIApplication.shared, didRegisterForRemoteNotificationsWithDeviceToken: Data([0xab, 0xcd]))
+    XCTAssertFalse(UserDefaults.standard.bool(forKey: ClikgateFlutterPlugin.manualPushTokenKey))
   }
 }

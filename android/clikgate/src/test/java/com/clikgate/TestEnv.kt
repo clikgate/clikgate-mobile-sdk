@@ -141,6 +141,7 @@ internal class TestEnv {
     var device: DeviceInfo = FakeDevice(context)
     var firebase: com.clikgate.internal.FirebaseAnalyticsBridge? = null
     var browser: com.clikgate.internal.BrowserOpener? = null
+    var pushTokens: com.clikgate.internal.PushTokenSource? = null
     val storage = Storage(context)
     val queue = EventQueue(context)
 
@@ -157,6 +158,7 @@ internal class TestEnv {
         installWaitForReferralMs = 3_000,
         firebase = firebase,
         appInstanceIdWaitMs = 500,
+        pushTokens = pushTokens,
         browser = browser,
     )
 

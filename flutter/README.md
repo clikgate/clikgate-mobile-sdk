@@ -4,9 +4,9 @@ The **core** Clikgate plugin for Flutter: deep links (direct and deferred), inst
 attribution, goals, `identifyUser`, `getInstallationId`, referee-side **referrals** (apply a code, referred-by),
 **uninstall tracking** and feature switches, powered by [Clikgate](https://clikgate.com).
 
-Referral links and stats, leaderboards, promo codes and share helpers are in the optional
-pure-Dart package [`clikgate_engage`](../flutter_engage) for apps without a backend; apps with a
-backend should call the Clikgate API from their server instead (recommended).
+Referral links and stats, leaderboards, promo codes and share helpers are the Engage features of
+this package (`import 'package:clikgate_flutter/engage.dart'`, since 2.1.0) for apps without a
+backend; apps with a backend should call the Clikgate API from their server instead (recommended).
 
 A thin bridge over the native Clikgate Android (`com.clikgate:clikgate-android`) and iOS
 SDKs — no attribution or referral logic runs in Dart.
@@ -40,9 +40,9 @@ final String? installationId = await Clikgate.getInstallationId(); // send it wi
 await Clikgate.identifyUser(customerId: null); // sign-out
 await Clikgate.setTrackingEnabled(false);
 
-// Push / uninstall tracking (works with firebase_messaging)
-await Clikgate.setPushToken(await FirebaseMessaging.instance.getToken(), provider: PushProvider.fcm);
-if (Clikgate.isClikgateMessage(message.data)) return; // in onMessage and the background handler
+// Uninstall tracking: turn it on in the dashboard; the push token is automatic (automaticPushToken,
+// no AppDelegate code, no permission prompt). iOS needs the Push Notifications capability.
+if (Clikgate.isClikgateMessage(message.data)) return; // in your FCM onMessage and background handlers
 
 // Referee-side referral calls (tied to this installation)
 final referral = await Clikgate.referrals.applyCode(programId: 'rpg_...', code: 'ADA42');
@@ -85,13 +85,27 @@ Errors are thrown as `ClikgateException(code, message, status, param, feature)` 
 
 ## Setup
 
+From your Flutter project's folder:
+
+```sh
+flutter pub add clikgate_flutter
+dart run clikgate_flutter          # sets up Clikgate (dart run clikgate_flutter:doctor checks it)
+```
+
+`dart run clikgate_flutter` is the [Clikgate setup command](https://clikgate.com/docs/setup-command) (the same
+program as `npx @clikgate/setup`, no Node.js needed). It shows every change before it writes anything. The
+first run downloads the program for your computer once (about 41 MB; up to 55 MB on Linux and Windows) and checks its SHA-256 against the
+checksum in this package. `npx @clikgate/setup` still works.
+
+By hand:
+
 - Android: intent filters with `android:autoVerify="true"` for your link domain; the plugin
   forwards launch and `onNewIntent` intents automatically.
 - iOS: Associated Domains, Background Modes → Remote notifications.
 
 Full guides: [Flutter integration](../docs/flutter.md) (Android setup, native SDK
 dependency) and [iOS setup](../docs/flutter_ios_setup.md). The `example/` app demonstrates
-the core plugin and the Engage add-on.
+the core plugin and its Engage features.
 
 ## Deep links on every plan
 
@@ -103,7 +117,7 @@ attribution is included in all of them. `goal` does nothing only when app attrib
 
 ## Removing the SDK
 
-1. Remove `clikgate_flutter` (and `clikgate_engage`, if used) from `pubspec.yaml` and run
+1. Remove `clikgate_flutter` from `pubspec.yaml` and run
    `flutter pub get`.
 2. Delete `Clikgate.configure(...)` and every other `Clikgate.*` / `ClikgateEngage` call
    (deep link listener, `goal`, `identifyUser`, consent, `setPushToken`, `isClikgateMessage` checks).
@@ -113,7 +127,8 @@ attribution is included in all of them. `goal` does nothing only when app attrib
    Android `autoVerify` intent filters for the link domains and custom schemes in
    `AndroidManifest.xml`.
 4. Remove push-token forwarding for uninstall tracking (`Clikgate.setPushToken`, the
-   `isClikgateMessage` filters in your FCM handlers). Keep your own push setup.
+   `isClikgateMessage` filters in your FCM handlers), and the Push Notifications capability if only
+   Clikgate used it. Keep your own push setup.
 5. In the Clikgate dashboard, mark the app as no longer tracked (app settings), so Clikgate stops
    uninstall checks and doesn't expect goals. Links keep redirecting to their web or store
    destinations. Then run `pod install` (iOS) and a clean build.
