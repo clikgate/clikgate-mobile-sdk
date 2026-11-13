@@ -57,6 +57,10 @@ android {
 kotlin {
     // Explicit API mode for the library sources only (not tests).
     explicitApi()
+    // The published POM asks for this kotlin-stdlib instead of the compiler's (2.1.0), whose
+    // 2.1 metadata a Kotlin 1.9 compiler can't read (React Native 0.76 / Expo 52 apps build
+    // with Kotlin 1.9.2x). apiVersion 1.9 below keeps the code within this stdlib's API.
+    coreLibrariesVersion = "1.9.24"
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
         // Emit metadata readable by apps still on Kotlin 1.9 (common in Flutter apps).
@@ -93,30 +97,21 @@ mavenPublishing {
     coordinates("com.clikgate", "clikgate-android", sdkVersion)
 }
 
-// Spec 0.4: the core SDK never depends on the Engage add-on (Engage depends on core). Fails if any
-// core dependency or source refers to clikgate-engage / com.clikgate.engage. Part of `check`.
+// Spec 0.4, kept after the merge (2.1.0): the Engage features ship in this artifact under com.clikgate.engage,
+// but core code never uses them (Engage uses core, never the other way round). Fails if any source outside
+// com/clikgate/engage refers to com.clikgate.engage. Part of `check`.
 val checkNoEngageDependency by tasks.registering {
     group = "verification"
-    description = "Fails if the core SDK depends on or imports the Engage add-on."
-    val sources = fileTree("src/main") { include("**/*.kt", "**/*.java", "**/*.xml") }
-    val declared = provider {
-        configurations.filter { it.name.endsWith("Classpath") || it.name in setOf("api", "implementation", "compileOnly", "runtimeOnly") }
-            .filterNot { it.name.contains("Test", ignoreCase = true) || it.name.contains("lint", ignoreCase = true) }
-            .flatMap { c -> c.dependencies.map { d -> "${c.name}: ${d.group}:${d.name}" } }
-    }
-    // Resolved (transitive) graphs of what apps compile against and ship.
-    val resolved = provider {
-        listOf("releaseCompileClasspath", "releaseRuntimeClasspath").flatMap { name ->
-            configurations.getByName(name).incoming.resolutionResult.allComponents.map { "$name: ${it.id.displayName}" }
-        }
+    description = "Fails if core code (outside com.clikgate.engage) refers to the Engage features."
+    val sources = fileTree("src/main") {
+        include("**/*.kt", "**/*.java")
+        exclude("java/com/clikgate/engage/**")
     }
     inputs.files(sources)
     doLast {
-        val bad = (declared.get() + resolved.get()).filter { it.contains("engage", ignoreCase = true) }
         val imports = sources.files.filter { f -> f.readText().contains("com.clikgate.engage") }
-        check(bad.isEmpty()) { "Core depends on Engage: $bad" }
         check(imports.isEmpty()) { "Core sources reference com.clikgate.engage: $imports" }
-        logger.lifecycle("checkNoEngageDependency: OK (${declared.get().size} declared, ${resolved.get().size} resolved components, ${sources.files.size} sources)")
+        logger.lifecycle("checkNoEngageDependency: OK (${sources.files.size} core sources)")
     }
 }
 tasks.named("check") { dependsOn(checkNoEngageDependency) }

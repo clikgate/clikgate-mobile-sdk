@@ -2,8 +2,7 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "paths": {
-      "@clikgate/react-native": ["../src/index"],
-      "@clikgate/react-native-engage": ["../../react-native-engage/src/index"]
+      "@clikgate/react-native": ["../src/index"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

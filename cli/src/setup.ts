@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import type { Options, Platform } from './args';
+import { setupSubcommand } from './command';
 import { applyPlan, undoInstructions, type ApplyDeps, type ApplyResult } from './apply';
 import { ApiClient, ApiError, NetworkError, type Fetch } from './api/client';
 import { Clikgate, isSharedPlatformDomain, isTestDomain, type App } from './api/clikgate';
@@ -75,7 +76,7 @@ export async function chooseProject(opts: Options, ui: UI): Promise<Candidate> {
         `No app project found in ${root}.`,
         'The setup command works in a Flutter, React Native, Expo, native Android (Gradle) or native iOS (Xcode) app project.',
         'Run it in the project folder, or pass --cwd <path> (and --platform <flutter|react-native|expo|android|ios> to skip detection).',
-        'For a website, run: npx @clikgate/setup website',
+        `For a website, run: ${setupSubcommand('website')}`,
       ].join('\n')
     );
   }

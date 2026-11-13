@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Core / Engage boundary checks for every SDK (spec v3 new edition, 0.4 and section 20):
-#   1. public-API snapshot of each core SDK (and each Engage package), checked in;
+# Core / Engage boundary checks for every SDK (spec v3 new edition, 0.4 and section 20). Since 2.1.0
+# each SDK is one package with its Engage features in their own module / package / folder
+# (Android com.clikgate.engage, iOS ClikgateEngage module, Flutter lib/engage.dart, RN src/engage):
+#   1. public-API snapshots of the core and of its Engage features, checked in;
 #   2. the core public API has no leaderboard, referral-stats, link-creation, code, share or
-#      identity-signal API (forbidden-name check on the snapshot);
-#   3. core never depends on Engage (build files, manifests, imports);
+#      identity-signal API (forbidden-name check on the core snapshot);
+#   3. core code never uses Engage (imports; iOS also: one SPM product / one pod ship both);
 #   4. size budgets: core Android < 150 KB, Engage Android < 44 KB, core iOS < 410 KB,
 #      Engage iOS < 95 KB (methods: android/DECISIONS.md and ios/DECISIONS.md, "Engage split");
 #   5. Change 12: the generated Provider types match shared/providers.json
@@ -61,9 +63,9 @@ android_api() {
   if [ $UPDATE = 1 ]; then
     heavy ./gradlew apiDump -q --console=plain
   else
-    # apiCheck: BCV snapshots (clikgate/api/clikgate.api, clikgate-engage/api/clikgate-engage.api).
-    # CoreBoundaryTest: forbidden names in the core snapshot, no com.clikgate.engage class on core's classpath.
-    # checkNoEngageDependency: no core configuration / source references clikgate-engage.
+    # apiCheck: BCV snapshot (clikgate/api/clikgate.api: core + com.clikgate.engage).
+    # CoreBoundaryTest: forbidden names outside com.clikgate.engage in the snapshot.
+    # checkNoEngageDependency: no core source (outside com/clikgate/engage) references com.clikgate.engage.
     heavy ./gradlew apiCheck :clikgate:checkNoEngageDependency \
       :clikgate:testDebugUnitTest --tests com.clikgate.CoreBoundaryTest -q --console=plain
   fi
@@ -83,8 +85,7 @@ rn_api() {
   local upd=0
   [ $UPDATE = 1 ] && upd=1
   (cd "$ROOT/react-native" && { [ -d node_modules ] || npm ci --no-audit --no-fund; } \
-    && UPDATE_API_SNAPSHOT=$upd npx jest publicApi --ci) &&
-  (cd "$ROOT/react-native-engage" && npm run -s devlink && UPDATE_API_SNAPSHOT=$upd npx jest publicApi --ci)
+    && UPDATE_API_SNAPSHOT=$upd npx jest publicApi --ci)
 }
 
 [ $UPDATE = 1 ] || step "providers: generated Provider types match shared/providers.json" providers_check
@@ -106,11 +107,11 @@ if want ios; then
 fi
 if want flutter; then
   step "flutter: API snapshots + no Engage in core + dependency check" flutter_api
-  [ $UPDATE = 0 ] && step "flutter: release scan (pub packages)" scan --pub "$ROOT/flutter" --pub "$ROOT/flutter_engage"
+  [ $UPDATE = 0 ] && step "flutter: release scan (pub packages)" scan --pub "$ROOT/flutter"
 fi
 if want rn; then
   step "react-native: API snapshots + no Engage in core + dependency check" rn_api
-  [ $UPDATE = 0 ] && step "react-native: release scan (npm pack)" scan --npm "$ROOT/react-native" --npm "$ROOT/react-native-engage"
+  [ $UPDATE = 0 ] && step "react-native: release scan (npm pack)" scan --npm "$ROOT/react-native"
 fi
 
 echo

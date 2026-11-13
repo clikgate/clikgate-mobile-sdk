@@ -166,7 +166,7 @@
 @@ -9,4 +9,5 @@
  activityCompose = "1.11.0"
  composeBom = "2024.09.00"
-+clikgate = "2.0.0"
++clikgate = "2.1.0"
  
  [libraries]
 @@ -25,4 +26,5 @@

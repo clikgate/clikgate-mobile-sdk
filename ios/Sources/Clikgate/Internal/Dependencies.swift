@@ -72,6 +72,11 @@ protocol BackgroundTaskRunning: Sendable {
     func run(name: String, _ work: @escaping @Sendable () async -> Void)
 }
 
+protocol RemoteNotificationRegistering: Sendable {
+    /// `UIApplication.registerForRemoteNotifications()` (no permission prompt); no-op in app extensions.
+    @MainActor func register()
+}
+
 struct ClikgateDependencies: Sendable {
     var transport: HTTPTransport
     var clock: ClikgateClock
@@ -100,6 +105,8 @@ struct ClikgateDependencies: Sendable {
     var vendorId: @Sendable () async -> String? = { await SystemDeviceInfo.identifierForVendor() }
     /// In-app browser for unmatched shared-domain links (SFSafariViewController).
     var browser: BrowserPresenting = SystemBrowser()
+    /// APNs registration for uninstall checks (`automaticPushToken`).
+    var remoteNotifications: RemoteNotificationRegistering = SystemRemoteNotifications()
 
     static func live() -> ClikgateDependencies {
         ClikgateDependencies(

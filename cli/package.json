@@ -1,6 +1,6 @@
 {
   "name": "@clikgate/setup",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Set up Clikgate (deep links, attribution, goals) in a Flutter, React Native, Expo, Android or iOS app project with one command. Shows every change and asks before writing anything.",
   "keywords": [
     "clikgate",

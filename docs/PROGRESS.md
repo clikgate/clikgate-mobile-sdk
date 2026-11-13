@@ -35,6 +35,20 @@ stay behind `vars.PUBLIC_SDK_RELEASES_ENABLED == 'true'`.
 | R.22 identify `verified` / `reason` (follow-up, 2026-11-08) | Android and iOS: identify 200 with a token sent and `verified: false` logs a warning naming the reason in plain words (customer ID kept, unverified); absent fields = older server, its `422 identity_invalid` still handled; referral / feature calls refused with `403 identity_expired` or `422 identity_invalid` log a warning. Never the token, secret or customer ID. No public API change (identify returns nothing, so Flutter / RN bridges unchanged). Tests use `identify_response_token_expired` | `Core.kt` `sendIdentify` / `featureCall`, `Core.swift` `sendIdentify` / `featureCall`, `IdentityVerifyTest.kt` (6), `IdentityVerifyTests.swift` (5); iOS `Logger.testSink` is `#if DEBUG` only |
 | AI guides API surface | regenerated in `clikgate_sdks` (`generate-api-surface.mjs --mobile`); `--check` up to date | `clikgate_sdks/ai-guides/clikgate-setup/references/api-surface.md` |
 
+## Engage merged into the core packages, 2.1.0 (2026-11-12, one heavy build at a time)
+
+Owner decision: one package per SDK, no separate Engage library (see docs/DECISIONS.md "One package per SDK").
+
+- Android: `:clikgate` 286 unit tests (core + Engage) 0 failures; `apiCheck`, `checkNoEngageDependency`, `lintRelease`,
+  `:sample:assembleDebug` pass; size core 124.6 KB (< 150), Engage 43.3 KB (< 44).
+- iOS: scheme `Clikgate-Package` (Mac Catalyst): ClikgateTests 210 + ClikgateEngageTests 24, 0 failures; `check_api.sh`
+  (290 + 141 declarations) and `check_size.sh` core 385.4 KB (< 410), Engage 92.4 KB (< 95); sample app builds;
+  `build_xcframework.sh` builds both frameworks from one archive.
+- Flutter 3.35.4: `flutter analyze` clean; 115 plugin tests (core + Engage) and 16 example tests pass.
+- React Native: typecheck, lint clean; Jest 182 tests pass; `bob build` and `npm pack --dry-run` include `src/engage`.
+- Setup command: 157 tests pass; `check_cli_sdk_versions.mjs` passes (2.1.0 everywhere).
+- `scripts/check_sdk_boundaries.sh` (with size): all steps pass; `check_no_track.mjs`, `check_no_identify.py` clean.
+
 ## Test runs (2026-11-08, one heavy build at a time)
 
 - Android `:clikgate:testDebugUnitTest :clikgate-engage:testDebugUnitTest :clikgate:apiCheck :sample:compileDebugKotlin`: 236 + 39 tests, 0 failures; `:clikgate:lintDebug` passes.

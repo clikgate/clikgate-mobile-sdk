@@ -88,6 +88,36 @@ export function addBoolIfMissing(text: string, key: string, value: boolean): str
   return out;
 }
 
+export const APS_ENVIRONMENT = 'aps-environment';
+
+/** The `aps-environment` entitlement (Push Notifications capability), or undefined. */
+export function apsEnvironment(text: string): string | undefined {
+  const v = readPlist(text)[APS_ENVIRONMENT];
+  return typeof v === 'string' ? v : undefined;
+}
+
+/**
+ * Sets a string key. An existing value is kept unless `overwrite` (used for a new Debug copy of the
+ * Release file); an existing non-string value is never touched.
+ */
+export function setString(text: string, key: string, value: string, overwrite = false): string {
+  const current = readPlist(text)[key];
+  if (current === value) return text;
+  if (current !== undefined && (!overwrite || typeof current !== 'string')) return text;
+  const root = parseXml(text);
+  const dict = rootDict(root);
+  let out: string;
+  const existing = current !== undefined ? valueFor(text, dict, key) : undefined;
+  if (existing) {
+    out = text.slice(0, existing.start) + `<string>${escapeText(value)}</string>` + text.slice(existing.end);
+  } else {
+    const indent = dictChildIndent(text, dict);
+    out = applySplices(text, [appendChildSplice(text, dict, `${indent}<key>${escapeText(key)}</key>\n${indent}<string>${escapeText(value)}</string>`)]);
+  }
+  readPlist(out);
+  return out;
+}
+
 /** A new entitlements file in Xcode's own format. */
 export function newEntitlements(hosts: string[]): string {
   return [

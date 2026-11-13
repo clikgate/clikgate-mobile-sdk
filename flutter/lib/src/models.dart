@@ -332,7 +332,7 @@ abstract final class ClikgateFeatures {
   static const appleSearchAds = 'apple_search_ads';
 }
 
-/// **Internal** (used by `clikgate_engage`; not part of the app-facing API):
+/// **Internal** (used by the Engage features, `engage.dart`; not part of the app-facing API):
 /// what a `/v1/sdk/*` call needs to act for this installation, from the
 /// native core SDK (`Clikgate.getRequestContext`). A snapshot: get a fresh
 /// one per call (the identity token changes with `Clikgate.identifyUser`).

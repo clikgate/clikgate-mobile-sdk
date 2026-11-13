@@ -4,7 +4,7 @@
  
  target 'UIKitApp' do
 +  # clikgate-setup:start
-+  pod 'Clikgate', '~> 2.0'
++  pod 'Clikgate', '~> 2.1'
 +  # clikgate-setup:end
    # Comment the next line if you don't want to use dynamic frameworks
    use_frameworks!
@@ -52,6 +52,16 @@
 +        // clikgate-setup:end
          // Override point for customization after application launch.
          return true
+@@ -31,4 +47,9 @@
+ 
+ 
++    // clikgate-setup:start
++    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
++        Clikgate.shared.setPushToken(deviceToken: deviceToken)
++    }
++    // clikgate-setup:end
+ }
+ 
 
 --- a/UIKitApp/SceneDelegate.swift
 +++ b/UIKitApp/SceneDelegate.swift
@@ -89,7 +99,7 @@
 
 --- /dev/null
 +++ b/UIKitApp/UIKitApp.entitlements
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,13 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -99,12 +109,14 @@
 +		<string>applinks:acme.ciz.to</string>
 +		<string>applinks:go.acme.com</string>
 +	</array>
++	<key>aps-environment</key>
++	<string>production</string>
 +</dict>
 +</plist>
 
 --- /dev/null
 +++ b/UIKitApp/UIKitAppDebug.entitlements
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -115,5 +127,7 @@
 +		<string>applinks:go.acme.com</string>
 +		<string>applinks:acme.dev.ciz.to</string>
 +	</array>
++	<key>aps-environment</key>
++	<string>development</string>
 +</dict>
 +</plist>

@@ -57,6 +57,8 @@ internal class Deps(
     /** Firebase Analytics (reflection; null in tests that don't need it). */
     val firebase: FirebaseAnalyticsBridge? = null,
     val appInstanceIdWaitMs: Long = 2_000,
+    /** FCM token for `automaticPushToken` (reflection; null in tests that don't need it). */
+    val pushTokens: PushTokenSource? = null,
     /** In-app browser for unmatched shared-domain links (null in tests that don't need it). */
     val browser: BrowserOpener? = null,
 ) {
@@ -70,6 +72,7 @@ internal class Deps(
             attestation = PlayIntegrityProvider(context),
             background = WorkManagerScheduler(context),
             firebase = ReflectionFirebaseBridge(context),
+            pushTokens = ReflectionPushTokenSource(),
             browser = CustomTabsOpener(context),
         )
     }
@@ -155,6 +158,10 @@ internal class Core(
 
     private var pushInFlight = false
     private var pushFailedHash: String? = null
+    /** `automaticPushToken`: the FCM token was looked up this launch. */
+    private var autoPushTokenChecked = false
+    /** `setPushToken` was called this launch: the automatic token never overrides it. */
+    private var manualPushToken = false
     private var identifyInFlight = false
     private var identifySeq = 0
     private var identifyFailedSeq = -1
@@ -375,7 +382,10 @@ internal class Core(
         }
         if (storage.identifyPending && config.privateMode) discardIdentify()
         if (storage.identifyPending && !identifyInFlight && identifyFailedSeq != identifySeq && allows("identify")) sendIdentify()
-        if (allows("push_token")) maybeSendPushToken()
+        if (allows("push_token")) {
+            maybeFetchAutomaticPushToken()
+            maybeSendPushToken()
+        }
         openPending?.let { cold ->
             if (!openInFlight && allows("open")) {
                 // With Firebase forwarding, the first /open of a process waits (≤ 2 s) for the app instance id.
@@ -1587,15 +1597,42 @@ internal class Core(
     // ------------------------------------------------------------------ push
 
     fun setPushToken(token: String?, provider: PushProvider) = runSerial {
+        manualPushToken = true
+        storePushToken(token, provider)
+    }
+
+    private fun storePushToken(token: String?, provider: PushProvider) {
         if (token.isNullOrEmpty()) {
             storage.pushToken = null
             storage.pushProvider = null
-            return@runSerial
+            return
         }
         storage.pushToken = token
         storage.pushProvider = provider.wireName
         pushFailedHash = null
         pump()
+    }
+
+    /**
+     * `automaticPushToken`: once per launch, when uninstall tracking is on (cached config counts),
+     * fetch the app's FCM token and store it like `setPushToken(token, FCM)`. Called from [pump]
+     * after the opt-out, consent and version-policy gates passed.
+     */
+    private fun maybeFetchAutomaticPushToken() {
+        if (autoPushTokenChecked || manualPushToken || !options.automaticPushToken || blocked) return
+        if (!isFeatureEnabled(ClikgateFeatures.UNINSTALL_TRACKING)) return
+        autoPushTokenChecked = true
+        val source = deps.pushTokens ?: return
+        if (!source.isAvailable()) {
+            Log.d("Firebase Messaging isn't in the app: no automatic push token for uninstall checks (call setPushToken)")
+            return
+        }
+        source.token { token ->
+            runSerial {
+                if (token.isNullOrEmpty() || manualPushToken || !storage.trackingEnabled || token == storage.pushToken) return@runSerial
+                storePushToken(token, PushProvider.FCM)
+            }
+        }
     }
 
     private fun currentPushJson(): JSONObject? {
@@ -1757,7 +1794,7 @@ internal class Core(
     // ------------------------------------------------------------------ Engage request context
 
     /**
-     * The request context for the Engage add-on / wrappers, once `/install` succeeded (waits up to
+     * The request context for the Engage features / wrappers, once `/install` succeeded (waits up to
      * [Deps.installWaitForReferralMs], else `install_pending`) and a pending identify was sent, so
      * the server knows the user. Same gates as [featureCall]. [cb] runs on the main thread.
      */
@@ -1803,7 +1840,7 @@ internal class Core(
     }
 
     /**
-     * An error the Engage add-on got from a `/v1/sdk/...` call it made with the request context:
+     * An error the Engage features got from a `/v1/sdk/...` call it made with the request context:
      * `feature_disabled` marks [feature] off until the next config fetch and refreshes the config in
      * the background (as [featureCall] does); `invalid_sdk_key`, `sdk_disabled` and
      * `installation_unknown` apply the global error rules. Other codes are ignored.

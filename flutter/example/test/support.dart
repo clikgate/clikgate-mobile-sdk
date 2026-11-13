@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:clikgate_engage/clikgate_engage.dart';
+import 'package:clikgate_flutter/engage.dart';
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:clikgate_flutter_example/src/variants/features.dart';
 import 'package:flutter/material.dart';

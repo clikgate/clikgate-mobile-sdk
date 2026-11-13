@@ -11,7 +11,7 @@ let monorepoSDK = URL(fileURLWithPath: Context.packageDirectory).appendingPathCo
 let useMonorepo = FileManager.default.fileExists(atPath: monorepoSDK)
 let clikgateSDK: Package.Dependency = useMonorepo
     ? .package(path: "../../../ios")
-    : .package(url: "https://github.com/clikgate/clikgate-ios-sdk.git", from: "2.0.0")
+    : .package(url: "https://github.com/clikgate/clikgate-ios-sdk.git", from: "2.1.0")
 // SwiftPM identifies a package by its directory / repository name.
 let clikgatePackageIdentity = useMonorepo ? "ios" : "clikgate-ios-sdk"
 

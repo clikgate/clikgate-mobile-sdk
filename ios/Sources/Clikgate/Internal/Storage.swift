@@ -15,6 +15,8 @@ final class PersistedState: @unchecked Sendable {
     var pushApnsEnvironment: String?
     /// sha256(provider + token) of the last token the server acknowledged.
     var lastPushHash: String?
+    /// `automaticPushToken` registered on an earlier launch (for the missing-token warning).
+    var autoPushRegistered = false
     var customerUserId: String?
     var identityToken: String?
     var identifyPending = false
@@ -27,6 +29,8 @@ final class PersistedState: @unchecked Sendable {
     var lastBackgroundAt: Date?
     var firstLaunchSignalsCollected = false
     var pasteboardToken: String?
+    /// `pasteboard_outcome` for /install (nil when the paste flow didn't run); kept so a retry sends the same value.
+    var pasteboardOutcome: String?
     var launchUrl: String?
     var attestKeyId: String?
     var attestKeyAttested = false
@@ -76,6 +80,7 @@ final class PersistedState: @unchecked Sendable {
         pushProvider = j.str("push_provider")
         pushApnsEnvironment = j.str("push_apns_environment")
         lastPushHash = j.str("last_push_hash")
+        autoPushRegistered = j.bool("auto_push_registered") ?? false
         customerUserId = j.str("customer_user_id")
         identityToken = j.str("identity_token")
         identifyPending = j.bool("identify_pending") ?? false
@@ -86,6 +91,7 @@ final class PersistedState: @unchecked Sendable {
         lastBackgroundAt = j.date("last_background_at")
         firstLaunchSignalsCollected = j.bool("first_launch_signals_collected") ?? false
         pasteboardToken = j.str("pasteboard_token")
+        pasteboardOutcome = j.str("pasteboard_outcome")
         launchUrl = j.str("launch_url")
         attestKeyId = j.str("attest_key_id")
         attestKeyAttested = j.bool("attest_key_attested") ?? false
@@ -126,6 +132,7 @@ final class PersistedState: @unchecked Sendable {
         b.set("push_provider", pushProvider)
         b.set("push_apns_environment", pushApnsEnvironment)
         b.set("last_push_hash", lastPushHash)
+        b.set("auto_push_registered", autoPushRegistered)
         b.set("customer_user_id", customerUserId)
         b.set("identity_token", identityToken)
         b.set("identify_pending", identifyPending)
@@ -136,6 +143,7 @@ final class PersistedState: @unchecked Sendable {
         b.set("last_background_at", lastBackgroundAt)
         b.set("first_launch_signals_collected", firstLaunchSignalsCollected)
         b.set("pasteboard_token", pasteboardToken)
+        b.set("pasteboard_outcome", pasteboardOutcome)
         b.set("launch_url", launchUrl)
         b.set("attest_key_id", attestKeyId)
         b.set("attest_key_attested", attestKeyAttested)

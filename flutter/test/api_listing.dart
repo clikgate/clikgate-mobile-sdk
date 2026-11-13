@@ -2,8 +2,7 @@
 // (package:analyzer `parseFile`, no resolution). Follows `export` directives
 // with their show/hide combinators and lists public top-level declarations
 // and their public members (signatures without bodies, doc comments or
-// initializer values). Copied verbatim into flutter_engage/test/: keep both
-// copies identical.
+// initializer values).
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/features.dart';

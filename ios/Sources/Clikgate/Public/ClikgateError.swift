@@ -77,7 +77,7 @@ public struct ClikgateError: Error, Sendable, Equatable, LocalizedError, CustomN
     public static let windowExpired = "window_expired"
     public static let selfReferral = "self_referral"
     public static let referrerBlocked = "referrer_blocked"
-    // Link creation, stats, leaderboard and promo-code codes are declared by the Engage add-on.
+    // Link creation, stats, leaderboard and promo-code codes are declared by the Engage features.
 
     static func featureDisabledError(_ feature: String) -> ClikgateError {
         ClikgateError(code: featureDisabled, message: "The '\(feature)' feature is switched off for this app.", feature: feature)

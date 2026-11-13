@@ -46,16 +46,15 @@ jobs:
           # The default list includes the obsolete 'tools' package, which cmdline-tools 16+ no longer has.
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build the release AARs and sources jars
-        run: ./gradlew :clikgate:assembleRelease :clikgate-engage:assembleRelease :clikgate:releaseSourcesJar :clikgate-engage:releaseSourcesJar
+      - name: Build the release AAR and sources jar
+        run: ./gradlew :clikgate:assembleRelease :clikgate:releaseSourcesJar
       - name: Scan
         run: |
           python3 ../scripts/scan_release_packages.py clikgate/build/outputs/aar/clikgate-release.aar \
-            clikgate-engage/build/outputs/aar/clikgate-engage-release.aar clikgate/build/libs/clikgate-sources.jar \
-            clikgate-engage/build/libs/clikgate-engage-sources.jar
+            clikgate/build/libs/clikgate-sources.jar
 
   ios:
-    runs-on: macos-26
+    runs-on: macos-15 # has Xcode 26.x (selected below); macos-26 runners got no capacity in Nov 2026
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Scan the pub packages
-        run: python3 scripts/scan_release_packages.py --pub flutter --pub flutter_engage
+        run: python3 scripts/scan_release_packages.py --pub flutter
 
   react-native:
     runs-on: ubuntu-latest
@@ -90,6 +89,5 @@ jobs:
       - name: Build the packages
         run: |
           (cd react-native && npm ci)
-          (cd react-native-engage && npm run devlink && npm run -s build)
       - name: Scan what npm pack includes
-        run: python3 scripts/scan_release_packages.py --npm react-native --npm react-native-engage
+        run: python3 scripts/scan_release_packages.py --npm react-native

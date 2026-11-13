@@ -3,7 +3,7 @@ import UIKit
 @_spi(ClikgateEngage) import Clikgate
 @testable import ClikgateEngage
 
-/// Engage add-on (spec 17A) against a fake core host and a fake transport.
+/// Engage features (spec 17A) against a fake core host and a fake transport.
 final class ClikgateEngageTests: XCTestCase {
     static let board = "lb_01JAB3C4D5E6F7G8H9JKMNPQRS"
     static let program = "rpg_01JAB3C4D5E6F7G8H9JKMNPQRS"

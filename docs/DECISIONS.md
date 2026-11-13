@@ -3,6 +3,44 @@
 Platform-specific decisions stay in each platform's `DECISIONS.md` (`android/`, `ios/`, `flutter/`, `react-native/`,
 `cli/`). This file holds the ones that span the SDKs.
 
+## One package per SDK: the Engage add-on merged into the core (2026-11-12)
+
+Owner decision (2026-11-12): "there should not be a clikgate engage library". From 2.1.0 every SDK ships one package
+with its Engage features inside; nothing was published, so there are no shims or deprecated packages.
+
+| SDK | Before | 2.1.0 |
+|---|---|---|
+| Android | `com.clikgate:clikgate-engage` module | `com.clikgate.engage` package inside `com.clikgate:clikgate-android` (the `:clikgate` module) |
+| iOS | SPM product `ClikgateEngage`, pod subspec `Clikgate/Engage` | SPM product `Clikgate` with two modules (`Clikgate`, `ClikgateEngage`); one pod, no subspecs |
+| Flutter | `clikgate_engage` package + its plugin | `package:clikgate_flutter/engage.dart`; the share channel is registered by the core plugin |
+| React Native | `@clikgate/react-native-engage` package + its TurboModule | `src/engage`, exported by `@clikgate/react-native`; the `ClikgateEngage` TurboModule is in the core's codegen library |
+
+- **The boundary stays.** Engage keeps its own module, package or folder, and the core code never imports it. The
+  checks now look at that folder instead of a separate package: Android `CoreBoundaryTest` (forbidden names outside
+  `com.clikgate.engage`) and `checkNoEngageDependency` (no core source refers to it); iOS `check_api.sh` (forbidden
+  names in the `Clikgate` module, no `import ClikgateEngage` in `Sources/Clikgate`, one product / one pod); Flutter and
+  React Native public-API snapshots for the core and for Engage, and "core never imports engage" tests.
+- **Size budgets are unchanged and measured per part (owner, option 1).** The iOS core stays under its 410 KB hard
+  ceiling (never raised) and Engage under 95 KB, measured on their own modules; Android core under 150 KB and Engage
+  under 44 KB, measured by splitting the one AAR's classes by package. At the merge: iOS core 385.4 KB, Engage 92.4 KB;
+  Android core 124.6 KB, Engage 43.3 KB. Android Engage lost its module-only `-Xno-*-assertions` compiler flags (one
+  module now, and the core keeps its null checks), so it is close to its budget: trim before adding to it.
+- **Apps that don't use Engage don't ship it.** R8, the iOS linker (static) and Dart tree-shaking drop the unused code;
+  React Native bundles every exported module, but Engage there is small plain TypeScript.
+- **Flutter now depends on `http` and `meta`** (Engage's dependencies), for every app. Engage's `share_plus` and
+  `url_launcher` were dropped before 2.1.0 shipped: as hard dependencies of every Flutter app they blocked apps on
+  `share_plus` 13 and broke fresh-template release builds (`:url_launcher_android:lintVitalAnalyzeRelease`). The
+  plugin's `com.clikgate/engage` channel does `shareText` / `openUrl` natively instead (flutter/DECISIONS.md).
+- **React Native `VERSION`**: the main entry exports the core `VERSION` only (Engage's was the same number);
+  `ClikgateEngage.version` stays.
+- **iOS test scheme.** With one product Xcode no longer generates the `Clikgate-Package` scheme, so a shared one is
+  checked in (`ios/.swiftpm/xcode/xcshareddata/xcschemes/Clikgate-Package.xcscheme`, with `.gitignore` exceptions)
+  that builds both modules and runs `ClikgateTests` and `ClikgateEngageTests`.
+- **XCFrameworks** are still two (`Clikgate`, `ClikgateEngage`; Swift needs a framework per module), built from one
+  archive of the `Clikgate` scheme. SPM and CocoaPods users get both from the one product / pod.
+- **Versions**: 2.1.0 for every SDK and the setup command (which never installed Engage packages; its constraints
+  move to `^2.1.0` / `~> 2.1`, minimum 2.1.0). Shared contract fixtures send `sdk_version: 2.1.0`.
+
 ## Change 23 — "Allow unknown goal names" off: `unknown_goal` (C23 S, 2026-11-08)
 
 Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` U, S, R.1, R.2, R.9 (R wins). Versions stay

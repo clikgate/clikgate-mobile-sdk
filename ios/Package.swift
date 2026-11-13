@@ -1,16 +1,16 @@
 // swift-tools-version:5.9
 import PackageDescription
 
-// Two products:
-// - `Clikgate`: the core SDK (required). It never depends on ClikgateEngage.
-// - `ClikgateEngage`: the optional Engage add-on for apps without their own backend
-//   (referral link + stats, leaderboards, promo codes, share helpers). Depends on Clikgate.
+// One product, `Clikgate` (since 2.1.0), with two modules:
+// - `Clikgate`: the core SDK. It never depends on ClikgateEngage.
+// - `ClikgateEngage`: the Engage features for apps without their own backend (referral link + stats,
+//   leaderboards, promo codes, share helpers). Depends on Clikgate; apps `import ClikgateEngage` to use them.
+//   The two modules stay separate so the core keeps its own size budget (< 410 KB) and boundary checks.
 let package = Package(
     name: "Clikgate",
     platforms: [.iOS(.v13)],
     products: [
-        .library(name: "Clikgate", targets: ["Clikgate"]),
-        .library(name: "ClikgateEngage", targets: ["ClikgateEngage"]),
+        .library(name: "Clikgate", targets: ["Clikgate", "ClikgateEngage"]),
     ],
     targets: [
         .target(

@@ -31,20 +31,23 @@ void main() {
     expect(offending, isEmpty);
   });
 
-  test('core never depends on clikgate_engage', () {
-    expect(File('pubspec.yaml').readAsStringSync(), isNot(contains('clikgate_engage')));
-    final importsEngage = RegExp(r'''^\s*(import|export|part)\s+['"]package:clikgate_engage''', multiLine: true);
-    final sources = Directory('lib').listSync(recursive: true).whereType<File>();
-    for (final f in sources) {
+  // Since 2.1.0 the Engage features ship in this package (lib/engage.dart, lib/src/engage/) and on the
+  // native side (the share bridge over the native SDK's Engage features); core code still never uses them.
+  test('core code never uses the Engage features', () {
+    expect(listing.where((l) => l.contains('engage.dart')), isEmpty, reason: 'clikgate_flutter.dart must not export Engage');
+    final importsEngage = RegExp(r"""^\s*(import|export|part)\s+['"](package:clikgate_flutter/engage\.dart|(\.\./)*(src/)?engage/)""", multiLine: true);
+    final core = Directory('lib').listSync(recursive: true).whereType<File>()
+        .where((f) => !f.path.contains('/engage/') && !f.path.endsWith('/engage.dart'));
+    for (final f in core) {
       expect(importsEngage.hasMatch(f.readAsStringSync()), isFalse, reason: f.path);
     }
-    // Native sides: no Engage module / product / artifact (the core's `@_spi(ClikgateEngage)`
-    // request-context API is core).
+    // Native sides: only EngageShareBridge (and the plugin registering it) may name the Engage features.
     for (final dir in ['android', 'ios']) {
       for (final f in Directory(dir).listSync(recursive: true).whereType<File>()) {
         if (f.path.contains('/build/') || f.path.contains('/.')) continue;
-        if (!f.path.endsWith('.kt') && !f.path.endsWith('.swift') && !f.path.endsWith('.gradle') && !f.path.endsWith('.podspec')) continue;
-        expect(f.readAsStringSync(), isNot(matches(RegExp(r'import\s+ClikgateEngage\b|"ClikgateEngage"|clikgate-engage|Clikgate/Engage'))), reason: f.path);
+        if (!f.path.endsWith('.kt') && !f.path.endsWith('.swift')) continue;
+        if (f.path.endsWith('EngageShareBridge.kt') || f.path.endsWith('EngageShareBridge.swift')) continue;
+        expect(f.readAsStringSync(), isNot(matches(RegExp(r'import\s+ClikgateEngage\b|com\.clikgate\.engage'))), reason: f.path);
       }
     }
   });

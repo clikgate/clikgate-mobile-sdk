@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import { setupCommand, setupSubcommand } from './command';
 import type { Platform } from './args';
 import { Clikgate, type SetupCheck, type FileCheck } from './api/clikgate';
 import { CLI_VERSION, DOCS_URL, SDK, SDK_KEY_ANY, SHARED_DOMAIN_FIX, SHARED_PLATFORM_DOMAINS, TEST_LINK_DOMAIN, isTestHost, maskKey } from './constants';
@@ -6,7 +7,8 @@ import { allLinkHosts, verifiedHosts } from './edit/androidManifest';
 import { backupDeclarations, backupProblems } from './edit/backupRules';
 import { catalogAliasFor, hasClikgateDependency } from './edit/gradle';
 import { expoRoot, findClikgatePlugin, parseJsonc } from './edit/json';
-import { applinksHosts } from './edit/plistEdit';
+import { apsEnvironment, applinksHosts } from './edit/plistEdit';
+import { hasPushTokenForward } from './edit/source';
 import { dependencyConstraint } from './edit/pubspec';
 import { exists, findFiles, read, readIfExists, rel } from './fsutil';
 import { isDebugSourceSet, type AndroidModule } from './project/android';
@@ -61,6 +63,7 @@ export interface ServerInput {
 }
 
 const DOC = (anchor: string) => `${DOCS_URL}#${anchor}`;
+const UNINSTALL_DOC = 'https://clikgate.com/docs/uninstall-tracking';
 
 export function versionAtLeast(constraint: string | undefined, minimum: string): boolean | undefined {
   if (!constraint) return undefined;
@@ -101,7 +104,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
         id: `${id}.shared_domains`,
         status: 'warn',
         title: `${name}: ${shared.map((h) => prefix + h).join(', ')}: ${SHARED_DOMAIN_FIX}`,
-        fix: `Remove ${shared.map((h) => prefix + h).join(', ')}. Use your app's link subdomain (<link_subdomain>.ciz.to in release builds, or <link_subdomain>.clk.ng on the Free plan; <link_subdomain>.dev.ciz.to in debug builds) and your verified custom domains. Run \`npx @clikgate/setup\` to add them.`,
+        fix: `Remove ${shared.map((h) => prefix + h).join(', ')}. Use your app's link subdomain (<link_subdomain>.ciz.to in release builds, or <link_subdomain>.clk.ng on the Free plan; <link_subdomain>.dev.ciz.to in debug builds) and your verified custom domains. Run \`${setupCommand()}\` to add them.`,
         doc_url: DOC('app-link-subdomains'),
       });
     } else add({ id: `${id}.shared_domains`, status: 'pass', title: `${name}: no shared Clikgate domain in app links` });
@@ -143,7 +146,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
     const fix =
       platform === 'ios' && !input.ios?.podfile
         ? `Add the Clikgate Swift package in Xcode: File › Add Package Dependencies…, ${SDK.ios.spm}, from ${SDK.ios.version}.`
-        : 'Run `npx @clikgate/setup` to add it.';
+        : 'Run `' + setupCommand() + '` to add it.';
     add({ id: 'sdk.dependency', status: 'fail', title: `${depLabel} dependency`, detail: 'not found', fix, doc_url: DOC('what-gets-changed') });
   } else {
     add({ id: 'sdk.dependency', status: 'pass', title: `${depLabel} dependency`, detail: constraint ?? 'found' });
@@ -155,7 +158,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
   const files = startupFiles(input);
   const withConfigure = files.filter((f) => /Clikgate\s*\.\s*configure\s*\(/.test(read(f)));
   if (withConfigure.length === 0) {
-    add({ id: 'startup.code', status: 'fail', title: 'Start-up code', detail: 'Clikgate.configure(...) not found', fix: 'Run `npx @clikgate/setup`, or add Clikgate.configure at app start (see the docs).', doc_url: DOC('what-gets-changed') });
+    add({ id: 'startup.code', status: 'fail', title: 'Start-up code', detail: 'Clikgate.configure(...) not found', fix: 'Run `' + setupCommand() + '`, or add Clikgate.configure at app start (see the docs).', doc_url: DOC('what-gets-changed') });
   } else {
     add({ id: 'startup.code', status: 'pass', title: 'Start-up code', detail: withConfigure.map((f) => rel(root, f)).join(', ') });
   }
@@ -206,7 +209,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
       androidRelease.push(release);
       const debugTest = [...debugHosts].filter((h) => h.endsWith(`.${TEST_LINK_DOMAIN}`));
       if (debugTest.length) add({ id: 'android.debug_test_domain', status: 'pass', title: `Android: ${debugTest.join(', ')} in debug builds` });
-      else add({ id: 'android.debug_test_domain', status: 'warn', title: `Android: your app's test subdomain (<link_subdomain>.${TEST_LINK_DOMAIN}) missing from debug builds`, fix: 'Test links won\'t open debug builds. Run `npx @clikgate/setup` to add it to src/debug/AndroidManifest.xml.' });
+      else add({ id: 'android.debug_test_domain', status: 'warn', title: `Android: your app's test subdomain (<link_subdomain>.${TEST_LINK_DOMAIN}) missing from debug builds`, fix: 'Test links won\'t open debug builds. Run `' + setupCommand() + '` to add it to src/debug/AndroidManifest.xml.' });
       sharedCheck('android', 'Android', [...releaseAll, ...debugHosts]);
       // Auto Backup: the app's own rules need Clikgate's excludes and tools:replace (else the
       // manifest merge fails). No own rules: the SDK's rules apply.
@@ -225,7 +228,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
             status: 'fail',
             title: 'Android: backup rules',
             detail: problems.join('; '),
-            fix: "Run `npx @clikgate/setup` to add Clikgate's excludes to your backup rules and tools:replace to <application>.",
+            fix: "Run `" + setupCommand() + "` to add Clikgate's excludes to your backup rules and tools:replace to <application>.",
           });
         } else add({ id: 'android.backup_rules', status: 'pass', title: "Android: backup rules exclude Clikgate's installation ID" });
       }
@@ -239,7 +242,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
     const iosAll: string[] = [];
     for (const c of ios.configs) {
       if (!c.entitlements) {
-        add({ id: `ios.entitlements.${c.name}`, status: c.debug ? 'warn' : 'fail', title: `iOS ${c.name}: no entitlements file`, fix: 'Run `npx @clikgate/setup` to add Associated Domains for this build configuration.' });
+        add({ id: `ios.entitlements.${c.name}`, status: c.debug ? 'warn' : 'fail', title: `iOS ${c.name}: no entitlements file`, fix: 'Run `' + setupCommand() + '` to add Associated Domains for this build configuration.' });
         continue;
       }
       const file = path.join(ios.srcRoot, c.entitlements);
@@ -260,17 +263,18 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
       const appTest = hosts.filter((h) => h.endsWith(`.${TEST_LINK_DOMAIN}`));
       if (c.debug) {
         if (appTest.length) add({ id: `ios.entitlements.${c.name}`, status: 'pass', title: `iOS ${c.name}: associated domains include ${appTest.join(', ')}`, detail: hosts.join(', ') });
-        else add({ id: `ios.entitlements.${c.name}`, status: 'warn', title: `iOS ${c.name}: your app's test subdomain (<link_subdomain>.${TEST_LINK_DOMAIN}) missing`, fix: 'Test links won\'t open Debug builds. Run `npx @clikgate/setup`.' });
+        else add({ id: `ios.entitlements.${c.name}`, status: 'warn', title: `iOS ${c.name}: your app's test subdomain (<link_subdomain>.${TEST_LINK_DOMAIN}) missing`, fix: 'Test links won\'t open Debug builds. Run `' + setupCommand() + '`.' });
       } else if (testHosts.length) {
         add({ id: `ios.entitlements.${c.name}`, status: 'fail', title: `iOS ${c.name}: ${testHosts.join(', ')} in a release configuration`, fix: `Remove ${testHosts.map((h) => `applinks:${h}`).join(', ')} from ${c.entitlements}; keep test domains in the Debug entitlements only.` });
       } else {
         const set = new Set(hosts);
         set.forEach((h) => liveHosts.add(h));
         iosRelease.push(set);
-        add({ id: `ios.entitlements.${c.name}`, status: hosts.length ? 'pass' : 'fail', title: `iOS ${c.name}: associated domains`, detail: hosts.join(', ') || 'none', ...(hosts.length ? {} : { fix: 'Add applinks:<your app link subdomain>.ciz.to (.clk.ng on the Free plan). Run `npx @clikgate/setup`.' }) });
+        add({ id: `ios.entitlements.${c.name}`, status: hosts.length ? 'pass' : 'fail', title: `iOS ${c.name}: associated domains`, detail: hosts.join(', ') || 'none', ...(hosts.length ? {} : { fix: 'Add applinks:<your app link subdomain>.ciz.to (.clk.ng on the Free plan). Run `' + setupCommand() + '`.' }) });
       }
     }
     sharedCheck('ios', 'iOS', iosAll, 'applinks:');
+    pushChecks(input, ios, add);
   }
 
   // ---- Expo config plugin
@@ -283,7 +287,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
       const found = findClikgatePlugin(json);
       const props = found?.props ?? {};
       const domains = Array.isArray(props.linkDomains) ? (props.linkDomains as string[]) : [];
-      if (!found) add({ id: 'expo.plugin', status: 'fail', title: 'Expo config plugin', detail: 'not in app.json', fix: 'Run `npx @clikgate/setup`.' });
+      if (!found) add({ id: 'expo.plugin', status: 'fail', title: 'Expo config plugin', detail: 'not in app.json', fix: 'Run `' + setupCommand() + '`.' });
       else if (domains.some(isTestHost)) {
         const t = domains.filter(isTestHost);
         add({ id: 'expo.plugin', status: 'fail', title: 'Expo config plugin', detail: `${t.join(', ')} is in linkDomains (all builds)`, fix: `Move it to "testLinkDomain" (development/preview builds only).` });
@@ -305,12 +309,67 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
     const missing = [...want].filter((h) => sets.some((s) => !s.has(h)));
     const id = `${name.toLowerCase()}.release_domains`;
     if (missing.length) {
-      add({ id, status: expected.size ? 'fail' : 'warn', title: `${name}: release builds miss ${missing.join(', ')}`, fix: 'Run `npx @clikgate/setup` to add every live link domain.' });
+      add({ id, status: expected.size ? 'fail' : 'warn', title: `${name}: release builds miss ${missing.join(', ')}`, fix: 'Run `' + setupCommand() + '` to add every live link domain.' });
     } else {
       add({ id, status: 'pass', title: `${name}: release builds cover ${[...want].join(', ')}` });
     }
   }
   return { checks, liveHostsFound: liveHosts };
+}
+
+/**
+ * Uninstall tracking on iOS (`automaticPushToken`): the Push Notifications capability in every
+ * build configuration, and the AppDelegate line that hands the APNs token to Clikgate (not on
+ * Flutter: the plugin receives it as an application delegate). Warnings only: apps that don't use
+ * uninstall tracking don't need either.
+ */
+function pushChecks(input: DoctorInput, ios: IosProject, add: (c: Omit<Check, 'group'>) => void): void {
+  const missing: string[] = [];
+  let read_ = 0;
+  for (const c of ios.configs) {
+    const text = c.entitlements ? readIfExists(path.join(ios.srcRoot, c.entitlements)) : undefined;
+    if (text === undefined) {
+      missing.push(c.name);
+      continue;
+    }
+    try {
+      if (!apsEnvironment(text)) missing.push(c.name);
+      read_++;
+    } catch {
+      missing.push(c.name);
+    }
+  }
+  if (missing.length) {
+    add({
+      id: 'ios.push.aps_environment',
+      status: 'warn',
+      title: `iOS: Push Notifications capability (aps-environment) missing in ${missing.join(', ')}`,
+      detail: 'Uninstall tracking needs an APNs token; users are never asked for notification permission.',
+      fix: 'Run `' + setupCommand() + '` (development in Debug, production in Release), or add Push Notifications in Xcode › Signing & Capabilities.',
+      doc_url: UNINSTALL_DOC,
+    });
+  } else if (read_) add({ id: 'ios.push.aps_environment', status: 'pass', title: 'iOS: Push Notifications capability (aps-environment)' });
+
+  if (input.platform === 'flutter') return; // the plugin forwards the token itself
+  const files = [
+    ...targetSwiftFiles(ios),
+    ...['AppDelegate.mm', 'AppDelegate.m'].map((n) => path.join(ios.srcRoot, ios.target, n)).filter(exists),
+  ];
+  const forwarding = files.filter((f) => hasPushTokenForward(read(f)));
+  const delegate = files.find((f) => /class\s+\w+\s*:[^{]*\b(UIApplicationDelegate|ExpoAppDelegate|RCTAppDelegate)\b/.test(read(f)) || /@implementation\s+\w*AppDelegate\b/.test(read(f)));
+  const call = input.platform === 'ios' ? 'Clikgate.shared.setPushToken(deviceToken: deviceToken)' : 'ClikgateRN.setPushToken(deviceToken: deviceToken)';
+  if (forwarding.length) {
+    add({ id: 'ios.push.token_forward', status: 'pass', title: 'iOS: APNs token forwarded to Clikgate', detail: forwarding.map((f) => rel(input.root, f)).join(', ') });
+  } else {
+    add({
+      id: 'ios.push.token_forward',
+      status: 'warn',
+      title: 'iOS: the APNs token isn\'t forwarded to Clikgate',
+      detail: delegate ? rel(input.root, delegate) : 'no AppDelegate found',
+      fix: `Uninstall tracking: in application(_:didRegisterForRemoteNotificationsWithDeviceToken:) call ${call}. ${delegate ? 'Run `' + setupCommand() + '` to add it.' : 'SwiftUI apps: add an AppDelegate with @UIApplicationDelegateAdaptor.'}`,
+      doc_url: UNINSTALL_DOC,
+    });
+  }
 }
 
 /** Plain-language fixes for setup-check `problem` codes (the code itself stays in `code`). */
@@ -320,11 +379,11 @@ const PROBLEM_FIXES: Record<string, (host: string, platform: 'android' | 'ios') 
   not_served: (h, p) => `https://${h} doesn't serve the ${p === 'ios' ? 'apple-app-site-association' : 'assetlinks.json'} file yet. Check the domain's status in the dashboard.`,
   redirected: (h) => `https://${h}/.well-known/… redirects; app-links files must be served without redirects. Check the domain's DNS points at Clikgate (not another service).`,
   invalid_json: (h) => `The app-links file on ${h} isn't valid JSON. Contact Clikgate support.`,
-  missing_team_id: () => 'Add your Apple Team ID (10 characters) to the iOS app in the dashboard, or rerun `npx @clikgate/setup`.',
-  missing_fingerprints: () => 'Add your signing SHA-256 fingerprints (debug and Play App Signing) to the Android app in the dashboard, or rerun `npx @clikgate/setup`.',
+  missing_team_id: () => 'Add your Apple Team ID (10 characters) to the iOS app in the dashboard, or rerun `' + setupCommand() + '`.',
+  missing_fingerprints: () => 'Add your signing SHA-256 fingerprints (debug and Play App Signing) to the Android app in the dashboard, or rerun `' + setupCommand() + '`.',
   app_not_listed: (h) => `${h}'s app-links file doesn't list this app yet. Check the app's identifiers in the dashboard, then run doctor again in a few minutes.`,
   wrong_fingerprint: () => 'The fingerprints in Clikgate don\'t match your signing certificate. Add the SHA-256 from `keytool` (debug) and Play Console › Release › Setup › App signing (release).',
-  link_subdomain_not_confirmed: () => 'Confirm the app\'s link subdomain in the dashboard (Apps › your app › Link subdomain), or run `npx @clikgate/setup` and confirm it.',
+  link_subdomain_not_confirmed: () => 'Confirm the app\'s link subdomain in the dashboard (Apps › your app › Link subdomain), or run `' + setupCommand() + '` and confirm it.',
 };
 
 function fileCheck(platform: 'android' | 'ios', d: { aasa?: FileCheck; assetlinks?: FileCheck }): [string, FileCheck | undefined] {
@@ -431,7 +490,7 @@ export async function waitForFirstEvent(clikgate: Clikgate, apps: { id: string; 
         group: 'live',
         status: 'warn',
         title: 'No event from your app yet',
-        fix: 'Run the app on a device or emulator (a debug build with the test key), then run `npx @clikgate/setup doctor` again.',
+        fix: 'Run the app on a device or emulator (a debug build with the test key), then run `' + setupSubcommand('doctor') + '` again.',
       };
     }
     await sleep(5000);

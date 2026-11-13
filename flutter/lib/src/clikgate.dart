@@ -17,12 +17,12 @@ const String _keepCustomerId = '\u0000';
 /// thin bridge over the native Android and iOS SDKs.
 ///
 /// Referral links and stats, leaderboards, promo codes and share helpers are
-/// in the optional `clikgate_engage` package (for apps without a backend).
+/// in the Engage features, `package:clikgate_flutter/engage.dart` (for apps without a backend).
 class Clikgate {
   Clikgate._();
 
   /// Version of this Flutter plugin (reported as `Clikgate-SDK-Version: flutter/<version>`).
-  static const String pluginVersion = '2.0.0';
+  static const String pluginVersion = '2.1.0';
 
   static DeepLinkHub _hub = DeepLinkHub();
 
@@ -59,6 +59,14 @@ class Clikgate {
   /// another organisation opens in an in-app browser (Custom Tabs /
   /// SFSafariViewController) and is reported on [onBrowserHandoff], never on
   /// [onDeepLink]. False drops it, as before 1.4.0.
+  ///
+  /// [automaticPushToken] (default true): when uninstall tracking is on for
+  /// the app (and tracking and consent allow it), the SDK gets a push token by
+  /// itself, without asking for notification permission. iOS: it registers for
+  /// remote notifications and this plugin passes the APNs token on (no
+  /// AppDelegate code). Android: it fetches the FCM token when Firebase
+  /// Messaging is in the app. A token passed to [setPushToken] always wins.
+  /// False leaves push registration to the app: call [setPushToken] yourself.
   static Future<void> configure({
     required String sdkKey,
     List<String> linkDomains = const [],
@@ -70,6 +78,7 @@ class Clikgate {
     bool waitForATT = false,
     Duration deferredDeepLinkTimeout = const Duration(seconds: 5),
     bool platformDomainBrowserFallback = true,
+    bool automaticPushToken = true,
   }) async {
     // Listen before configuring so no deep link is missed.
     _hub.start();
@@ -84,6 +93,7 @@ class Clikgate {
       'waitForATT': waitForATT,
       'deferredDeepLinkTimeoutMs': deferredDeepLinkTimeout.inMilliseconds,
       'platformDomainBrowserFallback': platformDomainBrowserFallback,
+      'automaticPushToken': automaticPushToken,
       'wrapperVersion': pluginVersion,
     });
   }
@@ -232,7 +242,9 @@ class Clikgate {
 
   /// Registers the push token used for uninstall checks. A null or empty
   /// token is ignored (e.g. `FirebaseMessaging.instance.getToken()` failed).
-  /// For [PushProvider.apns] pass the hex device token.
+  /// For [PushProvider.apns] pass the hex device token. Not needed with
+  /// `automaticPushToken` (the default); a token passed here always wins, and
+  /// on iOS the plugin then stops passing on the APNs token itself.
   static Future<void> setPushToken(String? token,
       {required PushProvider provider}) async {
     if (token == null || token.isEmpty) return;
@@ -344,7 +356,7 @@ class Clikgate {
   static Future<String> nativeSdkVersion() async =>
       await ClikgateChannels.invoke<String>('sdkVersion') ?? 'unknown';
 
-  /// **Internal** (used by `clikgate_engage`; not part of the app-facing
+  /// **Internal** (used by the Engage features, `engage.dart`; not part of the app-facing
   /// API): the request context for a `/v1/sdk/*` call on behalf of this
   /// installation, once the first install was recorded and a pending
   /// `identify` was sent. Throws `ClikgateException` (`not_configured`,
@@ -353,7 +365,7 @@ class Clikgate {
       ClikgateRequestContext.fromMap(
           await ClikgateChannels.invokeMap('getRequestContext'));
 
-  /// **Internal** (used by `clikgate_engage`): reports an error code a
+  /// **Internal** (used by the Engage features, `engage.dart`): reports an error code a
   /// `/v1/sdk/*` call made with [getRequestContext] got, so the native SDK
   /// applies its rules (`feature_disabled` switches [feature] off until the
   /// next config fetch; `invalid_sdk_key`, `sdk_disabled`,

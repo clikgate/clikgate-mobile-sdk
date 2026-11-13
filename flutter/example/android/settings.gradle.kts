@@ -35,8 +35,6 @@ if (clikgateAndroidSdk.resolve("settings.gradle.kts").exists() &&
     includeBuild(clikgateAndroidSdk) {
         dependencySubstitution {
             substitute(module("com.clikgate:clikgate-android")).using(project(":clikgate"))
-            // clikgate_engage's native share bridge
-            substitute(module("com.clikgate:clikgate-engage")).using(project(":clikgate-engage"))
         }
     }
 }

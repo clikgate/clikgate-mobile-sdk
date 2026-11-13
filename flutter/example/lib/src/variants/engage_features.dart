@@ -1,4 +1,4 @@
-import 'package:clikgate_engage/clikgate_engage.dart';
+import 'package:clikgate_flutter/engage.dart';
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 
 import 'backend_features.dart' show IdentifyFn;
@@ -7,7 +7,7 @@ import 'features.dart';
 Future<void> _identify(String? id, {String? identityToken}) =>
     Clikgate.identifyUser(customerId: id, identityToken: identityToken);
 
-/// No-backend variant: the optional Engage add-on (`clikgate_engage`) calls the `/v1/sdk/*`
+/// No-backend variant: the Engage features (`package:clikgate_flutter/engage.dart`) calls the `/v1/sdk/*`
 /// Engage endpoints with the core SDK's installation context.
 ///
 /// Without a backend there is nobody to sign an identity token, so the referral program must
@@ -28,7 +28,7 @@ class EngageFeatures extends ReferralFeatures {
   String get variant => 'engage';
 
   @override
-  String get description => 'Engage variant: invite, stats, leaderboards and promo codes via clikgate_engage (no backend)';
+  String get description => 'Engage variant: invite, stats, leaderboards and promo codes via the Engage features (no backend)';
 
   @override
   SignedInUser? get user => _user;

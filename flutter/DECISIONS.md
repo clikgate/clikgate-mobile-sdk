@@ -1,5 +1,7 @@
 # Flutter packages — decisions
 
+> **2.1.0 (2026-11-12): the Engage add-on is merged into this package.** See [docs/DECISIONS.md](../docs/DECISIONS.md) "One package per SDK". Entries below that describe Engage as a separate package, module or subspec are history; the core/Engage boundary and the size budgets they describe still apply.
+
 The plugin's earlier decisions (bridge, composite build, example pins) are recorded in
 `android/DECISIONS.md` ("Flutter plugin ↔ native SDK", "Flutter example") and
 `ios/DECISIONS.md`. This file covers the Flutter-specific parts of the Engage split.
@@ -53,7 +55,7 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
   (asserted by `flutter_engage/test/api_snapshot_test.dart`). It depends on two federated
   plugins (`share_plus`, `url_launcher`) for the share helpers; their native code is theirs.
   `share_plus` is `>=12.0.0 <13.0.0` (the example pins 12.0.x, contemporary with Flutter 3.35);
-  `url_launcher ^6.3.1`.
+  `url_launcher ^6.3.1`. *(Superseded in 2.1.0: see "Share helpers without share_plus / url_launcher".)*
 - 17A.3 rules: `isFeatureEnabled` first (no context call, no network when off); then the context;
   `not_identified` without network for `createLink`, `myStats`, `me`, `aroundMe`, `setOptOut`,
   `hostedPageUrl` when `customerUserId` is null. `identity_required` is left to the server: the
@@ -77,7 +79,7 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
 - Models parse the API's snake_case JSON directly (`fromJson`); they are no longer bridge maps.
   `Redemption.referral` is the core's `Referral`, built by Engage from the snake_case object.
 
-### Share helpers in pure Dart
+### Share helpers in pure Dart *(superseded in 2.1.0, see below)*
 
 - `share.system` → `share_plus` (`SharePlus.instance.share(ShareParams(text:, subject:))`).
 - `share.whatsApp` → `url_launcher.launchUrl(whatsapp://send?text=…, externalApplication)` with
@@ -91,6 +93,38 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
   intent with `setPackage("com.whatsapp")`, so WhatsApp Business (`com.whatsapp.w4b`) is only
   reached if it handles `whatsapp://`; otherwise the share sheet offers it. A tiny channel in the
   core would have avoided this but would put share code in the core, which spec 0.4 forbids.
+
+### Share helpers without share_plus / url_launcher — 2026-11-13 (2.1.0, before release)
+
+- **Why:** once Engage was merged into `clikgate_flutter`, `share_plus` (`>=12 <13`) and
+  `url_launcher` became dependencies of every Flutter app: apps on `share_plus` 13 couldn't resolve
+  the plugin, and a fresh `flutter create` app's release build failed in
+  `:url_launcher_android:lintVitalAnalyzeRelease` (lint crash on `UrlLauncher.java`). Flutter
+  packages are thin bridges, and the plugin already has a native Engage channel.
+- **How:** the default `EngageTextSharer` / `EngageUrlOpener` call the plugin's
+  `com.clikgate/engage` channel (`EngageShareBridge`, beside `shareLink`):
+  - `shareText {text, subject?}` → Android `ACTION_SEND` text/plain (+ `EXTRA_SUBJECT`) in a
+    chooser, started from the Activity (`ActivityAware`) or, without one, from the application
+    context with `FLAG_ACTIVITY_NEW_TASK`; `ActivityNotFoundException` → `share_unavailable`.
+    iOS `UIActivityViewController` from the top view controller (iPad popover anchored at its
+    centre), the subject through `UIActivityItemSource`; no view controller → `share_unavailable`.
+    It answers once the sheet is presented (share_plus waited for it to close; the Dart API returns
+    `void` either way).
+  - `openUrl {url}` → Android `ACTION_VIEW` (new task without an Activity), `false` on
+    `ActivityNotFoundException`; iOS `UIApplication.open` without `canOpenURL`, answering its
+    completion result.
+- Not the native SDK's `ClikgateEngage.share.system` / `whatsApp`: `system` takes no subject, and
+  `whatsApp` on iOS checks `canOpenURL` (needs `LSApplicationQueriesSchemes`) while on Android it
+  targets packages instead of `whatsapp://`. Using them would change the Dart behaviour; the
+  bridge code is ~40 lines per platform. Dart API and results are unchanged (snapshots unchanged):
+  `share.system` maps any error to `share_unavailable`; `share.whatsApp` returns `false` after the
+  share sheet when the open fails or throws. Tests can still pass `openUrl` / `shareText`.
+- The example keeps `share_plus` (12.0.x) for its backend variant's own share button; it is the
+  app's dependency, not the plugin's.
+- **RunnerTests host:** the example's `main.dart` asks its AppDelegate
+  (`com.clikgate.example/host` `isUnitTestHost`, true when `XCTestConfigurationFilePath` is set)
+  and skips `Clikgate.configure` / the UI under XCTest, so the plugin's unit tests see an
+  unconfigured SDK. Example-only; the plugin behaves the same.
 
 ### Boundary checks (spec 20)
 
@@ -129,7 +163,7 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
 - Backend variant: demo login → session token + identity token signed by the backend →
   `Clikgate.identify(id, identityToken:)` (verified identity). Invite / stats / leaderboard
   calls carry the session (`Authorization: Bearer`). The share button uses `share_plus`
-  directly; there is no WhatsApp deep link in this variant (the helper lives in Engage, and the
+  directly (the app's own dependency, not the plugin's); there is no WhatsApp deep link in this variant (the helper lives in Engage, and the
   share sheet offers WhatsApp). "Buy something" posts `/orders` (the backend sends the `purchase` goal;
   Change 22: there is no app-side event call). Promo codes are not in the backend variant (a backend would redeem them
   server-side with `POST /v1/codes/redeem`; not part of the sample backend).
@@ -269,3 +303,16 @@ packages read their `LICENSE`.
   example stays in the repository. A `.pubignore` replaces the directory's `.gitignore` for pub, so it repeats
   those entries; its patterns are unanchored (`**/test/`) so they mean the same to pub and to
   `scripts/scan_release_packages.py`, which reads them relative to the repository root.
+
+## Automatic push token on iOS (2.1.0)
+
+- The plugin was already an application delegate (`registrar.addApplicationDelegate`), so it now forwards
+  `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` to `Clikgate.shared.setPushToken(deviceToken:)`
+  whenever `automaticPushToken` is on (Flutter calls this void delegate method on every plugin, so
+  `firebase_messaging` still gets it; no swizzling). Before 2.1.0 this needed Info.plist `ClikgateForwardAPNsToken`;
+  that key still forces forwarding.
+- "A manual token wins": once Dart calls `setPushToken` (typically the FCM token from `firebase_messaging`), the plugin
+  stores `com.clikgate.flutter.manualPushToken` in `UserDefaults` and stops forwarding the APNs token. It is kept
+  across launches because the APNs callback and the Dart call race on every launch; without it the stored token
+  would flip between the APNs and FCM token and be re-sent twice per launch. Cost: an app that later stops calling
+  `setPushToken` keeps the flag until reinstall (it can set `ClikgateForwardAPNsToken` = YES).

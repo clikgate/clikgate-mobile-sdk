@@ -2,7 +2,7 @@ class Clikgate
   static const String pluginVersion
   static const ClikgateReferrals referrals
   static Future<bool> isFeatureEnabled(String key)
-  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true,})
+  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true, bool automaticPushToken = true,})
   static Stream<ClikgateDeepLink> get onDeepLink
   static Stream<ClikgateBrowserHandoff> get onBrowserHandoff
   static Future<ClikgateAttribution> getAttribution()

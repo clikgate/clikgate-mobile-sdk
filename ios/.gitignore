@@ -1,7 +1,11 @@
 .build/
 build/
 DerivedData/
-.swiftpm/
+.swiftpm/*
+# Kept: the shared Clikgate-Package scheme (builds and tests core + Engage; one product since 2.1.0)
+!.swiftpm/xcode/
+.swiftpm/xcode/*
+!.swiftpm/xcode/xcshareddata/
 *.xcuserstate
 xcuserdata/
 Package.resolved

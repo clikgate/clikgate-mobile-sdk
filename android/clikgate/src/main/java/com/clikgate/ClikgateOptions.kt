@@ -35,6 +35,12 @@ public enum class Attestation {
  *   `clkg.to`, `dev.ciz.to`) opens the app but belongs to another organisation (`/resolve` answers
  *   `matched: false`), open it in an in-app browser (Custom Tabs) and report it to
  *   [Clikgate.onBrowserHandoff]. Default true; false = the link is dropped (pre-1.4.0 behaviour).
+ * @property automaticPushToken When the app ships Firebase Cloud Messaging, fetch its token on each
+ *   launch (by reflection; no Firebase dependency) and use it for uninstall checks, as if passed to
+ *   [Clikgate.setPushToken]. Only when uninstall tracking is on for the app, tracking isn't opted
+ *   out, the SDK version isn't blocked and consent allows it. Never asks for notification
+ *   permission. A token passed to [Clikgate.setPushToken] in the same launch always wins.
+ *   Default true; false = only [Clikgate.setPushToken] tokens are used.
  */
 public data class ClikgateOptions @JvmOverloads constructor(
     val linkDomains: List<String> = emptyList(),
@@ -45,6 +51,7 @@ public data class ClikgateOptions @JvmOverloads constructor(
     val deferredDeepLinkTimeoutMs: Long = 5_000,
     val cloudProjectNumber: Long? = null,
     val platformDomainBrowserFallback: Boolean = true,
+    val automaticPushToken: Boolean = true,
 ) {
     public companion object {
         public const val DEFAULT_API_BASE_URL: String = "https://sdk.clikgate.com"

@@ -215,3 +215,15 @@ guide said "the setup command doesn't do websites"), so the website flow is new,
   `clikgate.keep-route.enabled`, `MapClikgateKeep`) and were not compiled or run against those SDKs. The
   framework adapters must exempt the route from CSRF protection (Laravel `web` middleware, Django, Spring Security)
   for the web script's same-origin POST to succeed.
+- **`aps-environment` is added always (automatic push token, 2.1.0).** The SDKs' `automaticPushToken` registers for
+  remote notifications only when uninstall tracking is on, and that needs the Push Notifications capability. The
+  CLI token's allow-list doesn't include the app's feature switches (and setup also runs offline), so the command
+  can't tell whether uninstall tracking is on: it adds the entitlement in every iOS project. It is harmless on its
+  own (no prompt, nothing shown); the one cost is manual signing, where the App ID needs Push Notifications and new
+  profiles: a reminder says so. Debug gets `development`, Release/Profile `production`; an existing value is kept,
+  except in a newly created Debug copy of the Release file, which gets `development`.
+- **The APNs token forward line** is idempotent by content (any `setPushToken(deviceToken:` /
+  `setPushTokenWithDeviceToken:` call counts), not by markers, so projects set up before 2.1.0 (which already have
+  markers) still get it. Objective-C files import the module's generated Swift header with `#if __has_include`
+  (`@import` needs `-fcxx-modules` in `.mm`). A new Objective-C method calls `super` only when the superclass
+  implements it (Expo's `EXAppDelegateWrapper` does, `UIResponder` doesn't).

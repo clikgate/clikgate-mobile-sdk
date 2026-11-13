@@ -22,3 +22,11 @@
     public java.lang.Object getResult();
 }
 -dontwarn com.google.firebase.analytics.**
+
+# Firebase Cloud Messaging is optional: with automaticPushToken the SDK reads the FCM token by
+# reflection when the app ships it (Task listener rules above).
+-keep class com.google.firebase.messaging.FirebaseMessaging {
+    public static com.google.firebase.messaging.FirebaseMessaging getInstance();
+    public com.google.android.gms.tasks.Task getToken();
+}
+-dontwarn com.google.firebase.messaging.**

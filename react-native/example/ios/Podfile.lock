@@ -1,8 +1,7 @@
 PODS:
-  - Clikgate (1.5.1):
-    - Clikgate/Core (= 1.5.1)
-  - clikgate-react-native (1.6.1):
-    - Clikgate (~> 1.5.1)
+  - Clikgate (2.1.0)
+  - clikgate-react-native (2.1.0):
+    - Clikgate (~> 2.1.0)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -24,32 +23,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - clikgate-react-native-engage (1.0.0):
-    - Clikgate/Engage (~> 1.5.0)
-    - hermes-engine
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - Yoga
-  - Clikgate/Core (1.5.1)
-  - Clikgate/Engage (1.5.1):
-    - Clikgate/Core
   - FBLazyVector (0.86.3)
   - hermes-engine (250829098.0.17):
     - hermes-engine/Pre-built (= 250829098.0.17)
@@ -1948,7 +1921,6 @@ PODS:
 DEPENDENCIES:
   - Clikgate (from `../../../ios`)
   - clikgate-react-native (from `../..`)
-  - clikgate-react-native-engage (from `../../../react-native-engage`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2032,8 +2004,6 @@ EXTERNAL SOURCES:
     :path: "../../../ios"
   clikgate-react-native:
     :path: "../.."
-  clikgate-react-native-engage:
-    :path: "../../../react-native-engage"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2189,9 +2159,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Clikgate: ca9a7a41974ed0cd4109bc700928a59c45b2ee3d
-  clikgate-react-native: 2825aaf38dc24a13a33d2994ee57a92225aedd37
-  clikgate-react-native-engage: a22a7dc9cf2588d6fe58d0bba7c351429f216767
+  Clikgate: 6439eb2a2d74ae7f4dd6d17ff99e7cc688b29aa0
+  clikgate-react-native: a5ff8e451d760383f0d2d181e7f23c33f8fb89ed
   FBLazyVector: 2138c6c2ab66c31bf5754dc18097fbc498a49c7f
   hermes-engine: 63c5db7d529c36335fada6582fd293ae2a105d77
   RCTDeprecation: 96f68ebf33f8762466b01d57d6e873c4f30efb07

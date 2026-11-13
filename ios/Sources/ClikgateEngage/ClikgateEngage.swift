@@ -3,7 +3,7 @@ import Foundation
 @_spi(ClikgateEngage) import Clikgate
 #endif
 
-/// Clikgate Engage add-on: convenience reads and actions for apps **without their own
+/// Clikgate Engage features: convenience reads and actions for apps **without their own
 /// backend** — the user's referral link and stats, leaderboards, promo / offline codes and share
 /// helpers. Apps with a backend should call the Clikgate control-plane API from their server and
 /// render their own screens instead (the recommended path, see `docs/engage.md`).
@@ -25,8 +25,8 @@ import Foundation
 /// in memory for 60 s (never on disk); a network error is retried once, nothing else is retried;
 /// errors are ``ClikgateError``s. Engage has no UI components.
 public enum ClikgateEngage {
-    /// Version of the Engage add-on.
-    public static var version: String { "2.0.0" }
+    /// Version of the Engage features (the SDK version).
+    public static var version: String { "2.1.0" }
 
     /// The user's referral link and stats (feature `referrals`).
     public static let referrals = ClikgateEngageReferrals(client: .live)

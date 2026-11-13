@@ -1,3 +1,30 @@
+## 2.1.0 (unreleased): Engage is part of the plugin
+
+- **The `clikgate_engage` package is merged into `clikgate_flutter`.** Import the Engage features with
+  `import 'package:clikgate_flutter/engage.dart';` (same API: `ClikgateEngage`, `ShareApp`, models). The share menu
+  channel is registered by this plugin. New dependencies: `http`, `meta`. `share.system` and `share.whatsApp` use the
+  plugin's own native side (Android `ACTION_SEND` chooser / `ACTION_VIEW`, iOS `UIActivityViewController` /
+  `UIApplication.open`), so the plugin does **not** depend on `share_plus` or `url_launcher` and apps keep any version
+  of them (same results and errors as before: `share_unavailable`, `whatsApp` → share sheet returning `false`).
+- Requires the native SDKs 2.1.0 (which contain the native Engage features).
+- **Automatic push token for uninstall tracking.** `Clikgate.configure(automaticPushToken: true)` (default) is
+  passed to both native SDKs: when uninstall tracking is on in the dashboard (and tracking and consent allow it)
+  they get a push token without asking for notification permission (iOS registers for remote notifications;
+  Android fetches the FCM token when Firebase Messaging is in the app). On iOS the plugin, already an application
+  delegate, now forwards `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` to the native SDK, so
+  apps need no AppDelegate code (no swizzling; `firebase_messaging` gets the same callback and keeps working). Once
+  Dart passes its own token with `setPushToken`, that one wins and the plugin stops forwarding the APNs token.
+  Info.plist `ClikgateForwardAPNsToken` is no longer needed (still honoured). iOS needs the Push Notifications
+  capability (`npx @clikgate/setup` adds it). `automaticPushToken: false` leaves push registration to the app.
+- **Setup command without Node.js.** After `flutter pub add clikgate_flutter`, run `dart run clikgate_flutter`
+  (also `dart run clikgate_flutter:setup`) to set Clikgate up, and `dart run clikgate_flutter:doctor` to check it.
+  It runs the same program as `npx @clikgate/setup` (2.1.0): the first run downloads the build for your computer
+  once from the `setup-v2.1.0` GitHub release (macOS, Linux and Windows; about 41 MB, up to 55 MB on Linux and
+  Windows), checks the SHA-256 of the download and of the unpacked program against the checksums in this package,
+  and caches it in `~/.clikgate/setup/` (Windows `%LOCALAPPDATA%\clikgate\setup\`). Nothing runs if a checksum
+  doesn't match. Its messages and `--help` name `dart run clikgate_flutter` (and `dart run clikgate_flutter:doctor`)
+  instead of npx. New dependency: `crypto`. No change to the plugin's API.
+
 ## 2.0.0 (unreleased): one method, `goal()`; installation ID
 
 **Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.

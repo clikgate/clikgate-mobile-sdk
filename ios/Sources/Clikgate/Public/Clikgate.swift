@@ -12,7 +12,7 @@ import UIKit
 @objc(Clikgate)
 public final class Clikgate: NSObject, @unchecked Sendable {
     /// The native SDK version.
-    public static let sdkVersion = "2.0.0"
+    public static let sdkVersion = "2.1.0"
 
     @objc public static let shared = Clikgate()
 
@@ -145,7 +145,7 @@ public final class Clikgate: NSObject, @unchecked Sendable {
         return c.features.isEnabled(key)
     }
 
-    // MARK: - Engage add-on (internal)
+    // MARK: - Engage features (internal)
 
     /// **Internal**, for the `ClikgateEngage` add-on: the request context for a `/v1/sdk` call.
     /// Throws `not_configured`, `opted_out`, `invalid_sdk_key`, `sdk_disabled` or `install_pending`;

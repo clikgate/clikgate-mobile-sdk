@@ -1,12 +1,13 @@
 Pod::Spec.new do |s|
   s.name             = 'Clikgate'
-  s.version          = '2.0.0'
-  s.summary          = 'Clikgate iOS SDK: deep links, deferred deep links, install attribution, referrals and uninstall tracking.'
+  s.version          = '2.1.0'
+  s.summary          = 'Clikgate iOS SDK: deep links, deferred deep links, install attribution, referrals, uninstall tracking and Engage features.'
   s.description      = <<-DESC
     The Clikgate SDK handles Universal Links and custom-scheme links, deferred deep links
     (pasteboard / Apple Search Ads), install attribution, goals, referral codes (referee side),
     push-token registration for uninstall tracking and SKAdNetwork / AdAttributionKit conversion
-    values. No third-party dependencies.
+    values, plus the Engage features for apps without their own backend (referral link and stats,
+    leaderboards, promo codes, share helpers). No third-party dependencies.
   DESC
   s.homepage         = 'https://clikgate.com'
   s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
@@ -21,28 +22,18 @@ Pod::Spec.new do |s|
   s.module_name      = 'Clikgate'
   s.static_framework = false
 
-  # Core is the default subspec: `pod 'Clikgate'` installs the core SDK only. The optional Engage
-  # add-on (spec 17A) is `pod 'Clikgate/Engage'`, which depends on Core and never the other way round.
-  s.default_subspec  = 'Core'
+  # One pod (since 2.1.0): the core SDK and its Engage features. CocoaPods compiles both source folders into
+  # the single `Clikgate` module (SPM keeps a separate `ClikgateEngage` module in the same product); the
+  # condition below makes the Engage sources skip their `import Clikgate`. App code uses `import Clikgate`
+  # with CocoaPods. Paths are relative to ios/ (the podspec's directory, and the root of the release zip).
+  s.source_files     = 'Sources/Clikgate/**/*.swift', 'Sources/ClikgateEngage/**/*.swift'
+  s.resource_bundles = { 'Clikgate_Privacy' => ['Sources/Clikgate/Resources/PrivacyInfo.xcprivacy'] }
+  s.frameworks       = 'Foundation', 'UIKit', 'Security', 'StoreKit', 'CryptoKit', 'SafariServices'
+  s.weak_frameworks  = 'AdServices', 'AdAttributionKit', 'AppTrackingTransparency', 'DeviceCheck'
 
-  # Paths are relative to ios/ (the podspec's directory, and the root of the release zip).
-  s.subspec 'Core' do |core|
-    core.source_files     = 'Sources/Clikgate/**/*.swift'
-    core.resource_bundles = { 'Clikgate_Privacy' => ['Sources/Clikgate/Resources/PrivacyInfo.xcprivacy'] }
-    core.frameworks       = 'Foundation', 'UIKit', 'Security', 'StoreKit', 'CryptoKit', 'SafariServices'
-    core.weak_frameworks  = 'AdServices', 'AdAttributionKit', 'AppTrackingTransparency', 'DeviceCheck'
-  end
-
-  # CocoaPods compiles all subspecs into the single `Clikgate` module (SPM has a separate
-  # `ClikgateEngage` module). The condition below makes the Engage sources skip their
-  # `import Clikgate` in that case; app code uses `import Clikgate` with CocoaPods.
-  s.subspec 'Engage' do |engage|
-    engage.dependency 'Clikgate/Core'
-    engage.source_files = 'Sources/ClikgateEngage/**/*.swift'
-    engage.frameworks   = 'Foundation', 'UIKit'
-    engage.pod_target_xcconfig = { 'SWIFT_ACTIVE_COMPILATION_CONDITIONS' => '$(inherited) CLIKGATE_POD_SINGLE_MODULE' }
-  end
-
-  # Release builds of the pod optimise for size (budgets: core < 410 KB, Engage < 80 KB).
-  s.pod_target_xcconfig = { 'SWIFT_OPTIMIZATION_LEVEL[config=Release]' => '-Osize' }
+  # Release builds of the pod optimise for size (budgets, measured per source folder: core < 410 KB, Engage < 95 KB).
+  s.pod_target_xcconfig = {
+    'SWIFT_OPTIMIZATION_LEVEL[config=Release]' => '-Osize',
+    'SWIFT_ACTIVE_COMPILATION_CONDITIONS' => '$(inherited) CLIKGATE_POD_SINGLE_MODULE',
+  }
 end

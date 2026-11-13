@@ -32,14 +32,14 @@ jobs:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests, core + Engage (JUnit + Robolectric + MockWebServer)
-        run: ./gradlew :clikgate:testDebugUnitTest :clikgate-engage:testDebugUnitTest --stacktrace
-      - name: Public API snapshots (binary-compatibility-validator) + core never depends on Engage
+        run: ./gradlew :clikgate:testDebugUnitTest --stacktrace
+      - name: Public API snapshot (binary-compatibility-validator) + core code never uses Engage
         run: ./gradlew apiCheck :clikgate:checkNoEngageDependency
       - name: Lint
-        run: ./gradlew :clikgate:lintRelease :clikgate-engage:lintRelease
+        run: ./gradlew :clikgate:lintRelease
       - name: Build AARs, sample app and instrumented tests
-        run: ./gradlew :clikgate:assembleRelease :clikgate-engage:assembleRelease :sample:assembleDebug :sample:assembleDebugAndroidTest
-      - name: Size budgets (core < 150 KB, Engage < 40 KB)
+        run: ./gradlew :clikgate:assembleRelease :sample:assembleDebug :sample:assembleDebugAndroidTest
+      - name: Size budgets (core < 150 KB, Engage < 44 KB)
         run: ./scripts/check_size.sh --no-build | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -47,11 +47,9 @@ jobs:
           name: android-reports
           path: |
             android/clikgate/build/reports/
-            android/clikgate-engage/build/reports/
             android/clikgate/build/outputs/aar/
-            android/clikgate-engage/build/outputs/aar/
 
-  # Publishes com.clikgate:clikgate-android and com.clikgate:clikgate-engage to Maven Central (Central Portal) on android-v* tags.
+  # Publishes com.clikgate:clikgate-android (with the Engage features) to Maven Central (Central Portal) on android-v* tags.
   # Secrets: MAVEN_CENTRAL_USERNAME / MAVEN_CENTRAL_PASSWORD (Central Portal user token),
   # SIGNING_KEY (ASCII-armored private key), SIGNING_KEY_ID, SIGNING_KEY_PASSWORD.
   # The deployment is uploaded but not auto-released (automaticRelease = false): release it in
@@ -81,12 +79,11 @@ jobs:
       # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
       - name: Scan the release packages
         run: |
-          ./gradlew :clikgate:assembleRelease :clikgate-engage:assembleRelease :clikgate:releaseSourcesJar :clikgate-engage:releaseSourcesJar
+          ./gradlew :clikgate:assembleRelease :clikgate:releaseSourcesJar
           python3 ../scripts/scan_release_packages.py clikgate/build/outputs/aar/clikgate-release.aar \
-            clikgate-engage/build/outputs/aar/clikgate-engage-release.aar clikgate/build/libs/clikgate-sources.jar \
-            clikgate-engage/build/libs/clikgate-engage-sources.jar
+            clikgate/build/libs/clikgate-sources.jar
       - name: Publish to Maven Central
-        run: ./gradlew :clikgate:publishToMavenCentral :clikgate-engage:publishToMavenCentral --no-configuration-cache
+        run: ./gradlew :clikgate:publishToMavenCentral --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}

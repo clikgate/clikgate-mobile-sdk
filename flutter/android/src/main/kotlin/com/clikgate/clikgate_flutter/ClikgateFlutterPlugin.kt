@@ -50,14 +50,19 @@ class ClikgateFlutterPlugin :
 
     // ------------------------------------------------------------------ FlutterPlugin
 
+    /** The Engage share menu's channel (`com.clikgate/engage`), part of this plugin since 2.1.0. */
+    private val engageShare = EngageShareBridge()
+
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         methods = MethodChannel(binding.binaryMessenger, METHOD_CHANNEL).also { it.setMethodCallHandler(this) }
         events = EventChannel(binding.binaryMessenger, EVENT_CHANNEL).also { it.setStreamHandler(this) }
         DeepLinkHub.install()
+        engageShare.onAttachedToEngine(binding)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        engageShare.onDetachedFromEngine(binding)
         methods?.setMethodCallHandler(null)
         events?.setStreamHandler(null)
         DeepLinkHub.removeSink(this)
@@ -79,6 +84,7 @@ class ClikgateFlutterPlugin :
     // ------------------------------------------------------------------ ActivityAware
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        engageShare.onAttachedToActivity(binding)
         activityBinding = binding
         binding.addOnNewIntentListener(this)
         // Cold start: the intent that launched the activity (App Link / scheme). The SDK keeps
@@ -89,6 +95,7 @@ class ClikgateFlutterPlugin :
     override fun onDetachedFromActivityForConfigChanges() = detachActivity()
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        engageShare.onReattachedToActivityForConfigChanges(binding)
         activityBinding = binding
         binding.addOnNewIntentListener(this)
     }
@@ -96,6 +103,7 @@ class ClikgateFlutterPlugin :
     override fun onDetachedFromActivity() = detachActivity()
 
     private fun detachActivity() {
+        engageShare.onDetachedFromActivity()
         activityBinding?.removeOnNewIntentListener(this)
         activityBinding = null
     }
@@ -179,7 +187,7 @@ class ClikgateFlutterPlugin :
                 "attributionMetadata" -> result.success(Clikgate.attributionMetadata())
                 // iOS only (Google on-device conversion measurement).
                 "enableGoogleOnDeviceMeasurement" -> result.success(null)
-                // ---- Engage add-on support (internal): clikgate_engage calls /v1/sdk/... itself
+                // ---- Engage features support (internal): the Engage features (engage.dart) call /v1/sdk/... itself
                 "getRequestContext" -> requestContext(result)
                 "reportServerError" -> reportServerError(call, result)
                 "sdkVersion" -> result.success(Clikgate.sdkVersion)
@@ -210,6 +218,7 @@ class ClikgateFlutterPlugin :
             apiBaseUrl = call.argument<String>("apiBaseUrl")?.takeIf { it.isNotBlank() } ?: ClikgateOptions.DEFAULT_API_BASE_URL,
             deferredDeepLinkTimeoutMs = (call.argument<Any>("deferredDeepLinkTimeoutMs") as? Number)?.toLong() ?: 5_000,
             platformDomainBrowserFallback = call.argument<Boolean>("platformDomainBrowserFallback") ?: true,
+            automaticPushToken = call.argument<Boolean>("automaticPushToken") ?: true,
         )
         // pasteboardMode / waitForATT are iOS-only and ignored here.
         Clikgate.setWrapper("flutter", call.argument<String>("wrapperVersion") ?: "unknown")

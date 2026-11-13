@@ -1,5 +1,7 @@
 # Android SDK + Flutter plugin (Android side): decisions and platform research
 
+> **2.1.0 (2026-11-12): the Engage add-on is merged into this package.** See [docs/DECISIONS.md](../docs/DECISIONS.md) "One package per SDK". Entries below that describe Engage as a separate package, module or subspec are history; the core/Engage boundary and the size budgets they describe still apply.
+
 Research done on 2026-10-20 against official docs and the artifacts on Google Maven /
 Maven Central. Where something was checked by inspecting a published artifact (e.g. `javap`
 on the AAR), that is noted.

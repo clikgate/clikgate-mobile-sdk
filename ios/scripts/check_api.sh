@@ -13,9 +13,9 @@
 #      creation, codes, share helpers, identity signals). The only allowed hits are the feature-key
 #      constants `ClikgateFeatures.leaderboards` / `.whatsappAttribution` (string keys for
 #      isFeatureEnabled; `whatsapp_attribution` is a server-side attribution feature);
-#   3. core never depends on Engage: Package.swift's Clikgate target has no dependencies,
-#      Sources/Clikgate never imports ClikgateEngage, and the podspec's default subspec is Core,
-#      which doesn't depend on Engage.
+#   3. core never depends on Engage: Package.swift's Clikgate target has no dependencies and
+#      Sources/Clikgate never imports ClikgateEngage. Since 2.1.0 both ship as one SPM product and one
+#      pod (no Engage product or subspec): the package and podspec checks below enforce that too.
 set -euo pipefail
 
 IOS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -106,13 +106,17 @@ pkg = open(sys.argv[1]).read()
 m = re.search(r'\.target\(\s*name:\s*"Clikgate"(.*?)\n\s*\),', pkg, re.S)
 if not m or "dependencies" in m.group(1):
     sys.exit("error: Package.swift: the Clikgate target must have no dependencies")
+if re.search(r'\.library\(\s*name:\s*"ClikgateEngage"', pkg):
+    sys.exit("error: Package.swift: Engage ships inside the Clikgate product, not as its own product")
+prod = re.search(r'\.library\(\s*name:\s*"Clikgate",\s*targets:\s*\[([^\]]*)\]', pkg)
+if not prod or '"ClikgateEngage"' not in prod.group(1):
+    sys.exit("error: Package.swift: the Clikgate product must include the ClikgateEngage target")
 pod = open(sys.argv[2]).read()
-if not re.search(r"s\.default_subspecs?\s*=\s*\[?\s*'Core'\s*\]?\s*$", pod, re.M):
-    sys.exit("error: Clikgate.podspec: the default subspec must be 'Core' only")
-core = re.search(r"s\.subspec 'Core' do \|(\w+)\|(.*?)\n  end", pod, re.S)
-if not core or "Engage" in core.group(2):
-    sys.exit("error: Clikgate.podspec: the Core subspec must not reference Engage")
-print("dependency check: core never depends on Engage (Package.swift, podspec, imports)")
+if re.search(r"\.subspec\s", pod):
+    sys.exit("error: Clikgate.podspec: one pod, no subspecs (Engage ships in the default pod)")
+if "Sources/ClikgateEngage" not in pod:
+    sys.exit("error: Clikgate.podspec: the pod must include the Engage sources")
+print("dependency check: core never depends on Engage; one SPM product and one pod ship both (Package.swift, podspec, imports)")
 PY
 
 exit $fail

@@ -8,6 +8,7 @@ and forwards:
 | `application(_:open:options:)` (custom schemes) | `handle(url:)` |
 | `application(_:continue:restorationHandler:)` (Universal Links) | `continue(userActivity:)` |
 | `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` | `handleRemoteNotification`: Clikgate's silent uninstall checks are answered with `.noData` and not passed on; every other push goes to the other plugins (e.g. `firebase_messaging`) |
+| `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` | `setPushToken(deviceToken:)` with `automaticPushToken` (default), until Dart passes its own token; every plugin receives this callback, so `firebase_messaging` keeps working |
 
 Links that open the app before Dart calls `Clikgate.configure` are kept and handled right after it.
 
@@ -18,7 +19,7 @@ Requirements:
 
 ## 1. Podfile
 
-Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.0.0`) from CocoaPods
+Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.1.0`, which includes the Engage features) from CocoaPods
 trunk. Set the platform to at least what your other plugins need:
 
 ```ruby
@@ -71,24 +72,28 @@ Add to `ios/Runner/Info.plist` (or use **Info → URL Types**):
 
 ## 4. Push (uninstall tracking)
 
-1. **Signing & Capabilities → + Push Notifications**, and **+ Background Modes → Remote notifications**
-   (`UIBackgroundModes` = `remote-notification`). Silent pushes don't need the notification permission prompt.
-2. **With `firebase_messaging`** (recommended):
-   - send the FCM token from Dart: `Clikgate.setPushToken(token, provider: PushProvider.fcm)`;
-   - in your handlers, `if (Clikgate.isClikgateMessage(message.data)) return;`.
+1. Turn on uninstall tracking in the dashboard.
+2. **Signing & Capabilities → + Push Notifications** (the `aps-environment` entitlement; `npx @clikgate/setup`
+   adds it). Background Modes → Remote notifications is not needed for uninstall checks: the check reads APNs'
+   reply, not delivery.
+3. That's all: no AppDelegate line. With `automaticPushToken` (default `true`) the native SDK calls
+   `registerForRemoteNotifications()` on every launch while uninstall tracking is on, tracking isn't opted out,
+   the SDK version isn't blocked and consent allows it, and the plugin receives
+   `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` as an application delegate (Flutter's
+   official mechanism, no swizzling) and passes the token on. Users don't have to allow notifications; the SDK
+   never asks and never shows anything.
 
-   Clikgate sends FCM data `{"cg":"uc"}` with `content-available`.
-3. **Native APNs without FCM**: either pass the hex APNs token from Dart with
-   `provider: PushProvider.apns`, or let the plugin forward it by adding to `Info.plist`:
+**With `firebase_messaging`**: it keeps working (every plugin receives the token callback). In your handlers,
+`if (Clikgate.isClikgateMessage(message.data)) return;`. Clikgate sends FCM data `{"cg":"uc"}` with
+`content-available`. If you send the FCM token from Dart (`Clikgate.setPushToken(token, provider:
+PushProvider.fcm)`), it wins: the plugin then stops passing on the APNs token.
 
-```xml
-<key>ClikgateForwardAPNsToken</key>
-<true/>
-```
-
-   It is off by default, so apps that use FCM don't register two tokens. Call
-   `UIApplication.shared.registerForRemoteNotifications()` in your AppDelegate (or let
-   `firebase_messaging` do it).
+**Side effect.** Registering early also hands the APNs token to any other push tool in your app, which may count
+the device as registered. Users still see no notifications without permission. To control push registration
+timing yourself, pass `automaticPushToken: false` to `Clikgate.configure`, call `registerForRemoteNotifications()`
+when you choose, and send the token from Dart with `setPushToken` (hex with `provider: PushProvider.apns`). The
+`Info.plist` key `ClikgateForwardAPNsToken` = YES (the only way before 2.1.0) still makes the plugin forward the
+APNs token in every case.
 
 ## 5. Scenes
 
@@ -132,8 +137,8 @@ platform view.
 
 ### WhatsApp sharing
 
-`ClikgateEngage().share.whatsApp` (package `clikgate_engage`) opens `whatsapp://send?text=…` with
-`url_launcher`, which calls `UIApplication.open` without a `canOpenURL` check, so it works without an
+`ClikgateEngage().share.whatsApp` (`package:clikgate_flutter/engage.dart`) opens `whatsapp://send?text=…` with
+`UIApplication.open` (the plugin's own native side) without a `canOpenURL` check, so it works without an
 Info.plist entry; when WhatsApp isn't installed the system share sheet is shown and the call returns
 `false`. Listing the scheme is still recommended (the native `ClikgateEngage` iOS module checks
 `canOpenURL`, which answers only for listed schemes):
@@ -161,5 +166,5 @@ Info.plist entry; when WhatsApp isn't installed the system share sheet is shown 
 
 ## 8. Releasing
 
-The published plugin's podspec depends on `Clikgate ~> 2.0.0` from trunk, so release the iOS SDK
+The published plugin's podspec depends on `Clikgate ~> 2.1.0` from trunk, so release the iOS SDK
 (`ios-v<version>` tag → CocoaPods trunk + SPM mirror) **before** publishing a plugin version that needs it.

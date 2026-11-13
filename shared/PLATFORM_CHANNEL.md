@@ -22,7 +22,7 @@ String, List, Map<String, Object?>.
 
 | Method | Arguments | Result |
 |---|---|---|
-| `configure` | `{sdkKey: String, linkDomains: List<String>, apiBaseUrl: String?, logLevel: "verbose"\|"debug"\|"info"\|"warn"\|"error"\|"none", environment: "production"\|"sandbox", attestation: "off"\|"ifAvailable", pasteboardMode: "off"\|"automatic"\|"pasteControlOnly" (iOS only), waitForATT: bool (iOS only), deferredDeepLinkTimeoutMs: int, wrapperVersion: String}` | `null` |
+| `configure` | `{sdkKey: String, linkDomains: List<String>, apiBaseUrl: String?, logLevel: "verbose"\|"debug"\|"info"\|"warn"\|"error"\|"none", environment: "production"\|"sandbox", attestation: "off"\|"ifAvailable", pasteboardMode: "off"\|"automatic"\|"pasteControlOnly" (iOS only), waitForATT: bool (iOS only), deferredDeepLinkTimeoutMs: int, automaticPushToken: bool (absent ⇒ true; 2.1.0), wrapperVersion: String}` | `null` |
 | `getAttribution` | `{}` | Attribution map |
 | `identify` | `{customerUserId: String?, identityToken: String?}` | `null` |
 | `setTrackingEnabled` | `{enabled: bool}` | `null` |
@@ -103,8 +103,8 @@ New error code: `feature_disabled` (details `{feature}`; native error types expo
 ## Engage split (spec v3 new edition, 0.4 / 17A)
 
 The bridges carry **core only**. Referral links and stats, leaderboards, promo codes and share
-helpers live in the Engage add-ons (`clikgate_engage`, pure Dart; `@clikgate/react-native-engage`,
-pure TypeScript), which call `/v1/sdk/*` themselves over HTTP (API_CONTRACT.md, snake_case JSON),
+helpers are the Engage features (`package:clikgate_flutter/engage.dart`, pure Dart; `src/engage` of
+`@clikgate/react-native`, pure TypeScript), which call `/v1/sdk/*` themselves over HTTP (API_CONTRACT.md, snake_case JSON),
 using the request context the core hands out. The bridge methods `referrals.createLink`,
 `referrals.myStats`, `referrals.shareToWhatsApp`, `leaderboards.top` / `me` / `aroundMe` /
 `setOptOut` and `codes.redeem` (RN `referralsCreateLink`, `referralsMyStats`,
@@ -142,8 +142,8 @@ error rules; other codes are ignored. It never fails.
 The native SDKs expose the same as internal API: Android `@ClikgateInternalApi`
 `Clikgate.requestContext(callback)` / `awaitRequestContext()` / `reportServerError(code, feature)`
 (`ClikgateRequestContext`); iOS `@_spi(ClikgateEngage)` `Clikgate.shared.requestContext()` /
-`reportServerError(code:feature:)` (`ClikgateRequestContext`). The native Engage modules
-(`com.clikgate:clikgate-engage`, `ClikgateEngage`) use them directly.
+`reportServerError(code:feature:)` (`ClikgateRequestContext`). The native Engage code
+(`com.clikgate.engage`, the `ClikgateEngage` module) uses them directly.
 
 ## Change 03 methods (SDK 1.2.0)
 
@@ -225,13 +225,13 @@ native method each (the core bridges are unchanged and still carry no share code
 
 | Package | Channel / module | Method | Arguments | Result |
 |---|---|---|---|---|
-| `clikgate_engage` | MethodChannel `com.clikgate/engage` | `shareLink` | map below | `bool` |
-| `@clikgate/react-native-engage` | TurboModule `ClikgateEngage` (codegen `RNClikgateEngageSpec`) | `shareLink` | map below | `Promise<boolean>` |
+| `clikgate_flutter` (Engage) | MethodChannel `com.clikgate/engage` (registered by the core plugin) | `shareLink` | map below | `bool` |
+| `@clikgate/react-native` (Engage) | TurboModule `ClikgateEngage` (in the core's codegen library `RNClikgateSpec`) | `shareLink` | map below | `Promise<boolean>` |
 
 Arguments: `{url: String, message: String?, app: ShareApp value?, shareUrls: {ShareApp value: String}?,
 code: String?, shortUrl: String?}`; `code` (with `shortUrl`) means a referral link
 (`share.referralLink`). The result is `true` when `app` itself opened. Errors: `share_unavailable`,
-`invalid_argument`. Both forward to the native Engage add-on (`EngageShare.link` / `referralLink` on
+`invalid_argument`. Both forward to the native Engage features (`EngageShare.link` / `referralLink` on
 Android, `ClikgateEngage.share.link` / `referralLink` on iOS), which builds the per-app links and records
 the share, so the behaviour is identical on every platform (SDK_BEHAVIOUR.md "Change 13").
 

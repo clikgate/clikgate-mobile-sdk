@@ -80,6 +80,33 @@ describe('doctor --json', () => {
     expect(byId(report, 'android.debug_test_domain')?.status).toBe('warn');
   });
 
+  it('uninstall tracking: passes after setup, warns without aps-environment or the forward line (not on Flutter)', async () => {
+    const rn = await setUp('react-native');
+    let { report } = await doctorJson(rn);
+    expect(byId(report, 'ios.push.aps_environment')?.status).toBe('pass');
+    expect(byId(report, 'ios.push.token_forward')?.status).toBe('pass');
+    const ent = path.join(rn, 'ios/RnApp/RnApp.entitlements');
+    fs.writeFileSync(ent, fs.readFileSync(ent, 'utf8').replace(/\s*<key>aps-environment<\/key>\s*<string>production<\/string>/, ''));
+    const ad = path.join(rn, 'ios/RnApp/AppDelegate.swift');
+    fs.writeFileSync(ad, fs.readFileSync(ad, 'utf8').replace('ClikgateRN.setPushToken(deviceToken: deviceToken)', ''));
+    ({ report } = await doctorJson(rn));
+    expect(validate(report)).toBe(true);
+    expect(byId(report, 'ios.push.aps_environment')?.status).toBe('warn');
+    expect(byId(report, 'ios.push.aps_environment')?.title).toContain('Release');
+    expect(byId(report, 'ios.push.token_forward')?.status).toBe('warn');
+    expect(byId(report, 'ios.push.token_forward')?.fix).toContain('ClikgateRN.setPushToken(deviceToken: deviceToken)');
+
+    const flutter = await setUp('flutter');
+    ({ report } = await doctorJson(flutter));
+    expect(byId(report, 'ios.push.aps_environment')?.status).toBe('pass');
+    expect(byId(report, 'ios.push.token_forward')).toBeUndefined();
+
+    const swiftUI = await setUp('ios-swiftui');
+    ({ report } = await doctorJson(swiftUI));
+    expect(byId(report, 'ios.push.token_forward')?.status).toBe('warn');
+    expect(byId(report, 'ios.push.token_forward')?.fix).toContain('@UIApplicationDelegateAdaptor');
+  });
+
   it('fails when CODE_SIGN_ENTITLEMENTS points to a missing file', async () => {
     const dir = await setUp('ios-swiftui');
     fs.rmSync(path.join(dir, 'MyApp/MyAppDebug.entitlements'));
@@ -99,13 +126,13 @@ describe('doctor --json', () => {
     expect(JSON.stringify(report)).not.toContain('zyx987');
   });
 
-  it('warns when the SDK constraint is below the minimum (Flutter ^1.3.0 < 2.0.0)', async () => {
+  it('warns when the SDK constraint is below the minimum (Flutter ^1.3.0 < 2.1.0)', async () => {
     const dir = await setUp('flutter');
     const pub = path.join(dir, 'pubspec.yaml');
-    fs.writeFileSync(pub, fs.readFileSync(pub, 'utf8').replace('clikgate_flutter: ^2.0.0', 'clikgate_flutter: ^1.3.0'));
+    fs.writeFileSync(pub, fs.readFileSync(pub, 'utf8').replace('clikgate_flutter: ^2.1.0', 'clikgate_flutter: ^1.3.0'));
     const { code, report } = await doctorJson(dir);
     expect(byId(report, 'sdk.version')).toMatchObject({ status: 'warn', title: 'SDK version ^1.3.0' });
-    expect(byId(report, 'sdk.version')?.detail).toBe('below the minimum 2.0.0');
+    expect(byId(report, 'sdk.version')?.detail).toBe('below the minimum 2.1.0');
     expect(code).toBe(0); // a warning, not a failure
   });
 
