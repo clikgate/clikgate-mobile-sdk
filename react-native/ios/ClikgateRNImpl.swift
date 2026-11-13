@@ -73,6 +73,7 @@ public final class ClikgateRNImpl: NSObject {
             options.deferredDeepLinkTimeout = ms / 1000
         }
         options.platformDomainBrowserFallback = (args["platformDomainBrowserFallback"] as? Bool) ?? true
+        options.automaticPushToken = (args["automaticPushToken"] as? Bool) ?? true
         Clikgate.setWrapper(name: ClikgateRN.wrapperName, version: (args["wrapperVersion"] as? String) ?? "0.0.0")
         Clikgate.configure(sdkKey: sdkKey, options: options)
         ClikgateRN.didConfigure()
@@ -179,9 +180,9 @@ public final class ClikgateRNImpl: NSObject {
         resolve(Clikgate.shared.isFeatureEnabled(key))
     }
 
-    // MARK: - Engage add-on (internal)
+    // MARK: - Engage features (internal)
 
-    /// Request context for `@clikgate/react-native-engage`.
+    /// Request context for the Engage features (src/engage).
     @objc public func getRequestContext(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
         guard Self.requireConfigured(reject) else { return }
         Self.run(nil, resolve, reject, Self.map) {

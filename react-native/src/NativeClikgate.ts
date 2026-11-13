@@ -1,4 +1,5 @@
-import type { CodegenTypes, TurboModule } from 'react-native';
+import type { TurboModule } from 'react-native';
+import type { UnsafeObject } from './codegenTypes';
 import { TurboModuleRegistry } from 'react-native';
 
 /**
@@ -10,58 +11,42 @@ import { TurboModuleRegistry } from 'react-native';
  *
  * The contract's `referrals.*` method names contain a dot, which is not a valid TurboModule
  * method name, so they are exposed as `referralsApplyCode` and `referralsReferredBy`.
- * `getRequestContext` / `reportServerError` are the internal methods the Engage add-on
- * (`@clikgate/react-native-engage`) uses.
+ * `getRequestContext` / `reportServerError` are the internal methods the Engage features
+ * (src/engage) use.
  *
  * Deep links are emitted as `ClikgateDeepLink` events (`NativeEventEmitter`), hence
  * `addListener` / `removeListeners`.
  */
 export interface Spec extends TurboModule {
-  configure(args: CodegenTypes.UnsafeObject): Promise<void>;
-  getAttribution(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
-  identifyUser(args: CodegenTypes.UnsafeObject): Promise<void>;
-  setTrackingEnabled(args: CodegenTypes.UnsafeObject): Promise<void>;
-  setPushToken(args: CodegenTypes.UnsafeObject): Promise<void>;
-  handleUrl(args: CodegenTypes.UnsafeObject): Promise<boolean>;
-  referralsApplyCode(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
-  referralsReferredBy(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
+  configure(args: UnsafeObject): Promise<void>;
+  getAttribution(args: UnsafeObject): Promise<UnsafeObject>;
+  identifyUser(args: UnsafeObject): Promise<void>;
+  setTrackingEnabled(args: UnsafeObject): Promise<void>;
+  setPushToken(args: UnsafeObject): Promise<void>;
+  handleUrl(args: UnsafeObject): Promise<boolean>;
+  referralsApplyCode(args: UnsafeObject): Promise<UnsafeObject>;
+  referralsReferredBy(args: UnsafeObject): Promise<UnsafeObject>;
   sdkVersion(): Promise<string>;
 
   // v3
-  isFeatureEnabled(args: CodegenTypes.UnsafeObject): Promise<boolean>;
+  isFeatureEnabled(args: UnsafeObject): Promise<boolean>;
 
   // Consent, Firebase forwarding, sales metadata
-  setConsent(args: CodegenTypes.UnsafeObject): Promise<void>;
-  getConsent(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
-  setConsentRegion(args: CodegenTypes.UnsafeObject): Promise<void>;
-  enableFirebaseForwarding(args: CodegenTypes.UnsafeObject): Promise<void>;
-  attributionMetadata(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
-  enableGoogleOnDeviceMeasurement(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<void>;
+  setConsent(args: UnsafeObject): Promise<void>;
+  getConsent(args: UnsafeObject): Promise<UnsafeObject>;
+  setConsentRegion(args: UnsafeObject): Promise<void>;
+  enableFirebaseForwarding(args: UnsafeObject): Promise<void>;
+  attributionMetadata(args: UnsafeObject): Promise<UnsafeObject>;
+  enableGoogleOnDeviceMeasurement(args: UnsafeObject): Promise<void>;
 
   // Resolves {status, reason, goalKind, valueIgnored}.
-  goal(args: CodegenTypes.UnsafeObject): Promise<CodegenTypes.UnsafeObject>;
+  goal(args: UnsafeObject): Promise<UnsafeObject>;
   // Resolves {installationId: string | null} (null when tracking is off).
-  getInstallationId(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
+  getInstallationId(args: UnsafeObject): Promise<UnsafeObject>;
 
-  // Engage add-on (internal)
-  getRequestContext(
-    args: CodegenTypes.UnsafeObject
-  ): Promise<CodegenTypes.UnsafeObject>;
-  reportServerError(args: CodegenTypes.UnsafeObject): Promise<void>;
+  // Engage features (internal)
+  getRequestContext(args: UnsafeObject): Promise<UnsafeObject>;
+  reportServerError(args: UnsafeObject): Promise<void>;
 
   addListener(eventName: string): void;
   removeListeners(count: number): void;

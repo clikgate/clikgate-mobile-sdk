@@ -30,7 +30,7 @@ import kotlin.coroutines.suspendCoroutine
  *
  * Referral links and stats, leaderboards, promo codes and share helpers are not in the core SDK:
  * call the Clikgate API from your backend (recommended) or, in apps without a backend, use the
- * optional Engage add-on `com.clikgate:clikgate-engage`.
+ * Engage features (`ClikgateEngage`).
  */
 public object Clikgate {
 
@@ -502,10 +502,10 @@ public object Clikgate {
         return isClikgateMessage(mapOf("cg" to cg))
     }
 
-    // ---------------------------------------------------------------- Engage add-on (internal)
+    // ---------------------------------------------------------------- Engage features (internal)
 
     /**
-     * Internal (Engage add-on, wrappers): the request context for a `/v1/sdk/...` call on behalf of
+     * Internal (Engage features, wrappers): the request context for a `/v1/sdk/...` call on behalf of
      * this installation, delivered on the main thread once the first `/install` succeeded (waits up
      * to 10 s, else `install_pending`) and a pending [identifyUser] was sent. Fails with
      * `not_configured`, `opted_out`, `invalid_sdk_key` or `sdk_disabled`.
@@ -536,7 +536,7 @@ public object Clikgate {
     }
 
     /**
-     * Internal (Engage add-on, wrappers): reports an error code a `/v1/sdk/...` call made with the
+     * Internal (Engage features, wrappers): reports an error code a `/v1/sdk/...` call made with the
      * [requestContext] got. `feature_disabled` (with its [feature]) switches the feature off until
      * the next config fetch and refreshes the config; `invalid_sdk_key`, `sdk_disabled` and
      * `installation_unknown` apply the SDK's global error rules. Other codes are ignored.

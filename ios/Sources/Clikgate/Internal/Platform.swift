@@ -293,6 +293,13 @@ struct SystemBrowser: BrowserPresenting {
     @MainActor func openExternal(_ url: URL) { UIApplication.shared.open(url) }
 }
 
+struct SystemRemoteNotifications: RemoteNotificationRegistering {
+    @MainActor func register() {
+        guard !Bundle.main.bundlePath.hasSuffix(".appex") else { return }
+        UIApplication.shared.registerForRemoteNotifications()
+    }
+}
+
 /// Reads `aps-environment` from the embedded provisioning profile (development builds, ad hoc,
 /// TestFlight-less builds). App Store builds have no embedded profile and always use production.
 enum ProvisioningProfile {

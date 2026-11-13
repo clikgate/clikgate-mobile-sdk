@@ -1,7 +1,7 @@
 {
   "name": "@clikgate/react-native",
-  "version": "2.0.0",
-  "description": "Clikgate deep linking, deferred deep links, install attribution, referrals and uninstall tracking for React Native (bridge over the native Clikgate Android and iOS SDKs), with an Expo config plugin.",
+  "version": "2.1.0",
+  "description": "Clikgate deep linking, deferred deep links, install attribution, referrals and uninstall tracking for React Native (bridge over the native Clikgate Android and iOS SDKs), with an Expo config plugin, plus the Engage features (referral links and stats, leaderboards, promo codes, share helpers) for apps without their own backend.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "react-native": "./src/index.ts",
@@ -59,6 +59,7 @@
     "attribution",
     "referrals",
     "uninstall-tracking",
+    "leaderboards",
     "clikgate"
   ],
   "repository": {
@@ -139,7 +140,8 @@
     },
     "ios": {
       "modulesProvider": {
-        "Clikgate": "RNClikgate"
+        "Clikgate": "RNClikgate",
+        "ClikgateEngage": "RNClikgateEngage"
       }
     }
   },

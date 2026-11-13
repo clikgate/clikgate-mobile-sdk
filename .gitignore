@@ -11,7 +11,9 @@ local.properties
 Pods/
 DerivedData/
 .build/
-.swiftpm/
+.swiftpm/*
+# ios/.swiftpm/xcode/xcshareddata/xcschemes/Clikgate-Package.xcscheme is kept (see ios/.gitignore)
+!/ios/.swiftpm/
 xcuserdata/
 node_modules/
 *.xcframework

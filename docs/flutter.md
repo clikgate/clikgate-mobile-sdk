@@ -12,17 +12,36 @@ plugin. Two ways to build those screens:
 - **Recommended:** your backend calls the Clikgate control-plane API (referrers, referral stats,
   leaderboards, identity signals, goals from your server) and your app renders what it returns. The app
   only needs `clikgate_flutter`.
-- **Apps without a backend:** the optional pure-Dart package
-  [`clikgate_engage`](../flutter_engage/README.md) (§5d). See [engage.md](engage.md) for when to
+- **Apps without a backend:** the Engage features in the same package,
+  `package:clikgate_flutter/engage.dart` (§5d). See [engage.md](engage.md) for when to
   use which.
 
 Requirements: Flutter 3.24+ (tested with 3.35.4), Android minSdk 21, iOS 13 (build with Xcode 26 or newer).
 
 ## 1. Install
 
+The quickest way is the setup command, in two steps from your Flutter project's folder:
+
+```sh
+flutter pub add clikgate_flutter
+dart run clikgate_flutter
+```
+
+`dart run` only finds packages that are in `pubspec.yaml`, so add the package first. The second command is
+the Clikgate setup command (the same program as `npx @clikgate/setup`, without Node.js): it signs you in,
+configures app links on Android and iOS and adds the start-up code, showing every change before it writes
+anything. The first run downloads the program for your computer once (about 41 MB; up to 55 MB on Linux and Windows), checks its SHA-256
+against the checksum in this package, and keeps it in `~/.clikgate/setup/` (Windows:
+`%LOCALAPPDATA%\clikgate\setup\`). `dart run clikgate_flutter:doctor` checks the setup and changes nothing.
+Flags such as `--dry-run`, `--yes` or `doctor --json` work as with npx
+([setup command docs](https://clikgate.com/docs/setup-command)). With fvm: `fvm dart run clikgate_flutter`.
+`npx @clikgate/setup` still works if you have Node.js.
+
+By hand: add the dependency and follow the sections below (configure, deep links, Android and iOS setup).
+
 ```yaml
 dependencies:
-  clikgate_flutter: ^2.0.0
+  clikgate_flutter: ^2.1.0
 ```
 
 ## 2. Configure
@@ -38,6 +57,7 @@ Future<void> main() async {
     // attestation: ClikgateAttestation.ifAvailable,
     // pasteboardMode: ClikgatePasteboardMode.automatic,   // iOS only, opt-in (default off since 1.2.0)
     // deferredDeepLinkTimeout: const Duration(seconds: 5),
+    // automaticPushToken: false,   // default true: push token for uninstall checks without app code (§6)
   );
   runApp(const MyApp());
 }
@@ -109,7 +129,7 @@ app side is a small swap:
 | Firebase Dynamic Links | Clikgate |
 |---|---|
 | `page.link` or your domain in the app's associated domains | your app's link subdomain (and verified custom domains) in the app's associated domains |
-| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage add-on's referral links |
+| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage features' referral links |
 | read `link` from the received dynamic link | read `path` and `data` from the Clikgate deep link (`url` is the link that opened the app) |
 | deferred link on first launch through the same callback | the same: the deferred link arrives on `onDeepLink` with `isDeferred` set |
 | `utm_*` and `st` / `sd` / `si` link parameters | the link's tags and preview, set when the link is created (the import maps them) |
@@ -268,8 +288,8 @@ final info = await Clikgate.referrals.referredBy();   // info.referred, info.ref
 `message`, `status` (HTTP), `param`, `feature` (for `feature_disabled`) and `offlineTouchId`
 (Engage `codes.redeem`).
 
-The user's own link and stats (referrer side) come from your backend, or from
-`clikgate_engage` (§5d).
+The user's own link and stats (referrer side) come from your backend, or from the
+Engage features (§5d).
 
 ## 5a. Feature switches
 
@@ -283,16 +303,16 @@ feature: ...)` without a network call (also when the server answers with its
 `feature_disabled` no-op body). Before the first config: `referrals`, `leaderboards`,
 `offline_codes`, `app_attribution` on, the rest off.
 
-## 5d. Engage add-on (`clikgate_engage`, apps without a backend)
+## 5d. Engage features (`package:clikgate_flutter/engage.dart`, apps without a backend)
 
-```yaml
-dependencies:
-  clikgate_flutter: ^2.0.0
-  clikgate_engage: ^2.0.0
-```
+Nothing extra to install: the Engage features are in `clikgate_flutter` (since 2.1.0; there is no
+separate `clikgate_engage` package). Import them with
+`import 'package:clikgate_flutter/engage.dart';`. Apps that never import it don't ship it
+(tree-shaking).
 
-Pure Dart (package `http`; `share_plus` and `url_launcher` for the share helpers), no native
-code of its own. It calls the same `/v1/sdk/*` endpoints with the core plugin's request context
+Pure Dart (package `http`), apart from the share helpers, which use the plugin's own native side
+(channel `com.clikgate/engage`; no `share_plus` / `url_launcher`, so apps keep any version of them).
+It calls the same `/v1/sdk/*` endpoints with the core plugin's request context
 (installation id, SDK key, environment, base URL, identity token), obtained through the core's
 internal `Clikgate.getRequestContext()`; it keeps no attribution state.
 
@@ -344,21 +364,21 @@ Rules (spec 17A.3):
   an explicit refresh (the example refreshes every 15 s).
 
 `share.link(url, {message, app, shareUrls})` / `share.referralLink(link, {message, app})` (Change 13):
-each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They use the native Engage add-on's share menu (clikgate_engage now has a small Android
-and iOS plugin over `com.clikgate:clikgate-engage` and `Clikgate/Engage`; everything else stays Dart),
+each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They use the native SDK's Engage share menu (the plugin's
+`com.clikgate/engage` channel, over `com.clikgate.engage` on Android and `ClikgateEngage` on iOS; everything else stays Dart),
 so the behaviour is the [Android](android.md) and [iOS](ios.md) one. With CocoaPods nothing extra is
-needed; the monorepo example substitutes the native modules from `../../android`.
+needed; the monorepo example substitutes the native SDK from `../../android`.
 
 Share helper setup:
 
 - **iOS:** listing `whatsapp` in `LSApplicationQueriesSchemes` (`ios/Runner/Info.plist`) is
-  recommended (the native SDKs and docs use it), but the Dart helper doesn't depend on it:
-  `url_launcher` opens the URL with `UIApplication.open` (no `canOpenURL`), and a failed open
-  falls back to the share sheet.
-- **Android:** nothing required. `whatsapp://send?text=` is opened with
-  `url_launcher.launchUrl`, which needs no `<queries>` entry (only `canLaunchUrl` would); if no
-  app handles it, the share sheet (`share_plus`) is used. Unlike the native Android Engage
-  module, the Dart helper can't target WhatsApp Business by package name.
+  recommended (the native SDKs and docs use it), but the helper doesn't depend on it: the
+  plugin opens the URL with `UIApplication.open` (no `canOpenURL`), and a failed open
+  falls back to the share sheet (`UIActivityViewController`).
+- **Android:** nothing required. `whatsapp://send?text=` is opened with an `ACTION_VIEW` intent,
+  which needs no `<queries>` entry; if no app handles it, the share sheet (`ACTION_SEND`
+  chooser) is used. Unlike the native Android Engage `whatsApp`, the helper opens the
+  `whatsapp://` link rather than targeting WhatsApp Business by package name.
 
 ## 5e. Consent, Firebase forwarding and sales metadata (1.2.0, change 03)
 
@@ -399,7 +419,22 @@ final c = await Clikgate.getConsent();   // c.required: true / false / null (unk
   in the same links and referrer when your app passes ad click IDs. On iOS the Apple Ads token is requested
   when the install is sent (after consent when it is required) and never kept on the device.
 
-## 6. Push token and uninstall tracking (with `firebase_messaging`)
+## 6. Push token and uninstall tracking
+
+1. Turn on uninstall tracking in the dashboard.
+2. iOS: add the Push Notifications capability (the `aps-environment` entitlement; `npx @clikgate/setup` adds it).
+   No AppDelegate code: the plugin is an application delegate and passes the APNs token to the SDK itself.
+3. Android: nothing, when `firebase_messaging` (Firebase Messaging) is in the app.
+
+Users don't have to allow notifications. With `automaticPushToken` (default `true`), while uninstall tracking is
+on, tracking isn't opted out, the SDK version isn't blocked and consent allows it, the SDK gets a push token on
+every launch: on iOS it calls `registerForRemoteNotifications()` and the plugin receives the token through
+Flutter's official app-delegate callback (no swizzling; `firebase_messaging` gets the same callback, so both keep
+working); on Android it fetches the FCM token when Firebase Messaging is in the app. It never asks for notification
+permission and never shows anything.
+
+A token you pass with `setPushToken` always wins. On iOS, once Dart has passed a token the plugin stops passing on
+the APNs token (so an FCM token and the APNs token don't take turns).
 
 ```dart
 @pragma('vm:entry-point')
@@ -414,13 +449,17 @@ FirebaseMessaging.onMessage.listen((m) {
   if (Clikgate.isClikgateMessage(m.data)) return;
   // your handling
 });
-await Clikgate.setPushToken(await FirebaseMessaging.instance.getToken(), provider: PushProvider.fcm);
-FirebaseMessaging.instance.onTokenRefresh.listen((t) => Clikgate.setPushToken(t, provider: PushProvider.fcm));
+// Optional: send the FCM token yourself (it wins over the automatic one).
+// await Clikgate.setPushToken(await FirebaseMessaging.instance.getToken(), provider: PushProvider.fcm);
+// FirebaseMessaging.instance.onTokenRefresh.listen((t) => Clikgate.setPushToken(t, provider: PushProvider.fcm));
 ```
 
-On iOS without FCM, pass the APNs device token as hex with `provider: PushProvider.apns`
-(the iOS plugin also receives it natively; see the iOS setup guide). Clikgate's silent
-uninstall checks (`{"cg": "uc"}`) must never produce a notification.
+Clikgate's silent uninstall checks (`{"cg": "uc"}`) must never produce a notification.
+
+**Side effect.** Registering early also hands the push token to any other push tool in your app, which may count
+the device as registered. Users still see no notifications without permission. To control push registration
+timing yourself, pass `automaticPushToken: false` to `configure` and call `setPushToken` (FCM token, or the hex
+APNs token with `provider: PushProvider.apns`) when you choose.
 
 ## 7. Android setup
 
@@ -502,7 +541,7 @@ Developing against an unpublished SDK:
 
 ## 8. iOS setup
 
-Associated Domains (Universal Links), Background Modes → Remote notifications, the
+Associated Domains (Universal Links), the Push Notifications capability, the
 `UISceneDelegate` forwarding for scene-based apps, pasteboard modes and APNs tokens are
 covered in [flutter_ios_setup.md](flutter_ios_setup.md).
 
@@ -527,7 +566,7 @@ screen, `firebase_messaging` token registration (optional, below).
 
 The screens are shared: they use a small `ReferralFeatures` interface
 (`lib/src/variants/features.dart`) with `BackendFeatures` (package `http`) and `EngageFeatures`
-(`clikgate_engage`). The leaderboard screen polls every 15 s while visible and clears client
+(the Engage features). The leaderboard screen polls every 15 s while visible and clears client
 caches first (Engage keeps reads for 60 s).
 
 ```sh

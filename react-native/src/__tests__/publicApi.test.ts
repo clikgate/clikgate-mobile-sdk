@@ -8,11 +8,17 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-import * as api from '../index';
+import * as main from '../index';
+import * as engage from '../engage';
 
 jest.mock('../NativeClikgate', () => ({ __esModule: true, default: null }));
 
 const ROOT = join(__dirname, '..', '..');
+
+/** The core's exports: the main entry without the Engage features it re-exports (src/engage). */
+const api: Record<string, any> = Object.fromEntries(
+  Object.entries(main).filter(([k]) => !(k in engage))
+);
 const SNAPSHOT = join(ROOT, 'api', 'public-api.txt');
 
 /** Core must not contain referrer-side / Engage API (spec 0.4). Case-insensitive. */
@@ -91,7 +97,9 @@ describe('public API (core)', () => {
     expect(offending).toEqual([]);
   });
 
-  it('never depends on or imports the Engage add-on', () => {
+  // Since 2.1.0 the Engage features ship in this package (src/engage, re-exported by src/index.ts);
+  // core code still never uses them.
+  it('core code never imports the Engage features', () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
     for (const section of [
       'dependencies',
@@ -103,11 +111,17 @@ describe('public API (core)', () => {
         '@clikgate/react-native-engage'
       );
     }
-    const importers = sourceFiles(join(ROOT, 'src')).filter((f) =>
-      /(from\s+|require\(\s*|import\(\s*)['"]@clikgate\/react-native-engage/.test(
-        readFileSync(f, 'utf8')
+    const importers = sourceFiles(join(ROOT, 'src'))
+      .filter(
+        (f) =>
+          !f.includes(`${join('src', 'engage')}`) &&
+          !f.endsWith(join('src', 'index.ts'))
       )
-    );
+      .filter((f) =>
+        /(from\s+|require\(\s*|import\(\s*)['"](@clikgate\/react-native-engage|\.\.?\/(\.\.\/)*engage)/.test(
+          readFileSync(f, 'utf8')
+        )
+      );
     expect(importers).toEqual([]);
   });
 });

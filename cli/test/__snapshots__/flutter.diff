@@ -72,7 +72,7 @@
 
 --- /dev/null
 +++ b/ios/Runner/Runner.entitlements
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,13 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -82,12 +82,14 @@
 +		<string>applinks:acme.ciz.to</string>
 +		<string>applinks:go.acme.com</string>
 +	</array>
++	<key>aps-environment</key>
++	<string>production</string>
 +</dict>
 +</plist>
 
 --- /dev/null
 +++ b/ios/Runner/RunnerDebug.entitlements
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -98,6 +100,8 @@
 +		<string>applinks:go.acme.com</string>
 +		<string>applinks:acme.dev.ciz.to</string>
 +	</array>
++	<key>aps-environment</key>
++	<string>development</string>
 +</dict>
 +</plist>
 
@@ -128,6 +132,6 @@
 @@ -35,4 +35,5 @@
    # Use with the CupertinoIcons class for iOS style icons.
    cupertino_icons: ^1.0.8
-+  clikgate_flutter: ^2.0.0
++  clikgate_flutter: ^2.1.0
  
  dev_dependencies:

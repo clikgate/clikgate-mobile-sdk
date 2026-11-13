@@ -12,6 +12,11 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
     private var eventSink: FlutterEventSink?
     /// Deep links that arrived before Dart listened (latest 10).
     private var pendingEvents: [[String: Any]] = []
+    /// `configure(automaticPushToken:)`: pass the APNs token from the app delegate callback to the SDK.
+    private var automaticPushToken = true
+    /// Set once Dart calls `setPushToken` (e.g. an FCM token from firebase_messaging): that token wins, so the
+    /// plugin stops passing on the APNs token (kept across launches so the two don't alternate).
+    static let manualPushTokenKey = "com.clikgate.flutter.manualPushToken"
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = ClikgateFlutterPlugin()
@@ -20,6 +25,7 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
         registrar.addMethodCallDelegate(instance, channel: methods)
         events.setStreamHandler(instance)
         registrar.addApplicationDelegate(instance)
+        EngageShareBridge.register(with: registrar)
         registrar.publish(instance)
         // Receive every deep link (the SDK buffers until a handler exists, then hands them over).
         Clikgate.shared.onDeepLink { [weak instance] result in
@@ -179,6 +185,7 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
             guard provider == "fcm" || provider == "apns" else {
                 result(Self.invalidArgument("provider must be fcm or apns", param: "provider")); return
             }
+            UserDefaults.standard.set(true, forKey: Self.manualPushTokenKey)
             sdk.setPushToken(provider == "apns" ? token.lowercased() : token, provider: provider)
             result(nil)
 
@@ -194,7 +201,7 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
                 result(Self.unwrap(r, Self.map))
             }
 
-        // ---- Engage add-on support (internal): clikgate_engage calls /v1/sdk/* itself
+        // ---- Engage features support (internal): the Engage features (engage.dart) call /v1/sdk/* itself
         case "getRequestContext":
             Task {
                 do {
@@ -225,6 +232,7 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
         guard let sdkKey = args["sdkKey"] as? String, sdkKey.hasPrefix("cg_sdk_") else {
             result(Self.invalidArgument("sdkKey must be a Clikgate SDK key (cg_sdk_...)", param: "sdkKey")); return
         }
+        automaticPushToken = (args["automaticPushToken"] as? Bool) ?? true
         if Clikgate.shared.isConfigured { result(nil); return }   // hot restart: native SDK keeps running
 
         var options = ClikgateOptions()
@@ -256,6 +264,7 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
             options.deferredDeepLinkTimeout = ms / 1000
         }
         options.platformDomainBrowserFallback = (args["platformDomainBrowserFallback"] as? Bool) ?? true
+        options.automaticPushToken = automaticPushToken
         Clikgate.setWrapper(name: "flutter", version: (args["wrapperVersion"] as? String) ?? "0.0.0")
         Clikgate.configure(sdkKey: sdkKey, options: options)
         result(nil)
@@ -280,13 +289,21 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
         return true
     }
 
-    /// Opt-in (Info.plist `ClikgateForwardAPNsToken` = YES): register the raw APNs token for apps that
-    /// don't use FCM. Apps using firebase_messaging should call `Clikgate.setPushToken(fcmToken)` from Dart instead.
+    /// `automaticPushToken` (default on): the native SDK calls `registerForRemoteNotifications()` when uninstall
+    /// tracking is on, and the APNs token comes back here (Flutter's plugin app-delegate mechanism, no swizzling),
+    /// so apps need no AppDelegate code. Every plugin gets this callback, so firebase_messaging keeps working.
+    /// Skipped once Dart has passed a token with `setPushToken` (that one wins). Info.plist
+    /// `ClikgateForwardAPNsToken` = YES (before 2.1.0 the only way) always forwards.
     public func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        guard (Bundle.main.object(forInfoDictionaryKey: "ClikgateForwardAPNsToken") as? Bool) == true,
-              Clikgate.shared.isConfigured else { return }
+        guard Clikgate.shared.isConfigured else { return }
+        let forced = (Bundle.main.object(forInfoDictionaryKey: "ClikgateForwardAPNsToken") as? Bool) == true
+        guard forced || Self.forwardsAPNsToken(automatic: automaticPushToken,
+                                               manualToken: UserDefaults.standard.bool(forKey: Self.manualPushTokenKey))
+        else { return }
         Clikgate.shared.setPushToken(deviceToken: deviceToken)
     }
+
+    static func forwardsAPNsToken(automatic: Bool, manualToken: Bool) -> Bool { automatic && !manualToken }
 
     // MARK: - Result maps (camelCase, JSON-compatible values only)
 

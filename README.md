@@ -21,18 +21,20 @@ goals, identifyUser and the installation ID, apply code / referred-by, push toke
 Flutter and React Native packages are thin bridges over the native SDKs: all attribution,
 queueing and referral logic is in the native code.
 
-### Engage add-on (optional, apps without a backend)
+### Engage features (in every SDK, for apps without a backend)
 
-Referral links and stats, leaderboards, promo codes and share helpers are in separate packages
-that depend on the core. Apps with a backend should call the Clikgate control-plane API from
-their server instead: see [docs/engage.md](docs/engage.md).
+Referral links and stats, leaderboards, promo codes and share helpers ship in the same package as
+the core SDK (since 2.1.0; there is no separate Engage package). Apps with a backend should call
+the Clikgate control-plane API from their server instead: see [docs/engage.md](docs/engage.md).
+The Engage code stays in its own module or folder, the core code never uses it, and apps that don't
+call Engage don't ship it (R8, the linker and Dart tree-shaking drop it).
 
-| Package | Path | Distribution |
+| SDK | Engage code | How apps use it |
 |---|---|---|
-| Android | [`android/clikgate-engage`](android/clikgate-engage) | Maven Central `com.clikgate:clikgate-engage` |
-| iOS | [`ios/Sources/ClikgateEngage`](ios/Sources/ClikgateEngage) | SPM product `ClikgateEngage`, CocoaPods subspec `Clikgate/Engage` |
-| Flutter (pure Dart) | [`flutter_engage/`](flutter_engage) | pub.dev `clikgate_engage` |
-| React Native (pure TypeScript) | [`react-native-engage/`](react-native-engage) | npm `@clikgate/react-native-engage` |
+| Android | [`android/clikgate/src/main/java/com/clikgate/engage`](android/clikgate/src/main/java/com/clikgate/engage) | `com.clikgate:clikgate-android`, `import com.clikgate.engage.ClikgateEngage` |
+| iOS | [`ios/Sources/ClikgateEngage`](ios/Sources/ClikgateEngage) | SPM product `Clikgate` (`import ClikgateEngage`); pod `Clikgate` (`import Clikgate`) |
+| Flutter (pure Dart) | [`flutter/lib/src/engage`](flutter/lib/src/engage) | `clikgate_flutter`, `import 'package:clikgate_flutter/engage.dart'` |
+| React Native (pure TypeScript) | [`react-native/src/engage`](react-native/src/engage) | `@clikgate/react-native`, `import { ClikgateEngage } from '@clikgate/react-native'` |
 
 ## Setup command (`cli/`)
 
@@ -52,7 +54,7 @@ registration (spec deliverable 6):
 
 | Sample | Path | Notes |
 |---|---|---|
-| Flutter (primary demo) | [`flutter/example`](flutter/example) | Two variants, `--dart-define=CLIKGATE_VARIANT=backend\|engage`: with the sample backend (recommended path), or the Engage add-on without a backend. Invite, stats, weekly leaderboard with live ranks and "my rank" in both; promo codes in the Engage variant. [docs/flutter.md §9](docs/flutter.md#9-example-app-two-variants) |
+| Flutter (primary demo) | [`flutter/example`](flutter/example) | Two variants, `--dart-define=CLIKGATE_VARIANT=backend\|engage`: with the sample backend (recommended path), or the Engage features without a backend. Invite, stats, weekly leaderboard with live ranks and "my rank" in both; promo codes in the Engage variant. [docs/flutter.md §9](docs/flutter.md#9-example-app-two-variants) |
 | Sample backend | [`samples/backend`](samples/backend) | FastAPI (Python 3.12): demo login with identity tokens, referral link / stats, leaderboards and purchase goals sent from the server through the Clikgate control-plane API. The API key and identity secret stay on the server |
 | Android | [`android/sample`](android/sample) | Kotlin, core SDK + Engage invite/stats; optional FCM via `-Pclikgate.firebase*` |
 | iOS | [`ios/Sample`](ios/Sample) | Swift (xcodegen), core SDK + Engage invite/stats, APNs token |
@@ -223,11 +225,11 @@ Change a field in the contract, the schemas, the backend and every SDK together.
 
 ## Docs
 
-- [engage.md](docs/engage.md): core SDK vs Engage add-on vs the recommended backend path.
+- [engage.md](docs/engage.md): the core SDK, its Engage features, and the recommended backend path.
 - [PRIVACY.md](docs/PRIVACY.md): what is collected, why, retention, probabilistic matching policy.
 - [TESTING_DEEP_LINKS.md](docs/TESTING_DEEP_LINKS.md): the device test matrix, step by step.
 - [RELEASING.md](docs/RELEASING.md): tags, what each release job publishes, and the publish order
-  (native → Flutter / RN core → Flutter / RN Engage → setup command).
+  (native → Flutter / React Native → setup command).
 - [SETUP_COMMAND.md](docs/SETUP_COMMAND.md): `npx @clikgate/setup` and `doctor`.
 - `docs/spec/`: the build specification.
 - Each SDK (and `cli/`) keeps a `DECISIONS.md` with platform-doc findings and judgement calls.
@@ -236,17 +238,16 @@ Change a field in the contract, the schemas, the backend and every SDK together.
 
 | | Command |
 |---|---|
-| Android | `cd android && ./gradlew :clikgate:testDebugUnitTest :clikgate-engage:testDebugUnitTest apiCheck :clikgate:assembleRelease :clikgate-engage:assembleRelease :sample:assembleDebug` |
+| Android | `cd android && ./gradlew :clikgate:testDebugUnitTest apiCheck :clikgate:checkNoEngageDependency :clikgate:assembleRelease :sample:assembleDebug` |
 | iOS | `cd ios && xcodebuild test -scheme Clikgate-Package -destination 'platform=macOS,variant=Mac Catalyst'` (core + Engage tests, no simulator) |
-| Flutter | `cd flutter && flutter pub get && flutter analyze && flutter test`, same in `flutter_engage/` and `flutter/example/` (Flutter 3.35) |
+| Flutter | `cd flutter && flutter pub get && flutter analyze && flutter test`, same in `flutter/example/` (Flutter 3.35) |
 | Sample backend | `cd samples/backend && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m pytest` |
-| React Native | `cd react-native && npm ci && npm test`; `cd react-native-engage && npm run devlink && npm test` |
-| Core / Engage boundaries | `scripts/check_sdk_boundaries.sh` (API snapshots, "no Engage API in core", "core never depends on Engage", size budgets) |
+| React Native | `cd react-native && npm ci && npm test` (core and Engage) |
+| Core / Engage boundaries | `scripts/check_sdk_boundaries.sh` (API snapshots, "no Engage API in core", "core code never uses Engage", size budgets for core and Engage) |
 | Setup command | `cd cli && npm ci && npm run typecheck && npm test && npm run build` (output `cli/dist/cli.cjs`); `node scripts/check_cli_sdk_versions.mjs` (versions it writes = the SDKs here) |
 
 CI workflows are in `.github/workflows/` (one per SDK, each with a release job on its own tag
-prefix: `android-v*`, `ios-v*`, `flutter-v*` / `flutter-engage-v*`, `react-native-v*` /
-`react-native-engage-v*`; plus `sdk-boundaries.yml` running `scripts/check_sdk_boundaries.sh`, and `cli.yml` /
+prefix: `android-v*`, `ios-v*`, `flutter-v*`, `react-native-v*`; plus `sdk-boundaries.yml` running `scripts/check_sdk_boundaries.sh`, and `cli.yml` /
 `cli-release.yml` for the setup command on `cli-v*`, npm trusted publishing). Releases need the publishing
 secrets described in each workflow and have not been run yet; the order is in
 [docs/RELEASING.md](docs/RELEASING.md).
@@ -255,9 +256,9 @@ secrets described in each workflow and have not been run yet; the order is in
 
 This repository has mixed licences:
 
-- **Apache License 2.0** for every mobile SDK (Android, iOS, Flutter, React Native and the Engage
-  add-ons; owner decision 2026-10-26): [LICENSE](LICENSE), with the same text in `ios/`, `flutter/`,
-  `flutter_engage/`, `react-native/` and `react-native-engage/` for their packages. The Android POM,
+- **Apache License 2.0** for every mobile SDK (Android, iOS, Flutter and React Native, including
+  their Engage features; owner decision 2026-10-26): [LICENSE](LICENSE), with the same text in `ios/`,
+  `flutter/` and `react-native/` for their packages. The Android POM,
   the podspecs and the SDK `package.json` files declare `Apache-2.0`.
 - **MIT** for the setup command in `cli/`: [cli/LICENSE](cli/LICENSE), and `"license": "MIT"` in
   `cli/package.json` (it kept its licence when it moved here from `clikgate_sdks`, owner decision

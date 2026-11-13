@@ -3,6 +3,7 @@ import {
   IOSConfig,
   createRunOncePlugin,
   withAndroidManifest,
+  withAppDelegate,
   withEntitlementsPlist,
   withFinalizedMod,
   withInfoPlist,
@@ -43,11 +44,20 @@ export interface ClikgatePluginProps {
    */
   enableBackgroundRemoteNotifications?: boolean;
   /**
-   * iOS: add `whatsapp` to `LSApplicationQueriesSchemes` (for apps that use the Engage add-on's
+   * iOS: add `whatsapp` to `LSApplicationQueriesSchemes` (for apps that use the Engage features'
    * `share.whatsApp`, or check `Linking.canOpenURL('whatsapp://')` themselves). Optional: Engage
    * opens `whatsapp://send` without a `canOpenURL` check. Default `true`.
    */
   enableWhatsAppSharing?: boolean;
+  /**
+   * iOS uninstall tracking with the SDK's `automaticPushToken` (default on): adds the Push
+   * Notifications capability (`aps-environment`, `development` unless already set, as
+   * expo-notifications does; Xcode writes the distribution value when you export) and the one line
+   * that passes the APNs token to Clikgate in the AppDelegate's
+   * `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`. Users are never asked for
+   * notification permission. Default `true`; `false` leaves both to you.
+   */
+  automaticPushToken?: boolean;
 }
 
 type InfoPlist = Record<string, unknown> & {
@@ -169,6 +179,7 @@ export function resolveProps(
     enableBackgroundRemoteNotifications:
       p.enableBackgroundRemoteNotifications !== false,
     enableWhatsAppSharing: p.enableWhatsAppSharing !== false,
+    automaticPushToken: p.automaticPushToken !== false,
   };
 }
 
@@ -229,6 +240,203 @@ export function addUrlScheme<T extends Record<string, unknown>>(
     ...infoPlist,
     CFBundleURLTypes: [...types, { CFBundleURLSchemes: [scheme] }],
   };
+}
+
+// ------------------------------------------------------------------ iOS push token (uninstall tracking)
+
+const APS_ENVIRONMENT = 'aps-environment';
+const MARK_START = '// @clikgate/react-native:push-token start';
+const MARK_END = '// @clikgate/react-native:push-token end';
+const SWIFT_LINE = 'ClikgateRN.setPushToken(deviceToken: deviceToken)';
+const OBJC_LINE = '[ClikgateRN setPushTokenWithDeviceToken:deviceToken];';
+
+/** Adds `aps-environment` (Push Notifications capability) unless the app already sets it. */
+export function addApsEnvironment(
+  entitlements: Entitlements,
+  value: 'development' | 'production' = 'development'
+): Entitlements {
+  if (typeof entitlements[APS_ENVIRONMENT] === 'string') return entitlements;
+  return { ...entitlements, [APS_ENVIRONMENT]: value };
+}
+
+/** True when the AppDelegate already passes the APNs token to Clikgate. */
+export function forwardsPushToken(contents: string): boolean {
+  return (
+    /setPushToken\s*\(\s*deviceToken\s*:/.test(contents) ||
+    /setPushTokenWithDeviceToken\s*:/.test(contents)
+  );
+}
+
+/** Offset of the `}` matching the `{` at `open` (skips strings and comments), or -1. */
+function matchingBrace(text: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+    if (c === '/' && n === '/') {
+      const e = text.indexOf('\n', i);
+      if (e < 0) return -1;
+      i = e;
+      continue;
+    }
+    if (c === '/' && n === '*') {
+      const e = text.indexOf('*/', i + 2);
+      if (e < 0) return -1;
+      i = e + 1;
+      continue;
+    }
+    if (c === '"') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== '"' && text[j] !== '\n')
+        j += text[j] === '\\' ? 2 : 1;
+      i = j;
+      continue;
+    }
+    if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function lineStartOf(text: string, offset: number): number {
+  return text.lastIndexOf('\n', offset - 1) + 1;
+}
+
+function indentOf(text: string, offset: number): string {
+  return /^[ \t]*/.exec(text.slice(lineStartOf(text, offset)))![0];
+}
+
+/** Inserts `lines` (already indented) right after the `{` at `open`. */
+function insertAfterBrace(text: string, open: number, lines: string[]): string {
+  const eol = text.indexOf('\n', open);
+  const at = eol < 0 ? text.length : eol;
+  return `${text.slice(0, at)}\n${lines.join('\n')}${text.slice(at)}`;
+}
+
+function addImport(text: string, line: string, pattern: RegExp): string {
+  if (text.includes(line)) return text;
+  let end = -1;
+  for (const m of text.matchAll(pattern)) {
+    const e = text.indexOf('\n', m.index!);
+    end = Math.max(end, e < 0 ? text.length : e);
+  }
+  if (end < 0) return `${line}\n${text}`;
+  return `${text.slice(0, end)}\n${line}${text.slice(end)}`;
+}
+
+/**
+ * Swift AppDelegate (Expo SDK 53+: `class AppDelegate: ExpoAppDelegate`): the forward line in
+ * `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`, adding that method (a
+ * `public override` that calls `super` for `ExpoAppDelegate`) when missing. Idempotent.
+ */
+export function addPushTokenForwardSwift(contents: string): string {
+  if (forwardsPushToken(contents)) return contents;
+  let out: string;
+  const fn =
+    /func\s+application\s*\(\s*_\s+[A-Za-z0-9_]+\s*:\s*UIApplication\s*,\s*didRegisterForRemoteNotificationsWithDeviceToken\s+([A-Za-z0-9_]+)\s*:\s*Data\s*\)\s*\{/.exec(
+      contents
+    );
+  if (fn) {
+    const open = fn.index + fn[0].length - 1;
+    const indent = indentOf(contents, fn.index) + '  ';
+    out = insertAfterBrace(contents, open, [
+      `${indent}${MARK_START}`,
+      `${indent}ClikgateRN.setPushToken(deviceToken: ${fn[1]})`,
+      `${indent}${MARK_END}`,
+    ]);
+  } else {
+    const cls =
+      /class\s+AppDelegate\s*:([^{]*)\{/.exec(contents) ??
+      /class\s+[A-Za-z0-9_]+\s*:([^{]*\b(?:ExpoAppDelegate|UIApplicationDelegate|RCTAppDelegate)\b[^{]*)\{/.exec(
+        contents
+      );
+    if (!cls)
+      throw new Error(
+        `[@clikgate/react-native] No AppDelegate class found: add ${SWIFT_LINE} to application(_:didRegisterForRemoteNotificationsWithDeviceToken:) yourself, or set automaticPushToken: false`
+      );
+    const open = cls.index + cls[0].length - 1;
+    const close = matchingBrace(contents, open);
+    if (close < 0)
+      throw new Error(
+        '[@clikgate/react-native] Could not read the AppDelegate class'
+      );
+    const expo = /\bExpoAppDelegate\b/.test(cls[1] ?? '');
+    const i = indentOf(contents, cls.index) + '  ';
+    const method = [
+      '',
+      `${i}${MARK_START}`,
+      `${i}${expo ? 'public override ' : ''}func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {`,
+      ...(expo
+        ? [
+            `${i}  super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)`,
+          ]
+        : []),
+      `${i}  ${SWIFT_LINE}`,
+      `${i}}`,
+      `${i}${MARK_END}`,
+    ].join('\n');
+    const at = lineStartOf(contents, close);
+    out = `${contents.slice(0, at).replace(/\n*$/, '')}\n${method}\n${contents.slice(at)}`;
+  }
+  return addImport(
+    out,
+    'import ClikgateReactNative',
+    /^(?:internal\s+|public\s+|@_exported\s+)?import\s+[A-Za-z]/gm
+  );
+}
+
+/** Objective-C AppDelegate (`AppDelegate.mm`, Expo SDK 52 and older): the same forward. */
+export function addPushTokenForwardObjc(contents: string): string {
+  if (forwardsPushToken(contents)) return contents;
+  let out: string;
+  const fn =
+    /-\s*\(\s*void\s*\)\s*application\s*:\s*\(\s*UIApplication\s*\*\s*\)\s*[A-Za-z0-9_]+\s+didRegisterForRemoteNotificationsWithDeviceToken\s*:\s*\(\s*NSData\s*\*\s*\)\s*([A-Za-z0-9_]+)\s*\{/.exec(
+      contents
+    );
+  if (fn) {
+    out = insertAfterBrace(contents, fn.index + fn[0].length - 1, [
+      `  ${MARK_START}`,
+      `  [ClikgateRN setPushTokenWithDeviceToken:${fn[1]}];`,
+      `  ${MARK_END}`,
+    ]);
+  } else {
+    const impl = /^@implementation\s+AppDelegate\b.*$/m.exec(contents);
+    const end = impl ? /^@end\b/m.exec(contents.slice(impl.index)) : null;
+    if (!impl || !end)
+      throw new Error(
+        `[@clikgate/react-native] No @implementation AppDelegate found: add ${OBJC_LINE} to application:didRegisterForRemoteNotificationsWithDeviceToken: yourself, or set automaticPushToken: false`
+      );
+    const at = impl.index + end.index;
+    const method = [
+      MARK_START,
+      '- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken',
+      '{',
+      '  if ([[self superclass] instancesRespondToSelector:_cmd]) {',
+      '    [super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];',
+      '  }',
+      `  ${OBJC_LINE}`,
+      '}',
+      MARK_END,
+      '',
+    ].join('\n');
+    out = `${contents.slice(0, at)}${method}\n${contents.slice(at)}`;
+  }
+  // Static library pods (the default) don't put the generated Swift header on the app's header
+  // search path, and `@import` needs -fcxx-modules in a `.mm`: declare the one method instead.
+  const header = [
+    '#if __has_include(<ClikgateReactNative/ClikgateReactNative-Swift.h>)',
+    '#import <ClikgateReactNative/ClikgateReactNative-Swift.h>',
+    '#else',
+    '@interface ClikgateRN : NSObject',
+    '+ (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;',
+    '@end',
+    '#endif',
+  ].join('\n');
+  if (out.includes('ClikgateReactNative-Swift.h')) return out;
+  return addImport(out, header, /^#import\s+[<"]/gm);
 }
 
 // ------------------------------------------------------------------ Android
@@ -505,6 +713,21 @@ const withClikgate: ConfigPlugin<ClikgatePluginProps | void> = (
     ) as typeof c.modResults;
     return c;
   });
+
+  if (props.automaticPushToken) {
+    config = withEntitlementsPlist(config, (c) => {
+      c.modResults = addApsEnvironment(c.modResults) as typeof c.modResults;
+      return c;
+    });
+    config = withAppDelegate(config, (c) => {
+      const { language, contents } = c.modResults;
+      if (language === 'swift')
+        c.modResults.contents = addPushTokenForwardSwift(contents);
+      else if (language === 'objc' || language === 'objcpp')
+        c.modResults.contents = addPushTokenForwardObjc(contents);
+      return c;
+    });
+  }
 
   config = withInfoPlist(config, (c) => {
     let plist = c.modResults as unknown as InfoPlist;

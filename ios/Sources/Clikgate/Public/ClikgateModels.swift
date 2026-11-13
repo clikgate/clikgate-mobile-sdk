@@ -45,7 +45,7 @@ public struct ClikgateReferral: Sendable, Equatable {
     /// The server's timestamp string (wrappers pass it through unchanged).
     @_spi(ClikgateWrapper) public var createdAtRaw: String? { createdAtString }
 
-    /// Decodes an API referral object (used by the Engage add-on).
+    /// Decodes an API referral object (used by the Engage features).
     @_spi(ClikgateEngage) public init?(apiJSON: [String: Any]?) { self.init(json: apiJSON) }
 
     init?(json: JSONObject?) {
@@ -154,13 +154,13 @@ public struct ClikgateReferredBy: Sendable, Equatable {
 /// that `/v1/sdk/config` reports).
 public enum ClikgateFeatures {
     public static let appAttribution = "app_attribution"
-    /// `referrals.applyCode` / `referrals.referredBy` (and the Engage add-on's referral calls).
+    /// `referrals.applyCode` / `referrals.referredBy` (and the Engage features' referral calls).
     public static let referrals = "referrals"
-    /// Used by the Engage add-on (`ClikgateEngage.leaderboards`).
+    /// Used by the Engage features (`ClikgateEngage.leaderboards`).
     public static let leaderboards = "leaderboards"
     public static let identityChecks = "identity_checks"
     public static let whatsappAttribution = "whatsapp_attribution"
-    /// Used by the Engage add-on (`ClikgateEngage.codes`).
+    /// Used by the Engage features (`ClikgateEngage.codes`).
     public static let offlineCodes = "offline_codes"
     public static let skanPostbacks = "skan_postbacks"
     public static let uninstallTracking = "uninstall_tracking"

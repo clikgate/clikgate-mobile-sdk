@@ -1,4 +1,4 @@
-import { HELP, parseArgs, UsageError } from './args';
+import { helpText, parseArgs, UsageError } from './args';
 import { CLI_VERSION, EXIT } from './constants';
 import { runDoctor } from './doctorCommand';
 import { describeError, runSetup, type Deps } from './setup';
@@ -22,7 +22,7 @@ export async function main(argv: string[], deps: Partial<Deps> = {}): Promise<nu
     return EXIT.OK;
   }
   if (opts.help) {
-    process.stdout.write(`${HELP}\n`);
+    process.stdout.write(`${helpText()}\n`);
     return EXIT.OK;
   }
   if (Number(process.versions.node.split('.')[0]) < 18) {

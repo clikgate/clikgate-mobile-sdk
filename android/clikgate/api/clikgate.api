@@ -254,7 +254,8 @@ public final class com/clikgate/ClikgateOptions {
 	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;J)V
 	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;)V
 	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;Z)V
-	public synthetic fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZZ)V
+	public synthetic fun <init> (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()Lcom/clikgate/LogLevel;
 	public final fun component3 ()Lcom/clikgate/Environment;
@@ -263,11 +264,13 @@ public final class com/clikgate/ClikgateOptions {
 	public final fun component6 ()J
 	public final fun component7 ()Ljava/lang/Long;
 	public final fun component8 ()Z
-	public final fun copy (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;Z)Lcom/clikgate/ClikgateOptions;
-	public static synthetic fun copy$default (Lcom/clikgate/ClikgateOptions;Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZILjava/lang/Object;)Lcom/clikgate/ClikgateOptions;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZZ)Lcom/clikgate/ClikgateOptions;
+	public static synthetic fun copy$default (Lcom/clikgate/ClikgateOptions;Ljava/util/List;Lcom/clikgate/LogLevel;Lcom/clikgate/Environment;Lcom/clikgate/Attestation;Ljava/lang/String;JLjava/lang/Long;ZZILjava/lang/Object;)Lcom/clikgate/ClikgateOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getApiBaseUrl ()Ljava/lang/String;
 	public final fun getAttestation ()Lcom/clikgate/Attestation;
+	public final fun getAutomaticPushToken ()Z
 	public final fun getCloudProjectNumber ()Ljava/lang/Long;
 	public final fun getDeferredDeepLinkTimeoutMs ()J
 	public final fun getEnvironment ()Lcom/clikgate/Environment;
@@ -518,5 +521,196 @@ public final class com/clikgate/ReferredBy {
 	public final fun getReferred ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/ClikgateEngage {
+	public static final field INSTANCE Lcom/clikgate/engage/ClikgateEngage;
+	public static final field version Ljava/lang/String;
+	public final fun clearCache ()V
+	public final fun getCodes ()Lcom/clikgate/engage/EngageCodes;
+	public final fun getLeaderboards ()Lcom/clikgate/engage/EngageLeaderboards;
+	public final fun getReferrals ()Lcom/clikgate/engage/EngageReferrals;
+	public final fun getShare ()Lcom/clikgate/engage/EngageShare;
+}
+
+public final class com/clikgate/engage/EngageCodes {
+	public static final field INSTANCE Lcom/clikgate/engage/EngageCodes;
+	public final fun redeem (Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun redeem (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/clikgate/engage/EngageErrors {
+	public static final field CODE_DISABLED Ljava/lang/String;
+	public static final field CODE_EXPIRED Ljava/lang/String;
+	public static final field CODE_NOT_FOUND Ljava/lang/String;
+	public static final field HOSTED_PAGE_UNAVAILABLE Ljava/lang/String;
+	public static final field IDENTITY_REQUIRED Ljava/lang/String;
+	public static final field INSTANCE Lcom/clikgate/engage/EngageErrors;
+	public static final field INVALID_SEGMENT Ljava/lang/String;
+	public static final field LEADERBOARD_NOT_FOUND Ljava/lang/String;
+	public static final field NOT_IDENTIFIED Ljava/lang/String;
+	public static final field PERIOD_NOT_FOUND Ljava/lang/String;
+	public static final field RATE_LIMITED Ljava/lang/String;
+	public static final field REDEMPTION_LIMIT_REACHED Ljava/lang/String;
+	public static final field REFERRER_NOT_FOUND Ljava/lang/String;
+	public static final field SHARE_UNAVAILABLE Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/EngageLeaderboards {
+	public static final field INSTANCE Lcom/clikgate/engage/EngageLeaderboards;
+	public final fun aroundMe (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun aroundMe (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun aroundMe$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;ILjava/lang/Object;)V
+	public static synthetic fun aroundMe$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun hostedPageUrl (Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun hostedPageUrl (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun hostedPageUrl$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;ILjava/lang/Object;)V
+	public static synthetic fun hostedPageUrl$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun me (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun me (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun me$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;ILjava/lang/Object;)V
+	public static synthetic fun me$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun setOptOut (Ljava/lang/String;ZLcom/clikgate/ClikgateCallback;)V
+	public final fun setOptOut (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun top (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILcom/clikgate/ClikgateCallback;)V
+	public final fun top (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun top$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILcom/clikgate/ClikgateCallback;ILjava/lang/Object;)V
+	public static synthetic fun top$default (Lcom/clikgate/engage/EngageLeaderboards;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/clikgate/engage/EngageReferrals {
+	public static final field INSTANCE Lcom/clikgate/engage/EngageReferrals;
+	public final fun createLink (Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun createLink (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun createLink$default (Lcom/clikgate/engage/EngageReferrals;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;ILjava/lang/Object;)V
+	public static synthetic fun createLink$default (Lcom/clikgate/engage/EngageReferrals;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun myStats (Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun myStats (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/clikgate/engage/EngageShare {
+	public static final field INSTANCE Lcom/clikgate/engage/EngageShare;
+	public final fun link (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/engage/ShareApp;Ljava/util/Map;Ljava/lang/CharSequence;)Z
+	public static synthetic fun link$default (Lcom/clikgate/engage/EngageShare;Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/engage/ShareApp;Ljava/util/Map;Ljava/lang/CharSequence;ILjava/lang/Object;)Z
+	public final fun referralLink (Landroid/content/Context;Lcom/clikgate/engage/ReferralLink;Ljava/lang/String;Lcom/clikgate/engage/ShareApp;Ljava/lang/CharSequence;)Z
+	public static synthetic fun referralLink$default (Lcom/clikgate/engage/EngageShare;Landroid/content/Context;Lcom/clikgate/engage/ReferralLink;Ljava/lang/String;Lcom/clikgate/engage/ShareApp;Ljava/lang/CharSequence;ILjava/lang/Object;)Z
+	public final fun system (Landroid/content/Context;Ljava/lang/String;Ljava/lang/CharSequence;)V
+	public static synthetic fun system$default (Lcom/clikgate/engage/EngageShare;Landroid/content/Context;Ljava/lang/String;Ljava/lang/CharSequence;ILjava/lang/Object;)V
+	public final fun whatsApp (Landroid/content/Context;Ljava/lang/String;)Z
+}
+
+public final class com/clikgate/engage/LeaderboardEntry {
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;ILjava/lang/Integer;Z)V
+	public final fun getDisplay ()Ljava/lang/String;
+	public final fun getPending ()Ljava/lang/Integer;
+	public final fun getRank ()I
+	public final fun getReferrerId ()Ljava/lang/String;
+	public final fun getScore ()I
+	public final fun isMe ()Z
+}
+
+public final class com/clikgate/engage/LeaderboardPage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/engage/LeaderboardPeriod;Ljava/util/List;)V
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getLeaderboardId ()Ljava/lang/String;
+	public final fun getMetric ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPeriod ()Lcom/clikgate/engage/LeaderboardPeriod;
+	public final fun getSegment ()Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/LeaderboardPeriod {
+	public static final field CURRENT Ljava/lang/String;
+	public static final field Companion Lcom/clikgate/engage/LeaderboardPeriod$Companion;
+	public static final field PREVIOUS Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getEndsAt ()Ljava/lang/String;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getStartsAt ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/LeaderboardPeriod$Companion {
+}
+
+public final class com/clikgate/engage/MyRank {
+	public fun <init> (Ljava/lang/String;Lcom/clikgate/engage/LeaderboardPeriod;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/String;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/clikgate/engage/LeaderboardPeriod;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBestRank ()Ljava/lang/Integer;
+	public final fun getEmbedUrl ()Ljava/lang/String;
+	public final fun getGapToNext ()Ljava/lang/Integer;
+	public final fun getLeaderboardId ()Ljava/lang/String;
+	public final fun getOptedOut ()Z
+	public final fun getPending ()Ljava/lang/Integer;
+	public final fun getPeriod ()Lcom/clikgate/engage/LeaderboardPeriod;
+	public final fun getPeriodEndsAt ()Ljava/lang/String;
+	public final fun getRank ()Ljava/lang/Integer;
+	public final fun getReferrerId ()Ljava/lang/String;
+	public final fun getScore ()I
+}
+
+public final class com/clikgate/engage/RedeemedCode {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getCampaignId ()Ljava/lang/String;
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getKind ()Ljava/lang/String;
+	public final fun getLinkId ()Ljava/lang/String;
+	public final fun getProgramId ()Ljava/lang/String;
+	public final fun getReferrerId ()Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/Redemption {
+	public fun <init> (Ljava/lang/String;Lcom/clikgate/engage/RedeemedCode;Lcom/clikgate/Referral;)V
+	public final fun getCode ()Lcom/clikgate/engage/RedeemedCode;
+	public final fun getOfflineTouchId ()Ljava/lang/String;
+	public final fun getReferral ()Lcom/clikgate/Referral;
+}
+
+public final class com/clikgate/engage/ReferralLink {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getProgramId ()Ljava/lang/String;
+	public final fun getReferrerId ()Ljava/lang/String;
+	public final fun getShortUrl ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/ReferralStats {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIIIIII)V
+	public final fun getClicks ()I
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getDisqualified ()I
+	public final fun getInProgress ()I
+	public final fun getInstalls ()I
+	public final fun getProgramId ()Ljava/lang/String;
+	public final fun getQualified ()I
+	public final fun getReferrerId ()Ljava/lang/String;
+	public final fun getRejected ()I
+	public final fun getShortUrl ()Ljava/lang/String;
+	public final fun getSignups ()I
+	public final fun getStatus ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+}
+
+public final class com/clikgate/engage/ShareApp : java/lang/Enum {
+	public static final field DISCORD Lcom/clikgate/engage/ShareApp;
+	public static final field EMAIL Lcom/clikgate/engage/ShareApp;
+	public static final field FACEBOOK Lcom/clikgate/engage/ShareApp;
+	public static final field IMESSAGE Lcom/clikgate/engage/ShareApp;
+	public static final field INSTAGRAM Lcom/clikgate/engage/ShareApp;
+	public static final field LINKEDIN Lcom/clikgate/engage/ShareApp;
+	public static final field OTHER Lcom/clikgate/engage/ShareApp;
+	public static final field SLACK Lcom/clikgate/engage/ShareApp;
+	public static final field SMS Lcom/clikgate/engage/ShareApp;
+	public static final field SNAPCHAT Lcom/clikgate/engage/ShareApp;
+	public static final field TELEGRAM Lcom/clikgate/engage/ShareApp;
+	public static final field TIKTOK Lcom/clikgate/engage/ShareApp;
+	public static final field WHATSAPP Lcom/clikgate/engage/ShareApp;
+	public static final field X Lcom/clikgate/engage/ShareApp;
+	public static final field YOUTUBE Lcom/clikgate/engage/ShareApp;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/engage/ShareApp;
+	public static fun values ()[Lcom/clikgate/engage/ShareApp;
 }
 

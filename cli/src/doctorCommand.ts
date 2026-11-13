@@ -1,4 +1,5 @@
 import type { Options } from './args';
+import { setupCommand, setupSubcommand } from './command';
 import { EXIT } from './constants';
 import { runLocalChecks, serverChecks, summarise, waitForFirstEvent, type Check, type DoctorReport } from './doctor';
 import { loadProject, needsPlatforms } from './project/load';
@@ -33,7 +34,7 @@ export async function runDoctor(opts: Options, deps: Deps): Promise<{ code: numb
         ? all.find((a) => a.id === opts.app && a.platform === platform)
         : all.find((a) => a.platform === platform && (platform === 'android' ? a.package_name : a.bundle_id)?.toLowerCase() === id?.toLowerCase());
       if (!app) {
-        checks.push({ id: `clikgate.${platform}.app`, group: 'clikgate', status: 'fail', title: `No Clikgate ${platform === 'ios' ? 'iOS' : 'Android'} app uses ${id ?? 'this project'}`, fix: 'Run `npx @clikgate/setup` to create or pick it.' });
+        checks.push({ id: `clikgate.${platform}.app`, group: 'clikgate', status: 'fail', title: `No Clikgate ${platform === 'ios' ? 'iOS' : 'Android'} app uses ${id ?? 'this project'}`, fix: 'Run `' + setupCommand() + '` to create or pick it.' });
         continue;
       }
       apps.push({ id: app.id, platform });
@@ -54,7 +55,7 @@ export async function runDoctor(opts: Options, deps: Deps): Promise<{ code: numb
       group: 'clikgate',
       status: 'skip',
       title: 'Clikgate checks skipped (not signed in)',
-      detail: 'run `npx @clikgate/setup doctor` in a terminal and sign in to check app-links files and events',
+      detail: 'run `' + setupSubcommand('doctor') + '` in a terminal and sign in to check app-links files and events',
     });
   }
 

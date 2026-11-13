@@ -77,6 +77,7 @@ void main() {
         'waitForATT': true,
         'deferredDeepLinkTimeoutMs': 3000,
         'platformDomainBrowserFallback': true,
+        'automaticPushToken': true,
         'wrapperVersion': Clikgate.pluginVersion,
       });
     });

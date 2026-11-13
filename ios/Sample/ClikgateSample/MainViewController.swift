@@ -1,6 +1,6 @@
 import UIKit
 import Clikgate
-import ClikgateEngage   // optional add-on: invite link, stats, share helpers (apps without a backend)
+import ClikgateEngage   // Engage features (same Clikgate package): invite link, stats, share helpers (apps without a backend)
 
 /// Demo screen: attribution, last deep link, referral link sharing, code entry, stats, push status.
 final class MainViewController: UIViewController {

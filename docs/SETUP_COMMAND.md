@@ -4,7 +4,7 @@ Source: `cli/` in this repository (`clikgate_mobile_sdk`; it moved here from `cl
 
 The command sets up Clikgate in a Flutter, React Native, Expo, native Android or native iOS app project. It shows every change as a diff and asks once before writing anything. It only ever uses the **test** SDK key. App links use the app's own **link subdomain** (`yourapp.ciz.to`, or `yourapp.clk.ng` on the Free plan, and `yourapp.dev.ciz.to` in **debug builds only**) plus the organisation's verified custom domains, never a shared domain (change 09 N.1).
 
-- npm package: **`@clikgate/setup`**, bin **`clikgate-setup`**. The documented command is always `npx @clikgate/setup`.
+- npm package: **`@clikgate/setup`**, bin **`clikgate-setup`**. The documented command is `npx @clikgate/setup`; Flutter projects can use `dart run clikgate_flutter` instead (no Node.js, [below](#flutter-projects-dart-run-clikgate_flutter)).
 - Node 18 or newer. One bundled file (`dist/cli.cjs`, built with tsup) with no runtime dependencies to install.
 - No telemetry. The only network calls go to the Clikgate API (`https://api.clikgate.com`, or `--api-url`), and only after the person signs in. Offline mode makes none.
 
@@ -38,6 +38,52 @@ The device sign-in prints "If your account uses two-factor sign-in, the page als
 | 1 | problems found, or a step failed (including bad flags, no project, a live key in offline mode) |
 | 2 | cancelled (answered no, or no `--yes` in a non-interactive shell) |
 | 3 | sign-in failed (denied, expired, or rejected) |
+
+## Flutter projects: `dart run clikgate_flutter`
+
+Owner decision 2026-11-13 (option A): Flutter developers run the same command without Node.js.
+
+```
+flutter pub add clikgate_flutter     # dart run only finds packages that are in pubspec.yaml
+dart run clikgate_flutter            # = npx @clikgate/setup   (also: dart run clikgate_flutter:setup)
+dart run clikgate_flutter:doctor     # = npx @clikgate/setup doctor
+```
+
+With fvm: `fvm dart run clikgate_flutter`. Every flag above works the same way. `dart pub global activate` doesn't
+work for packages that depend on the Flutter SDK, so it isn't offered. Setup sees the dependency `flutter pub add`
+wrote and reports it as already set up (an older constraint than `SDK.flutter.minimum` becomes a manual step).
+
+- **One codebase.** `scripts/build_setup_binaries.sh` builds `cli/dist/cli.cjs` with the cli's own build, then
+  compiles it with Bun (`npx --yes bun@<pinned>`, `build --compile`) into self-contained executables:
+  `cli/dist/bin/clikgate-setup-<version>-<darwin-arm64|darwin-x64|linux-x64|linux-arm64|windows-x64>[.exe]`
+  and their release assets `….gz` (`gzip -9n`), plus `SHA256SUMS` (both). x64 builds use Bun's baseline target
+  (no AVX2); Linux builds need glibc. The binaries are 90–116 MB (mostly the Bun runtime); the downloads are
+  41 MB (darwin-arm64), 43.5 MB (darwin-x64), 52 MB (Linux) and 55 MB (Windows). Builds are reproducible. On macOS the darwin binaries are ad-hoc signed
+  (Apple silicon needs a signature); they aren't notarised, which is fine because a file downloaded by
+  `dart run` has no quarantine attribute, so Gatekeeper doesn't check it.
+- **The pub package carries the checksums.** The script writes `flutter/lib/src/setup_runner/setup_binaries.g.dart`
+  (version, and per platform the sha256 of the `.gz` and of the binary, from `SHA256SUMS`).
+  `scripts/check_cli_sdk_versions.mjs` fails when its version isn't `CLI_VERSION`, when a platform is missing,
+  or when a hash differs from a file present in `cli/dist/bin`.
+- **Runner** (`flutter/bin/{clikgate_flutter,setup,doctor}.dart`, code in `flutter/lib/src/setup_runner/`,
+  not exported; pure Dart, no Flutter imports): picks the platform from `Abi.current()` (Windows on Arm uses
+  the x64 binary), downloads
+  `https://github.com/clikgate/clikgate-mobile-sdk/releases/download/setup-v<version>/<asset>.gz` once to a
+  temp file, checks the sha256 of the `.gz`, unpacks it (streaming, `dart:io` gzip) to a second temp file,
+  checks the binary's sha256, makes it executable and renames it into `~/.clikgate/setup/<version>/`
+  (Windows: `%LOCALAPPDATA%\clikgate\setup\<version>\`). Later runs reuse the cached binary while its hash
+  (the binary hash) still matches. It runs the binary in the current folder with the terminal attached
+  (prompts work), passes every argument through and exits with its exit code. The child gets
+  `CLIKGATE_SETUP_COMMAND=dart run clikgate_flutter` (kept when already set, e.g. `fvm dart run
+  clikgate_flutter`), so `--help`, the "Run `…`" hints and doctor's fixes (also in `--json`) name
+  `dart run clikgate_flutter` / `dart run clikgate_flutter:doctor` instead of npx (`cli/src/command.ts`). Its own messages (download progress) go to stderr,
+  so `doctor --json` keeps stdout for the report. Nothing else is sent anywhere.
+- **Failures:** on an unsupported platform or a failed download it exits 1. When `node` is on PATH it prints
+  `npx @clikgate/setup@<version> <same args>` but doesn't run it. Otherwise it links to the docs and the manual
+  steps. A checksum mismatch is never run, and there is no fallback for it.
+- **Overrides** (testing, offline): `CLIKGATE_SETUP_BINARY=<path>` runs that binary (no download, no hash
+  check); `CLIKGATE_SETUP_BASE_URL=<url>` downloads `<url>/<asset>.gz` instead (still verified).
+- Release: [RELEASING.md](RELEASING.md) "Setup command binaries".
 
 ## What it does (S.3)
 
@@ -73,11 +119,11 @@ The device sign-in prints "If your account uses two-factor sign-in, the page als
 
 The command writes the dependency into the manifest itself, so the diff shows it and a re-run sees it. Then it runs the package manager to resolve it:
 
-- `pubspec.yaml`: `clikgate_flutter: ^2.0.0`, then `flutter pub get`;
-- `package.json`: `@clikgate/react-native: ^2.0.0`, in alphabetical position, then `<pm> install`. Expo uses the same path (see [cli/DECISIONS.md](../cli/DECISIONS.md): `npx expo install` adds nothing for packages outside Expo's bundled list);
-- Gradle: `implementation("com.clikgate:clikgate-android:2.0.0")` (Kotlin DSL), `implementation 'com.clikgate:clikgate-android:2.0.0'` (Groovy), or a version-catalog entry `clikgate-android` plus `implementation(libs.clikgate.android)`;
+- `pubspec.yaml`: `clikgate_flutter: ^2.1.0`, then `flutter pub get`;
+- `package.json`: `@clikgate/react-native: ^2.1.0`, in alphabetical position, then `<pm> install`. Expo uses the same path (see [cli/DECISIONS.md](../cli/DECISIONS.md): `npx expo install` adds nothing for packages outside Expo's bundled list);
+- Gradle: `implementation("com.clikgate:clikgate-android:2.1.0")` (Kotlin DSL), `implementation 'com.clikgate:clikgate-android:2.1.0'` (Groovy), or a version-catalog entry `clikgate-android` plus `implementation(libs.clikgate.android)`;
 - Podfile: `pod 'Clikgate', '~> 2.0'` in the app target.
-- An existing, older constraint is never rewritten: setup lists it as a manual step ("Update clikgate_flutter … to ^2.0.0") and doctor warns (`sdk.version`, minimum 2.0.0 for Flutter, React Native, Android and iOS).
+- An existing, older constraint is never rewritten: setup lists it as a manual step ("Update clikgate_flutter … to ^2.1.0") and doctor warns (`sdk.version`, minimum 2.1.0 for Flutter, React Native, Android and iOS).
 - The SDKs' `platformDomainBrowserFallback` option (default on) is never written.
   - Without a Podfile it prints the Xcode "Add Package Dependencies" steps for `https://github.com/clikgate/clikgate-ios-sdk` as a manual step. It doesn't edit Swift package references in `project.pbxproj`: they are several linked objects, and a partial edit breaks the project.
 
@@ -119,6 +165,10 @@ All edits use real parsers (see [cli/DECISIONS.md](../cli/DECISIONS.md)). Insert
 - lists the declared attributes in `tools:replace` on `<application>` (keeping what's there; `xmlns:tools` is added when missing), so the app's files, now with the excludes, are used.
 Excludes already present are left alone, so a second run changes nothing. An attribute that isn't an `@xml/` reference, or a file that doesn't parse, becomes a manual step. Apps that declare neither attribute need nothing: the SDK's rules apply.
 
+**Uninstall tracking (iOS: Flutter, React Native, Expo with `ios/`, iOS).** The SDKs get a push token by themselves (`automaticPushToken`, default on) once uninstall tracking is on in the dashboard; users are never asked for notification permission. So setup:
+- adds `aps-environment` (the Push Notifications capability) to the entitlements it already edits: `development` in the Debug file, `production` in the Release/Profile file. It does this **always**: the CLI token can't see whether uninstall tracking is on, and the entitlement alone asks nothing and shows nothing. An existing value is kept. A reminder says that manual signing needs Push Notifications on the App ID and new profiles. Projects without link domains get it in the entitlements files their configurations already use (none: a manual step);
+- adds the one line that hands the APNs token to Clikgate to a UIKit AppDelegate, Swift or Objective-C (`.m`/`.mm`), when it's missing: in `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` (added when the AppDelegate doesn't have it; Expo's `ExpoAppDelegate` gets a `public override` that calls `super`). iOS apps call `Clikgate.shared.setPushToken(deviceToken:)`, React Native and Expo `ClikgateRN.setPushToken(deviceToken:)`. A file that already forwards the token is left alone. Flutter: nothing (the plugin is an application delegate and forwards the token itself). SwiftUI apps without an AppDelegate: a manual step with an `@UIApplicationDelegateAdaptor` snippet. Expo without `ios/`: the config plugin adds the line and the entitlement on prebuild.
+
 The SDK's own `linkDomains` include the test subdomain only in debug builds too: Dart `kDebugMode`, JS `__DEV__`, Android `FLAG_DEBUGGABLE`, Swift `#if DEBUG`. When a project has separate Android and iOS apps with different test keys, the code picks the key per platform (`defaultTargetPlatform` / `Platform.OS`).
 
 ## doctor (S.5)
@@ -135,6 +185,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
   - a Free plan app subdomain (`yourapp.clk.ng`, change 10) passes like `yourapp.ciz.to`: only the bare shared hosts warn;
   - every configuration's `CODE_SIGN_ENTITLEMENTS` file exists and parses;
   - the Expo plugin entry;
+  - uninstall tracking on iOS (warnings): `ios.push.aps_environment` (every configuration's entitlements have `aps-environment`) and `ios.push.token_forward` (an AppDelegate passes the APNs token to Clikgate; not checked for Flutter, whose plugin does it);
   - `android.backup_rules` (only when the app declares its own `android:fullBackupContent` / `android:dataExtractionRules`): `tools:replace` lists them and each rules file excludes Clikgate's files; it fails otherwise (the manifest merge would fail, or the installation ID would be backed up).
 - **Clikgate:** in a terminal it offers to sign in. It then reads `GET /v1/cli/setup-check` per app and shows a ✓/✗ and a fix for each domain's AASA/assetlinks.
   - Only the file that applies to the app's platform is judged (`applies: true`).
@@ -170,7 +221,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
 | `flutter` `package` / `minimum` / `constraint` (`^version`) | `flutter/pubspec.yaml` `name` / `version` |
 | `reactNative` `package` / `minimum` / `constraint` (`^version`) | `react-native/package.json` `name` / `version` |
 
-`node scripts/check_cli_sdk_versions.mjs` (or `cd cli && npm run check:sdk-versions`) fails when they drift; it also checks `CLI_VERSION` against `cli/package.json`. CI runs it (`cli.yml` › `sdk-versions`, and before every `cli-release.yml` publish). So an SDK release that bumps a version bumps `cli/src/constants.ts`, the CLI's snapshots (`cd cli && npm run test:update`, then review), this page, and the CLI changelog in the same change. The AI guides in `clikgate_sdks` (`ai-guides/versions.json`) are checked against the same constants there.
+`node scripts/check_cli_sdk_versions.mjs` (or `cd cli && npm run check:sdk-versions`) fails when they drift; it also checks `CLI_VERSION` against `cli/package.json` and against the Flutter runner's `setup_binaries.g.dart` (version, and the checksums when the binaries are built). CI runs it (`cli.yml` › `sdk-versions`, and before every `cli-release.yml` publish). So an SDK release that bumps a version bumps `cli/src/constants.ts`, the CLI's snapshots (`cd cli && npm run test:update`, then review), this page, and the CLI changelog in the same change. The AI guides in `clikgate_sdks` (`ai-guides/versions.json`) are checked against the same constants there.
 
 ## Tests and CI
 
@@ -230,5 +281,5 @@ All five were free on 2026-10-26. Don't publish the `@clikgate/react-native` pla
 
 **Also before launch:**
 
-- The packages the command installs must be live: `clikgate_flutter` on pub.dev, `clikgate_flutter` 2.0.0, `@clikgate/react-native` 2.0.0 on npm, `com.clikgate:clikgate-android` 2.0.0 on Maven Central, `Clikgate` 2.0.0, and the `Clikgate` pod / SPM mirror. Until then, use `--no-install` in demos.
+- The packages the command installs must be live: `clikgate_flutter` on pub.dev, `clikgate_flutter` 2.1.0, `@clikgate/react-native` 2.1.0 on npm, `com.clikgate:clikgate-android` 2.1.0 on Maven Central, `Clikgate` 2.1.0, and the `Clikgate` pod / SPM mirror. Until then, use `--no-install` in demos.
 - Run the command once on a real iOS project on a Mac (S.8: iOS isn't build-tested in CI), and once on a device for the "first event" check.

@@ -6,7 +6,7 @@
 //     --dart-define=CLIKGATE_SDK_KEY=cg_sdk_... \
 //     --dart-define=CLIKGATE_PROGRAM_ID=rpg_... \
 //     [--dart-define=CLIKGATE_IDENTITY_TOKEN=<token for user CLIKGATE_USER_ID>]
-import 'package:clikgate_engage/clikgate_engage.dart';
+import 'package:clikgate_flutter/engage.dart';
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -63,7 +63,7 @@ void main() {
       expect(info.referred, isA<bool>());
       if (programId.isEmpty) return;
       try {
-        // Referrer side: the Engage add-on (pure Dart, same installation via the core's context).
+        // Referrer side: the Engage features (pure Dart, same installation via the core's context).
         final engage = ClikgateEngage();
         final link = await engage.referrals.createLink(programId: programId, displayName: 'IT');
         expect(link.code, isNotEmpty);

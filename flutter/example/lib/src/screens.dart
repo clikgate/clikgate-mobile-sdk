@@ -239,7 +239,7 @@ class _SignInScreenState extends State<SignInScreen> {
 }
 
 /// Referral invite: the user's link, share, stats. Same screen in both variants; the data comes
-/// from the sample backend or from clikgate_engage.
+/// from the sample backend or from the Engage features (package:clikgate_flutter/engage.dart).
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key});
 

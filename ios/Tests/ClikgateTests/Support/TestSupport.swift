@@ -268,6 +268,7 @@ final class Harness: @unchecked Sendable {
     var device = FakeDevice()
     let dispatcher = DeepLinkDispatcher()
     var browser = FakeBrowser()
+    let remoteNotifications = FakeRemoteNotifications()
     let logger = ClikgateLogger(level: .none)
     var firebase = FakeFirebase()
     var deviceCheck = FakeDeviceCheck()
@@ -300,7 +301,7 @@ final class Harness: @unchecked Sendable {
             apnsEnvironment: { "sandbox" }, appURLSchemes: ["myapp"], storageDirectory: dir,
             uuid: { [unowned self] in self.nextUUID() }, jitter: { 0 },
             firebase: firebase, deviceCheck: deviceCheck, onDeviceMeasurement: odm,
-            vendorId: { [vendorId] in vendorId }, browser: browser)
+            vendorId: { [vendorId] in vendorId }, browser: browser, remoteNotifications: remoteNotifications)
     }
 
     /// Tests default to `.automatic` pasteboard reads (the SDK default is `.off` since 1.2.0).
@@ -366,4 +367,12 @@ final class FakeBrowser: BrowserPresenting, @unchecked Sendable {
     var opened: [URL] { lock.lock(); defer { lock.unlock() }; return _opened }
     /// URLs sent to the system browser (Change 17 password links).
     var external: [URL] { lock.lock(); defer { lock.unlock() }; return _external }
+}
+
+/// Counts `registerForRemoteNotifications()` calls.
+final class FakeRemoteNotifications: RemoteNotificationRegistering, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _calls = 0
+    @MainActor func register() { lock.lock(); _calls += 1; lock.unlock() }
+    var calls: Int { lock.lock(); defer { lock.unlock() }; return _calls }
 }

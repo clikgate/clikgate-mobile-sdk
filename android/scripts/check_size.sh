@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Size budgets (spec 0.4): core Android < 150 KB, Engage Android < 44 KB (40 KB until Change 13 share.link; see DECISIONS.md).
 #
-# Builds the release AARs (unminified, as published) and reports, per module:
-#   jar      classes.jar inside the AAR (compressed, as shipped in the AAR)
+# Builds the release AAR (unminified, as published; since 2.1.0 one artifact with the Engage features under
+# com.clikgate.engage) and reports, for the core classes and the Engage classes separately:
+#   jar      the part's classes, zipped (as in the AAR's classes.jar)
 #   classes  sum of the uncompressed .class files
 #   d8       DEX of the library's own classes, no shrinking (d8 --release --min-api 21)
 #   r8       DEX after R8 with the whole public API kept (what an app that calls every public
@@ -20,7 +21,7 @@ CORE_BUDGET_KB=150
 ENGAGE_BUDGET_KB=44
 
 if [ "${1:-}" != "--no-build" ]; then
-  ./gradlew :clikgate:assembleRelease :clikgate-engage:assembleRelease -q --console=plain
+  ./gradlew :clikgate:assembleRelease -q --console=plain
 fi
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
@@ -36,11 +37,11 @@ trap 'rm -rf "$WORK"' EXIT
 
 kb() { awk "BEGIN { printf \"%.1f\", $1 / 1024 }"; }
 
-measure() { # name aar keep-package classpath-jar consumer-rules
-  local name="$1" aar="$2" pkg="$3" cp="${4:-}"
+measure() { # name classes-jar keep-package classpath-jar consumer-rules
+  local name="$1" src="$2" pkg="$3" cp="${4:-}"
   local dir="$WORK/$name"
   mkdir -p "$dir/x" "$dir/d8" "$dir/r8"
-  unzip -q -o "$aar" classes.jar -d "$dir"
+  cp "$src" "$dir/classes.jar"
   local jar=$(stat -f%z "$dir/classes.jar" 2>/dev/null || stat -c%s "$dir/classes.jar")
   (cd "$dir/x" && unzip -q -o ../classes.jar)
   local classes=$(find "$dir/x" -name '*.class' -exec cat {} + | wc -c | tr -d ' ')
@@ -63,11 +64,16 @@ PRO
   echo "$r8" > "$WORK/$name.r8"
 }
 
-CORE_AAR=clikgate/build/outputs/aar/clikgate-release.aar
-ENGAGE_AAR=clikgate-engage/build/outputs/aar/clikgate-engage-release.aar
-measure core "$CORE_AAR" com.clikgate "" clikgate/consumer-rules.pro
-mkdir -p "$WORK/corecp" && unzip -q -o "$CORE_AAR" classes.jar -d "$WORK/corecp"
-measure engage "$ENGAGE_AAR" com.clikgate.engage "$WORK/corecp/classes.jar" clikgate-engage/consumer-rules.pro
+AAR=clikgate/build/outputs/aar/clikgate-release.aar
+# Split the one classes.jar: core = everything outside com/clikgate/engage, Engage = that package.
+mkdir -p "$WORK/all" "$WORK/split"
+unzip -q -o "$AAR" classes.jar -d "$WORK/split"
+(cd "$WORK/all" && unzip -q -o ../split/classes.jar)
+(cd "$WORK/all" && find . -type f ! -path './com/clikgate/engage/*' | sed 's#^\./##' | zip -q -@ "$WORK/split/core.jar")
+(cd "$WORK/all" && find ./com/clikgate/engage -type f | sed 's#^\./##' | zip -q -@ "$WORK/split/engage.jar")
+printf -- '-dontwarn **\n' > "$WORK/engage-rules.pro"
+measure core "$WORK/split/core.jar" com.clikgate "" clikgate/consumer-rules.pro
+measure engage "$WORK/split/engage.jar" com.clikgate.engage "$WORK/split/core.jar" "$WORK/engage-rules.pro"
 
 fail=0
 core_kb=$(( $(cat "$WORK/core.r8") / 1024 ))

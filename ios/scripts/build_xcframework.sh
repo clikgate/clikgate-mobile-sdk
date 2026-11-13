@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Builds Clikgate.xcframework (core) and ClikgateEngage.xcframework (optional Engage add-on,
-# spec 17A.1) — static, library evolution enabled — from the Swift package.
+# Builds Clikgate.xcframework (core) and ClikgateEngage.xcframework (the Engage features; one SPM
+# product / one pod since 2.1.0, two modules) — static, library evolution enabled — from the Swift package.
 #
 #   ios/scripts/build_xcframework.sh [output-dir]      # default: ios/build/xcframework
 #
-# Steps per module: `xcodebuild archive` its package scheme for iOS devices and the simulator
-# with BUILD_LIBRARY_FOR_DISTRIBUTION=YES, wrap the module's own object file + .swiftinterface
-# into a static <Module>.framework, then `xcodebuild -create-xcframework`. The core framework
-# carries PrivacyInfo.xcprivacy. ClikgateEngage.framework contains only Engage's code (the
-# ClikgateEngage scheme also compiles the core, whose object is not copied): apps link both
-# XCFrameworks, and installing the core alone never brings Engage in.
+# Steps: `xcodebuild archive` the package's `Clikgate` scheme (the one product: both modules) for iOS
+# devices and the simulator with BUILD_LIBRARY_FOR_DISTRIBUTION=YES; then per module wrap its own
+# object file + .swiftinterface into a static <Module>.framework and `xcodebuild -create-xcframework`.
+# The core framework carries PrivacyInfo.xcprivacy. Binary (XCFramework) installs link both frameworks;
+# SPM and CocoaPods installs get both from the one product / pod.
 # Each module and its main type share a name (`Clikgate`, `ClikgateEngage`);
 # `-alias-module-names-in-module-interface` keeps the emitted .swiftinterface files buildable
 # (swiftlang/swift#56573).
@@ -53,7 +52,7 @@ make_framework() { # $1 = module, $2 = archive name, $3 = platform dir (Release-
   obj="$(find "$WORK/$arch.xcarchive" -name "$name.o" | head -1)"
   [ -n "$obj" ] || { echo "$name.o not found in $arch archive" >&2; exit 1; }
   local module
-  module="$(find "$DERIVED/$arch/Build/Intermediates.noindex/ArchiveIntermediates/$name/BuildProductsPath/$platform" -maxdepth 1 -name "$name.swiftmodule" -type d | head -1)"
+  module="$(find "$DERIVED/$arch/Build/Intermediates.noindex/ArchiveIntermediates/Clikgate/BuildProductsPath/$platform" -maxdepth 1 -name "$name.swiftmodule" -type d | head -1)"
   [ -n "$module" ] || { echo "$name.swiftmodule not found for $platform" >&2; exit 1; }
 
   mkdir -p "$fw/Modules"
@@ -87,20 +86,15 @@ make_framework() { # $1 = module, $2 = archive name, $3 = platform dir (Release-
 PLIST
 }
 
-build_module() { # $1 = module (= package scheme), $2 = version
+build_module() { # $1 = module, $2 = version (archives: ios, ios-simulator)
   local name="$1" version="$2"
-  echo "==> $name: archiving for iOS devices"
-  archive "$name" "generic/platform=iOS" "$name-ios"
-  echo "==> $name: archiving for iOS Simulator"
-  archive "$name" "generic/platform=iOS Simulator" "$name-ios-simulator"
-
-  make_framework "$name" "$name-ios" Release-iphoneos "$version"
-  make_framework "$name" "$name-ios-simulator" Release-iphonesimulator "$version"
+  make_framework "$name" ios Release-iphoneos "$version"
+  make_framework "$name" ios-simulator Release-iphonesimulator "$version"
 
   echo "==> $name: creating XCFramework"
   xcodebuild -create-xcframework \
-    -framework "$WORK/$name-ios/$name.framework" \
-    -framework "$WORK/$name-ios-simulator/$name.framework" \
+    -framework "$WORK/ios/$name.framework" \
+    -framework "$WORK/ios-simulator/$name.framework" \
     -output "$OUT/$name.xcframework"
 
   (cd "$OUT" && zip -qry "$name-${version}.xcframework.zip" "$name.xcframework")
@@ -118,6 +112,10 @@ report_size() { # $1 = module
   size -m "$bin" | awk '/Section __text|Section __const|Section __data|Section __cstring/ {print "  " $0}' | head -8 || true
 }
 
+echo "==> Clikgate (core + Engage modules): archiving for iOS devices"
+archive Clikgate "generic/platform=iOS" ios
+echo "==> Clikgate (core + Engage modules): archiving for iOS Simulator"
+archive Clikgate "generic/platform=iOS Simulator" ios-simulator
 build_module Clikgate "$VERSION"
 build_module ClikgateEngage "$ENGAGE_VERSION"
 

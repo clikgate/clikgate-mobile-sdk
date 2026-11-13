@@ -9,17 +9,16 @@ promo codes and share helpers are **not** in it:
 
 - **Recommended:** your backend calls the Clikgate control-plane API (referrers, referral stats,
   leaderboards, identity signals, goals from your server) and your app renders its own screens.
-- **Apps without a backend:** add the optional Engage add-on `com.clikgate:clikgate-engage`
-  (section 6d). See [engage.md](engage.md) for when to use which.
+- **Apps without a backend:** use the Engage features, `com.clikgate.engage.ClikgateEngage`, which
+  ship in `com.clikgate:clikgate-android` (section 6d). See [engage.md](engage.md) for when to use which.
 
 ## 1. Install
 
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.clikgate:clikgate-android:2.0.0")
-    // Optional Engage add-on (apps without a backend; pulls in clikgate-android):
-    // implementation("com.clikgate:clikgate-engage:2.0.0")
+    // Includes the Engage features (com.clikgate.engage) for apps without a backend; R8 drops them if unused.
+    implementation("com.clikgate:clikgate-android:2.1.0")
     // Optional, only if you enable Play Integrity attestation:
     // implementation("com.google.android.play:integrity:1.6.0")
 }
@@ -204,7 +203,7 @@ app side is a small swap:
 | Firebase Dynamic Links | Clikgate |
 |---|---|
 | `page.link` or your domain in the app's associated domains | your app's link subdomain (and verified custom domains) in the app's associated domains |
-| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage add-on's referral links |
+| create links with `buildShortDynamicLink` or the REST API | create links in the dashboard, with the Clikgate API (`POST /v1/links`, server SDKs `links.create`) or, without a backend, the Engage features' referral links |
 | read `link` from the received dynamic link | read `path` and `data` from the Clikgate deep link (`url` is the link that opened the app) |
 | deferred link on first launch through the same callback | the same: the deferred link arrives on `onDeepLink` with `isDeferred` set |
 | `utm_*` and `st` / `sd` / `si` link parameters | the link's tags and preview, set when the link is created (the import maps them) |
@@ -392,11 +391,10 @@ config is re-fetched in the background.
 | `leaderboards` | Engage `leaderboards.*` |
 | `offline_codes` | Engage `codes.redeem` |
 
-## 6d. Engage add-on (optional, apps without a backend)
+## 6d. Engage features (apps without a backend)
 
-```kotlin
-dependencies { implementation("com.clikgate:clikgate-engage:2.0.0") }   // depends on clikgate-android
-```
+Nothing extra to install: the Engage features are in `com.clikgate:clikgate-android` (since 2.1.0;
+there is no separate `clikgate-engage` artifact). Import them from `com.clikgate.engage`.
 
 `ClikgateEngage` (package `com.clikgate.engage`) calls the same `/v1/sdk/...` endpoints using the
 core SDK's installation, SDK key and identity token; `Clikgate.configure` must have been called.
@@ -458,20 +456,27 @@ Rules:
 - Codes: 3–30 characters after trimming (`invalid_argument` otherwise); case, spaces and dashes
   are normalised by the server. Limits are clamped: `limit` 1..100, `radius` 1..25.
 - No UI components; no polling or push of rank changes (refresh while the screen is visible).
-- Engage models are plain classes (no data-class `equals`/`copy`, to keep the add-on under its
-  40 KB budget). From Java: `ClikgateEngage.INSTANCE.getReferrals().createLink(programId, null, callback)`.
+- Engage models are plain classes (no data-class `equals`/`copy`, to keep the Engage code under its
+  44 KB budget). From Java: `ClikgateEngage.INSTANCE.getReferrals().createLink(programId, null, callback)`.
 
 ## 7. Push token and uninstall tracking
 
-The SDK has no Firebase dependency: pass the FCM token and filter Clikgate's silent pushes.
+Turn on uninstall tracking in the dashboard and upload your FCM credentials. If the app ships
+Firebase Cloud Messaging, that is all: on each launch the SDK reads the FCM token itself
+(`FirebaseMessaging.getInstance().getToken()`, by reflection; the SDK still has no Firebase
+dependency) and sends it when it changed, which also picks up rotated tokens. Users don't have to
+allow notifications: the SDK never asks for notification permission and never shows anything.
+Without Firebase Messaging in the app nothing happens (one debug log).
+
+The automatic token is used only while uninstall tracking is on for the app (cached config counts),
+tracking isn't opted out, the SDK version isn't blocked and consent allows tracking; it is
+re-checked when consent or opt-out changes to allowed. A token you pass to `setPushToken` in the same
+launch always wins.
+
+Keep the one filter line so Clikgate's silent checks never reach your own handling:
 
 ```kotlin
-// After Firebase is initialised:
-FirebaseMessaging.getInstance().token.addOnSuccessListener { Clikgate.setPushToken(it, PushProvider.FCM) }
-
 class MyMessagingService : FirebaseMessagingService() {
-    override fun onNewToken(token: String) = Clikgate.setPushToken(token, PushProvider.FCM)
-
     override fun onMessageReceived(message: RemoteMessage) {
         if (Clikgate.isClikgateMessage(message.data)) return   // uninstall check: show nothing
         // your own handling
@@ -479,9 +484,29 @@ class MyMessagingService : FirebaseMessagingService() {
 }
 ```
 
-The token is sent only when it changed. Clikgate's checks are data-only messages
-(`{"cg": "uc"}`, normal priority, TTL 0); they never show a notification and need no
-notification permission. Uninstalls are detected only for installs that registered a token
+To control push registration timing yourself, set `ClikgateOptions(automaticPushToken = false)`
+and pass the token:
+
+```kotlin
+// After Firebase is initialised:
+FirebaseMessaging.getInstance().token.addOnSuccessListener { Clikgate.setPushToken(it, PushProvider.FCM) }
+
+class MyMessagingService : FirebaseMessagingService() {
+    override fun onNewToken(token: String) = Clikgate.setPushToken(token, PushProvider.FCM)
+    // onMessageReceived as above
+}
+```
+
+Side effect, honestly: reading the token early creates the app's FCM registration at launch, and
+any other push tool in the app that reads the same token gets it too (it may count the device as
+registered). Users still see no notifications without permission. If you turned off FCM auto-init
+(`firebase_messaging_auto_init_enabled = false`) to delay registration, set
+`automaticPushToken = false` and call `setPushToken` when you are ready.
+
+The SDK's consumer R8 rules keep the two Firebase methods it calls and use `-dontwarn`, so apps
+without Firebase build cleanly. The token is sent only when it changed. Clikgate's checks are
+data-only messages (`{"cg": "uc"}`, normal priority, TTL 0); they never show a notification and
+need no notification permission. Uninstalls are detected only for installs that registered a token
 and only after you upload FCM credentials in Clikgate.
 
 ## 8. Privacy and opt-out
@@ -606,7 +631,7 @@ cleartext for that host in a debug network security config).
 ## 11. Sample app
 
 `android/sample` demonstrates direct and deferred deep links, apply code / referred-by (core),
-invite link + WhatsApp share and stats (Engage add-on), goals, the installation ID, FCM token forwarding and (1.2.0)
+invite link + WhatsApp share and stats (Engage features), goals, the installation ID, FCM token forwarding and (1.2.0)
 consent buttons, an EEA region hint, Firebase forwarding (`firebase-analytics` as a runtime-only
 dependency) and `attributionMetadata()`. Build:
 
@@ -631,7 +656,7 @@ For the recommended backend path (invite link, stats and leaderboards from your 
 
 ## 12. Removing the SDK
 
-1. Remove the dependencies `com.clikgate:clikgate-android` and `com.clikgate:clikgate-engage` (and
+1. Remove the dependency `com.clikgate:clikgate-android` (and
    `com.google.android.play:integrity` if you added it only for Clikgate).
 2. Remove `Clikgate.configure(...)` and every `Clikgate.*` / `ClikgateEngage.*` call: `onDeepLink`,
    `handleIntent` / `handleUrl` in your activities, `goal`, `identifyUser`, consent, Firebase forwarding,
@@ -671,7 +696,7 @@ SDK leaves them unused in the app's data directory (delete them on first launch 
 | `Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions)` | 1.2.0; Firebase detected at runtime |
 | `Clikgate.attributionMetadata(): Map<String, String>` | 1.2.0; `cg_click_id`, `cg_link_id` |
 | `Clikgate.sdkVersion` | |
-| *Engage add-on* (`com.clikgate:clikgate-engage`) | callback + same-name `suspend` variants |
+| *Engage features* (`com.clikgate.engage`, in `clikgate-android`) | callback + same-name `suspend` variants |
 | `ClikgateEngage.referrals.createLink(programId, displayName?)` / `myStats(programId)` | `ReferralLink` / `ReferralStats` |
 | `ClikgateEngage.share.link(context, url, message?, app?, shareUrls?, chooserTitle?)` / `referralLink(context, link, message?, app?, chooserTitle?)` | `Boolean` (`app` itself opened); `ShareApp` |
 | `ClikgateEngage.share.system(context, text, chooserTitle?)` / `whatsApp(context, text)` | `Unit` / `Boolean` (WhatsApp opened) |

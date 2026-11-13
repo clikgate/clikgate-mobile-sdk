@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.1.0 (unreleased)
+
+- **Also runs as `dart run clikgate_flutter`** (Flutter projects, no Node.js): the same code compiled with Bun into
+  self-contained binaries (`scripts/build_setup_binaries.sh`), downloaded and verified by `clikgate_flutter`. When
+  `CLIKGATE_SETUP_COMMAND` is set (the Flutter runner sets `dart run clikgate_flutter`), `--help`, the "Run `…`"
+  hints and doctor's fixes (also in `--json`) name that command, and `…:doctor` for doctor. Default unchanged:
+  `npx @clikgate/setup`.
+- Installs the 2.1.0 SDKs, which contain the Engage features (no separate Engage package exists any more; the command
+  never installed one). Constraints `^2.1.0` / `~> 2.1`; doctor's minimum is 2.1.0.
+- **Uninstall tracking without notification permission (iOS).** The 2.1.0 SDKs get a push token by themselves
+  (`automaticPushToken`). Setup now adds `aps-environment` (Push Notifications capability) to the entitlements it
+  edits, always (`development` in Debug, `production` in Release; an existing value is kept), and the one line that
+  passes the APNs token to Clikgate to a UIKit AppDelegate (Swift or Objective-C) when missing:
+  `Clikgate.shared.setPushToken(deviceToken:)` for iOS apps, `ClikgateRN.setPushToken(deviceToken:)` for React Native
+  and Expo with `ios/` (Expo's `ExpoAppDelegate` gets a `public override` that calls `super`). Flutter needs no line
+  (the plugin forwards the token). SwiftUI apps without an AppDelegate get a manual step. Running setup again changes
+  nothing. New doctor warnings `ios.push.aps_environment` and `ios.push.token_forward` (the latter not for Flutter).
+
 ## 2.0.0 (unreleased) (Change 22)
 
 - **Breaking: installs the 2.0.0 SDKs, where `track()` was removed in favour of `goal()`.** Android, iOS, Flutter and React Native 2.0.0 (`~> 2.0` for the pod); doctor's minimum versions follow, so projects on 1.x get a warning to upgrade. The setup command never wrote `track()` calls, so no generated code changes. This is the first public release.

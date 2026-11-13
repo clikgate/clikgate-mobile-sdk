@@ -2,7 +2,7 @@
   "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
   "keychain_previous_installation_id": null,
   "app_version": "3.4.1",
-  "sdk_version": "2.0.0",
+  "sdk_version": "2.1.0",
   "platform": "ios",
   "os_version": "18.1",
   "device_model": "iPhone15,2",
@@ -10,6 +10,7 @@
   "timezone": "Africa/Lagos",
   "launch_url": null,
   "pasteboard_token": "cgdl_9Xk2abcdefghijklmnopqrstuv",
+  "pasteboard_outcome": "token_found",
   "push": {
     "provider": "apns",
     "token": "a1b2c3d4",

@@ -1,6 +1,6 @@
 import Foundation
 
-/// **Internal.** The request context the optional Engage add-on (`ClikgateEngage`) uses to call
+/// **Internal.** The request context the Engage features (`ClikgateEngage`) uses to call
 /// `/v1/sdk/*` on behalf of this installation. Not part of the app-facing API: it is
 /// `@_spi(ClikgateEngage)` and may change without notice.
 ///

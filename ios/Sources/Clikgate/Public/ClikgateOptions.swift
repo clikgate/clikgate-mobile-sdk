@@ -51,6 +51,11 @@ public struct ClikgateOptions: Sendable {
     /// app's (`/resolve` says `matched: false`) opens in an in-app browser (SFSafariViewController)
     /// and is reported as `Clikgate.browserHandoffNotification`. Default true; false drops it (pre-1.4.0 behaviour).
     public var platformDomainBrowserFallback: Bool
+    /// When uninstall tracking is on in the dashboard (and tracking and consent allow it), call
+    /// `registerForRemoteNotifications()` on each launch so an APNs token exists even if the user never allows
+    /// notifications (no prompt, nothing shown). Forward the token with `setPushToken(deviceToken:)`.
+    /// Default true; false leaves push registration to the app.
+    public var automaticPushToken: Bool
 
     public static let defaultApiBaseUrl = URL(string: "https://sdk.clikgate.com")!
 
@@ -63,8 +68,10 @@ public struct ClikgateOptions: Sendable {
         waitForATT: Bool = false,
         attestation: Attestation = .off,
         deferredDeepLinkTimeout: TimeInterval = 5,
-        platformDomainBrowserFallback: Bool = true
+        platformDomainBrowserFallback: Bool = true,
+        automaticPushToken: Bool = true
     ) {
+        self.automaticPushToken = automaticPushToken
         self.platformDomainBrowserFallback = platformDomainBrowserFallback
         self.apiBaseUrl = apiBaseUrl
         self.linkDomains = linkDomains

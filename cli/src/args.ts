@@ -1,3 +1,5 @@
+import { setupCommand, setupSubcommand } from './command';
+
 export type Platform = 'flutter' | 'react-native' | 'expo' | 'android' | 'ios';
 export const PLATFORMS: Platform[] = ['flutter', 'react-native', 'expo', 'android', 'ios'];
 
@@ -115,7 +117,7 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Options {
     throw new UsageError(`Unknown option ${arg}`);
   }
   if (o.json && o.command !== 'doctor') throw new UsageError('--json works with doctor only');
-  if ((o.websiteServer || o.webKey !== undefined) && o.command !== 'website') throw new UsageError('--website-server and --web-key work with the website command only (npx @clikgate/setup website)');
+  if ((o.websiteServer || o.webKey !== undefined) && o.command !== 'website') throw new UsageError('--website-server and --web-key work with the website command only (' + setupSubcommand('website') + ')');
   if (o.command === 'website' && (o.platform || o.sdkKey !== undefined || o.domains || o.app)) {
     throw new UsageError('--platform, --app, --sdk-key and --domain are for app projects, not the website command');
   }
@@ -136,12 +138,18 @@ export function normaliseHost(d: string): string {
     .toLowerCase();
 }
 
-export const HELP = `Set up Clikgate in this app project.
+/** --help, with the usage lines in the command the person typed (src/command.ts). */
+export function helpText(env: NodeJS.ProcessEnv = process.env): string {
+  const usage = [
+    [`${setupCommand(env)} [options]`, 'interactive setup'],
+    [`${setupSubcommand('doctor', env)} [options]`, 'checks only, changes nothing'],
+    [`${setupSubcommand('website', env)} [options]`, 'add the web script (and, with your own server, the /cg/keep route)'],
+  ];
+  const width = Math.max(...usage.map(([c]) => c.length)) + 2;
+  return `Set up Clikgate in this app project.
 
 Usage
-  npx @clikgate/setup [options]          interactive setup
-  npx @clikgate/setup doctor [options]   checks only, changes nothing
-  npx @clikgate/setup website [options]  add the web script (and, with your own server, the /cg/keep route)
+${usage.map(([c, what]) => `  ${c.padEnd(width)}${what}`).join('\n')}
 
 Options
   --dry-run          show the plan and diffs, change nothing
@@ -164,3 +172,4 @@ Options
 
 Exit codes: 0 success, 1 problems found or a step failed, 2 cancelled, 3 sign-in failed.
 Docs: https://clikgate.com/docs/setup-command`;
+}

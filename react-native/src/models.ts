@@ -148,6 +148,16 @@ export interface ClikgateConfig {
    * `true`; `false` drops it, as before 1.5.0.
    */
   platformDomainBrowserFallback?: boolean;
+  /**
+   * Push token for uninstall checks without asking for notification permission. Default `true`.
+   * Only while uninstall tracking is on for the app (and tracking and consent allow it). iOS: the
+   * SDK calls `registerForRemoteNotifications()` on each launch; forward the token from your
+   * AppDelegate with `Clikgate.shared.setPushToken(deviceToken:)` (the Expo plugin and
+   * `npx @clikgate/setup` add that line). Android: the SDK fetches the FCM token when Firebase
+   * Messaging is in the app. A token passed to `setPushToken` always wins. `false` leaves push
+   * registration to the app.
+   */
+  automaticPushToken?: boolean;
 }
 
 /**

@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   s.name         = "clikgate-react-native"
   s.module_name  = "ClikgateReactNative"
   s.version      = package["version"]
-  s.summary      = "Clikgate deep linking, install attribution, referrals and uninstall tracking for React Native (iOS)."
+  s.summary      = "Clikgate deep linking, install attribution, referrals, uninstall tracking and Engage for React Native (iOS)."
   s.homepage     = "https://clikgate.com"
   s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
   s.authors      = { "Clikgate" => "sdk@clikgate.com" }
@@ -21,7 +21,7 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.swift_version = "5.9"
 
-  s.dependency "Clikgate", "~> 2.0.0"
+  s.dependency "Clikgate", "~> 2.1.0"
 
   install_modules_dependencies(s)
 end
