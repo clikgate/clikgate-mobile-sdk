@@ -701,9 +701,13 @@ export function editSwiftPushForward(text: string, target: PushForwardTarget, la
 
 /**
  * UIKit AppDelegate (Objective-C, `.m` / `.mm`): the same forward. Imports the module's generated
- * Swift header with `#import` (works in Objective-C++ too, where `@import` needs -fcxx-modules).
+ * Swift header with `#import` when the app can see it (framework pods), else declares the one method it
+ * calls (static library pods); `@import` would need -fcxx-modules in Objective-C++.
+ * `headerText` is the AppDelegate's `.h` (where `@interface AppDelegate : Superclass` usually is): a new
+ * method calls `super` only when the superclass can have it (`RCTAppDelegate`, `EXAppDelegateWrapper`),
+ * since `[super …]` on a plain `UIResponder` / `NSObject` doesn't compile.
  */
-export function editObjcPushForward(text: string, target: PushForwardTarget, label: string): SourceResult {
+export function editObjcPushForward(text: string, target: PushForwardTarget, label: string, headerText = ''): SourceResult {
   if (hasPushTokenForward(text)) return { kind: 'done' };
   const manual = (reason: string): SourceResult => ({ kind: 'manual', reason: `${label}: ${reason}`, snippet: pushForwardSnippet('objc', target) });
   const unit = unitOf(text);
@@ -723,13 +727,19 @@ export function editObjcPushForward(text: string, target: PushForwardTarget, lab
     const end = /^@end\b/m.exec(text.slice(impl.index));
     if (!end) return manual('the @implementation has no @end');
     const endAt = impl.index + end.index;
+    const superclass = new RegExp(`@interface\\s+${impl[1]}\\s*:\\s*([A-Za-z0-9_]+)`).exec(text + '\n' + headerText)?.[1];
+    const callsSuper = superclass !== 'UIResponder' && superclass !== 'NSObject';
     const method = [
       S,
       '- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken',
       '{',
-      `${unit}if ([[self superclass] instancesRespondToSelector:_cmd]) {`,
-      `${unit}${unit}[super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];`,
-      `${unit}}`,
+      ...(callsSuper
+        ? [
+            `${unit}if ([[self superclass] instancesRespondToSelector:_cmd]) {`,
+            `${unit}${unit}[super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];`,
+            `${unit}}`,
+          ]
+        : []),
       `${unit}${pushForwardLine('objc', target)}`,
       '}',
       E,
@@ -739,7 +749,14 @@ export function editObjcPushForward(text: string, target: PushForwardTarget, lab
   const header = target === 'native' ? 'Clikgate/Clikgate-Swift.h' : 'ClikgateReactNative/ClikgateReactNative-Swift.h';
   const fallback = target === 'native' ? 'Clikgate-Swift.h' : 'ClikgateReactNative-Swift.h';
   if (!out.includes(fallback)) {
-    const imports = [S, `#if __has_include(<${header}>)`, `#import <${header}>`, '#else', `#import "${fallback}"`, '#endif', E].join('\n');
+    // Static library pods (the React Native default, or no use_frameworks!) don't put the generated
+    // Swift header on the app's header search path, and `@import` needs -fcxx-modules in a `.mm`:
+    // declare the one Objective-C method the forward calls instead.
+    const declaration =
+      target === 'native'
+        ? ['@interface Clikgate : NSObject', '@property (class, nonatomic, readonly, strong) Clikgate *shared;', '- (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;', '@end']
+        : ['@interface ClikgateRN : NSObject', '+ (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;', '@end'];
+    const imports = [S, `#if __has_include(<${header}>)`, `#import <${header}>`, '#else', ...declaration, '#endif', E].join('\n');
     const after = afterLastImport(out, /^#import\s+[<"]/gm);
     out = after < 0 ? imports + '\n\n' + out : out.slice(0, after) + '\n' + imports + out.slice(after);
   }

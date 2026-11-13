@@ -424,11 +424,15 @@ export function addPushTokenForwardObjc(contents: string): string {
     ].join('\n');
     out = `${contents.slice(0, at)}${method}\n${contents.slice(at)}`;
   }
+  // Static library pods (the default) don't put the generated Swift header on the app's header
+  // search path, and `@import` needs -fcxx-modules in a `.mm`: declare the one method instead.
   const header = [
     '#if __has_include(<ClikgateReactNative/ClikgateReactNative-Swift.h>)',
     '#import <ClikgateReactNative/ClikgateReactNative-Swift.h>',
     '#else',
-    '#import "ClikgateReactNative-Swift.h"',
+    '@interface ClikgateRN : NSObject',
+    '+ (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;',
+    '@end',
     '#endif',
   ].join('\n');
   if (out.includes('ClikgateReactNative-Swift.h')) return out;
