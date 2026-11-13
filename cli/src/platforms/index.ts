@@ -144,7 +144,10 @@ function planIosPushForward(pb: PlanBuilder, ios: IosProject, target: PushForwar
     return;
   }
   const r = rel(pb.root, file);
-  const result = file.endsWith('.swift') ? editSwiftPushForward(pb.current(r)!, target, r) : editObjcPushForward(pb.current(r)!, target, r);
+  const header = path.join(path.dirname(file), 'AppDelegate.h');
+  const result = file.endsWith('.swift')
+    ? editSwiftPushForward(pb.current(r)!, target, r)
+    : editObjcPushForward(pb.current(r)!, target, r, exists(header) ? read(header) : '');
   source(pb, r, result, 'forward the APNs token to Clikgate (uninstall tracking)', doneLabel);
 }
 

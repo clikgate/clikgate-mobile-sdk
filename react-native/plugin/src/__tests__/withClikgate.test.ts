@@ -695,6 +695,10 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
     expect(text).toContain(
       '#import <ClikgateReactNative/ClikgateReactNative-Swift.h>'
     );
+    // static library pods: the generated header isn't on the app's search path
+    expect(text).toContain(
+      '#else\n@interface ClikgateRN : NSObject\n+ (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;\n@end\n#endif'
+    );
     expect(addPushTokenForwardObjc(text)).toBe(text);
   });
 
@@ -705,7 +709,7 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
     expect(text).toContain('instancesRespondToSelector:_cmd');
     expect(
       text.indexOf('[ClikgateRN setPushTokenWithDeviceToken:deviceToken];')
-    ).toBeLessThan(text.indexOf('@end'));
+    ).toBeLessThan(text.lastIndexOf('@end'));
   });
 
   it('automaticPushToken: false adds neither', () => {

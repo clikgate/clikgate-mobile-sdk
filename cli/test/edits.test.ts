@@ -260,7 +260,17 @@ describe('uninstall tracking: aps-environment and the APNs token forward line', 
     const n = editObjcPushForward(m, 'native', 'AppDelegate.m') as { text: string };
     expect(n.text).toContain('[Clikgate.shared setPushTokenWithDeviceToken:deviceToken];');
     expect(n.text).toContain('instancesRespondToSelector:_cmd');
-    expect(n.text.indexOf('didRegisterForRemoteNotificationsWithDeviceToken')).toBeLessThan(n.text.indexOf('@end'));
+    expect(n.text.indexOf('didRegisterForRemoteNotificationsWithDeviceToken')).toBeLessThan(n.text.lastIndexOf('@end'));
     expect(n.text).toContain('#import <Clikgate/Clikgate-Swift.h>');
+    // static library pods: no generated header on the app's search path, so the method is declared
+    expect(n.text).toContain('#else\n@interface Clikgate : NSObject\n@property (class, nonatomic, readonly, strong) Clikgate *shared;\n- (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;\n@end\n#endif');
+    expect(r.text).toContain('#else\n@interface ClikgateRN : NSObject\n+ (void)setPushTokenWithDeviceToken:(NSData *)deviceToken;\n@end\n#endif');
+
+    // [super …] doesn't compile when the superclass is a plain UIResponder (no UIApplicationDelegate).
+    const plain = editObjcPushForward(m, 'native', 'AppDelegate.m', '@interface AppDelegate : UIResponder <UIApplicationDelegate>\n@end\n') as { text: string };
+    expect(plain.text).toContain('[Clikgate.shared setPushTokenWithDeviceToken:deviceToken];');
+    expect(plain.text).not.toContain('[super');
+    const rn = editObjcPushForward(m, 'react-native', 'AppDelegate.mm', '#import <RCTAppDelegate.h>\n\n@interface AppDelegate : RCTAppDelegate\n@end\n') as { text: string };
+    expect(rn.text).toContain('[super application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];');
   });
 });
