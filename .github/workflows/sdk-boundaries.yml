@@ -38,7 +38,7 @@ jobs:
         run: scripts/check_sdk_boundaries.sh --only android
 
   ios:
-    runs-on: macos-26
+    runs-on: macos-15 # has Xcode 26.x (selected below); macos-26 runners got no capacity in Nov 2026
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4

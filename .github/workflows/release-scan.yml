@@ -54,7 +54,7 @@ jobs:
             clikgate/build/libs/clikgate-sources.jar
 
   ios:
-    runs-on: macos-26
+    runs-on: macos-15 # has Xcode 26.x (selected below); macos-26 runners got no capacity in Nov 2026
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4

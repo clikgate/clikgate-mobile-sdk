@@ -17,7 +17,7 @@ env:
 
 jobs:
   test:
-    runs-on: macos-26
+    runs-on: macos-15 # has Xcode 26.x (selected below); macos-26 runners got no capacity in Nov 2026
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
   release:
     if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/ios-v')
     needs: test
-    runs-on: macos-26
+    runs-on: macos-15 # has Xcode 26.x (selected below); macos-26 runners got no capacity in Nov 2026
     timeout-minutes: 45
     permissions:
       contents: write
