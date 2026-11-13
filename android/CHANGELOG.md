@@ -2,6 +2,10 @@
 
 ## 2.1.0 (unreleased): Engage is part of the SDK
 
+- **Fixed: apps building with Kotlin 1.9 failed to compile against the SDK** ("Module was compiled with an incompatible
+  version of Kotlin. The binary version of its metadata is 2.1.0, expected version is 1.9.0", e.g. React Native 0.76 /
+  Expo 52 and older Flutter apps). The SDK already compiled to Kotlin 1.9 metadata, but its POM asked for
+  kotlin-stdlib 2.1.0; it now asks for kotlin-stdlib 1.9.24.
 - **The Engage add-on is merged into the SDK.** `com.clikgate:clikgate-android` now contains the Engage features
   (`com.clikgate.engage.ClikgateEngage`: referral links and stats, leaderboards, promo codes, share helpers) for apps
   without a backend. There is no `com.clikgate:clikgate-engage` artifact any more; the API and package names are

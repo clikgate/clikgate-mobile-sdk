@@ -57,6 +57,10 @@ android {
 kotlin {
     // Explicit API mode for the library sources only (not tests).
     explicitApi()
+    // The published POM asks for this kotlin-stdlib instead of the compiler's (2.1.0), whose
+    // 2.1 metadata a Kotlin 1.9 compiler can't read (React Native 0.76 / Expo 52 apps build
+    // with Kotlin 1.9.2x). apiVersion 1.9 below keeps the code within this stdlib's API.
+    coreLibrariesVersion = "1.9.24"
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
         // Emit metadata readable by apps still on Kotlin 1.9 (common in Flutter apps).
