@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:clikgate_flutter/clikgate_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'src/config.dart';
 import 'src/push.dart';
@@ -20,8 +22,21 @@ ReferralFeatures createFeatures() => switch (ExampleConfig.variant) {
       final other => throw ArgumentError('CLIKGATE_VARIANT must be backend or engage, not "$other"'),
     };
 
+/// True when the app is the iOS RunnerTests host (XCTest): the plugin's unit tests expect an unconfigured
+/// SDK, so the example then neither configures Clikgate nor starts. Answered by the example's own
+/// AppDelegate (`com.clikgate.example/host`), not by the plugin.
+Future<bool> isUnitTestHost() async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return false;
+  try {
+    return await const MethodChannel('com.clikgate.example/host').invokeMethod<bool>('isUnitTestHost') ?? false;
+  } on MissingPluginException {
+    return false;
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (await isUnitTestHost()) return runApp(const SizedBox.shrink());
   await Clikgate.configure(
     sdkKey: ExampleConfig.sdkKey,
     linkDomains: [ExampleConfig.linkDomain],
