@@ -51,7 +51,7 @@ jobs:
       - run: npm run build
       - name: The package contains only the bundle, the doctor schema, README and LICENSE
         run: |
-          npm pack --dry-run --json | node -e "
+          npm pack --dry-run --json --ignore-scripts | node -e "
             const files = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0].files.map(f => f.path).sort();
             const allowed = ['LICENSE', 'README.md', 'dist/cli.cjs', 'package.json', 'schema/doctor-report.schema.json'];
             const extra = files.filter(f => !allowed.includes(f));
