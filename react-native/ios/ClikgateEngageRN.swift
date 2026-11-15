@@ -11,7 +11,7 @@ import ClikgateEngage
 /// which give each app its own version of the link and record the share.
 @objc(ClikgateEngageRN)
 public final class ClikgateEngageRN: NSObject {
-    /// Change 26, R.28: the referral link saved for the signed-in customer (`{link, token}`).
+    /// The referral link saved for the signed-in customer (`{link, token}`).
     @objc public static func savedLink(_ programId: String, resolve: @escaping (NSDictionary) -> Void) {
         _ = ClikgateEngage.referrals   // prepares links after identifyUser() from now on
         let (data, token) = Clikgate.shared.savedLinkJSON(programId: programId)

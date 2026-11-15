@@ -65,7 +65,7 @@ export interface ClikgateEngageOptions {
   linking?: EngageLinking;
   /** Default: the native `ClikgateEngage` module. */
   shareLink?: EngageLinkSharer;
-  /** Default: the native `ClikgateEngage` module (change 26 saved referral links). */
+  /** Default: the native `ClikgateEngage` module (saved referral links). */
   savedLinks?: EngageSavedLinks;
   /** Per-attempt timeout (default 10 000 ms, the contract's timeout). */
   timeoutMs?: number;
@@ -185,7 +185,7 @@ export class ClikgateEngage {
     }): Promise<ReferralLink> => {
       const programId = requireString(options?.programId, 'programId');
       const displayName = options.displayName ?? null;
-      // Change 26, R.28: the link saved for the signed-in customer answers at once (offline too)
+      // The link saved for the signed-in customer answers at once (offline too)
       // and is refreshed in the background
       const saved = await this.savedLinks.saved(programId);
       if (displayName == null && saved.link != null) {
@@ -482,7 +482,7 @@ async function nativeShareLink(
   return NativeClikgateEngage.shareLink(args);
 }
 
-/** Change 26, R.28: the referral links the native SDK keeps for the signed-in customer. */
+/** The referral links the native SDK keeps for the signed-in customer. */
 export interface EngageSavedLinks {
   saved(programId: string): Promise<{ link: unknown; token: string | null }>;
   save(programId: string, link: unknown, token: string): Promise<void>;

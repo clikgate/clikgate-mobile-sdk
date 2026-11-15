@@ -56,9 +56,9 @@ final class PersistedState: @unchecked Sendable {
     /// The launch URL was already delivered locally (consent buffering): don't deliver the
     /// install response's direct deep link for it again.
     var launchUrlDeliveredLocally = false
-    /// Change 26, R.1: only the restored Keychain item came back (another phone); sent until `/install` succeeds.
+    /// Only the restored Keychain item came back (another phone); sent until `/install` succeeds.
     var keychainRestored = false
-    /// Change 26, KC.6: Apple's app record tries (at most 2: this launch and the next) and whether it was accepted.
+    /// Apple's app record tries (at most 2: this launch and the next) and whether it was accepted.
     var appRecordTries = 0
     var appRecordSent = false
 
@@ -288,7 +288,7 @@ final class EventQueue {
     }
 }
 
-/// Change 26, R.28: the signed-in customer's referral links (`links.json`: `{"c": owner, "l": {programId: link}}`),
+/// The signed-in customer's referral links (`links.json`: `{"c": owner, "l": {programId: link}}`),
 /// read and written synchronously by Engage (and the Flutter / React Native bridges). `owner` is the hashed
 /// customer ID the core sets; a link is only answered or saved for the current owner, and another owner (sign-out,
 /// another customer, opt-out, private mode) empties the file.

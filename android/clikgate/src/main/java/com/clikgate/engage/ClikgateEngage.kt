@@ -35,7 +35,7 @@ public object ClikgateEngage {
     /** Version of the Engage features (the SDK version). */
     public const val version: String = com.clikgate.BuildConfig.SDK_VERSION
 
-    // Change 26, R.28: the client registers with the core to prepare the signed-in customer's referral links
+    // The client registers with the core to prepare the signed-in customer's referral links
     // in the background after identifyUser() (EngageClient.prepareLink)
     internal val client = EngageClient()
 
@@ -83,7 +83,7 @@ public object EngageReferrals {
         client.prepareLinks()
         val body = JSONObject().put("program_id", programId)
         if (displayName != null) body.put("display_name", displayName)
-        // Change 26, R.28: the link saved for this customer answers at once (offline too) and is refreshed
+        // The link saved for this customer answers at once (offline too) and is refreshed
         // in the background; the API is called first only when nothing is saved (or to set a display name).
         val saved = if (displayName == null) com.clikgate.Clikgate.coreOrNull()?.savedLink(programId) else null
         if (saved != null) client.deliver(callback, ClikgateResult.Success(EngageJson.referralLink(saved)))

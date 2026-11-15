@@ -548,7 +548,7 @@ public object Clikgate {
     }
 
     /**
-     * Internal (Flutter / React Native Engage, change 26 R.28): the link JSON saved for [programId] for the
+     * Internal (Flutter / React Native Engage): the link JSON saved for [programId] for the
      * signed-in customer (or null) and the token to pass to [saveLinkJson]. Not for apps.
      */
     @ClikgateInternalApi

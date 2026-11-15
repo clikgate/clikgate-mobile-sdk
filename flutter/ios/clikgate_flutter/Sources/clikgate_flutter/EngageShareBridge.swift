@@ -32,7 +32,7 @@ final class EngageShareBridge: NSObject, FlutterPlugin {
         case "shareLink": shareLink(args, result)
         case "shareText": shareText(args, result)
         case "openUrl": openUrl(args, result)
-        // Change 26, R.28: the link saved for the signed-in customer (Dart's createLink)
+        // The link saved for the signed-in customer (Dart's createLink)
         case "savedLink":
             _ = ClikgateEngage.referrals   // prepares links after identifyUser() from now on
             let programId = args["programId"] as? String ?? ""

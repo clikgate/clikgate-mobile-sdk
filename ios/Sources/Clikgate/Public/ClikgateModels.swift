@@ -90,7 +90,7 @@ public struct ClikgateAttribution: Sendable {
     public let clickId: String?
     let clickedAtString: String?
     public let isReinstall: Bool
-    /// Change 26: the app was already on this phone before your first release with Clikgate (an existing user,
+    /// The app was already on this phone before your first release with Clikgate (an existing user,
     /// now tracked). ``status`` is then ``Status/organic``: existing users are never attributed.
     public let isExistingUser: Bool
     public internal(set) var installId: String?
@@ -108,7 +108,7 @@ public struct ClikgateAttribution: Sendable {
 
     @_optimize(size)
     init(json j: JSONObject) {
-        // Change 26: the wire status `existing` is `organic` + isExistingUser (also when read back from state.json)
+        // The wire status `existing` is `organic` + isExistingUser (also when read back from state.json)
         isExistingUser = j.str("status") == "existing" || j.bool("is_existing_user") == true
         status = isExistingUser ? .organic : j.str("status").flatMap(Status.init(rawValue:)) ?? .pending
         matchType = j.str("match_type")

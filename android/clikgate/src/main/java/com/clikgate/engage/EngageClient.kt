@@ -52,7 +52,7 @@ internal class EngageClient(
     @Volatile var retryDelayMs: Long = 500,
 ) : com.clikgate.internal.LinkPreparer {
     /**
-     * Change 26, R.28: the core's "prepare this program's link" listener after `identifyUser()` (the core saves
+     * The core's "prepare this program's link" listener after `identifyUser()` (the core saves
      * every link answer for the customer it was made for). Here rather than in a class of its own: the Engage
      * size budget.
      */
@@ -85,7 +85,7 @@ internal class EngageClient(
 
     fun <T> fail(callback: ClikgateCallback<T>?, error: ClikgateError) = deliver(callback, ClikgateResult.Failure(error))
 
-    /** [callback] null: a background call whose answer only the core keeps (change 26 saved links). */
+    /** [callback] null: a background call whose answer only the core keeps (saved referral links). */
     fun <T> deliver(callback: ClikgateCallback<T>?, result: ClikgateResult<T>) {
         if (callback != null) main.post { callback.onResult(result) }
     }
@@ -181,7 +181,7 @@ internal class EngageClient(
                     try {
                         @Suppress("UNCHECKED_CAST")
                         val value = EngageJson.parse(kind, json) as T
-                        // Change 26, R.28: a link answer is saved for the customer it was made for
+                        // A link answer is saved for the customer it was made for
                         if (kind == EngageJson.LINK) Clikgate.coreOrNull()?.saveLinkAnswer(body, ctx.customerUserId, json)
                         ClikgateResult.Success(value)
                     } catch (e: ClikgateError) {

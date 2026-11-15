@@ -98,7 +98,7 @@ internal object Json {
 
     fun attribution(o: JSONObject?, installId: String?): ClikgateAttribution {
         if (o == null) return pendingAttribution(installId)
-        // Change 26: the wire status `existing` is reported as `organic` with isExistingUser
+        // The wire status `existing` is reported as `organic` with isExistingUser
         val wire = o.str("status") ?: ClikgateAttribution.STATUS_PENDING
         val existing = wire == "existing"
         return ClikgateAttribution(

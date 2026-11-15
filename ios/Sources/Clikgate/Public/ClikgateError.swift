@@ -77,11 +77,11 @@ public struct ClikgateError: Error, Sendable, Equatable, LocalizedError, CustomN
     public static let windowExpired = "window_expired"
     public static let selfReferral = "self_referral"
     public static let referrerBlocked = "referrer_blocked"
-    /// Change 26: `applyCode` from an installation that already had the app before Clikgate was added
+    /// `applyCode` from an installation that already had the app before Clikgate was added
     /// (an existing user can't be referred). Check with ``isExistingUser``.
     public static let existingUser = "existing_user"
 
-    /// Change 26: the typed check for ``existingUser`` (409 from `applyCode` / Engage `codes.redeem`).
+    /// The typed check for ``existingUser`` (409 from `applyCode` / Engage `codes.redeem`).
     public var isExistingUser: Bool { code == Self.existingUser }
     // Link creation, stats, leaderboard and promo-code codes are declared by the Engage features.
 

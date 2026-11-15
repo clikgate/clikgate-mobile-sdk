@@ -45,7 +45,7 @@ actor ClikgateCore {
     let testMode: Bool
     /// `goal()` completions by queue id, settled when Clikgate answers (in memory only).
 
-    /// Change 26, R.28: the signed-in customer's saved referral links (synchronous, for Engage).
+    /// The signed-in customer's saved referral links (synchronous, for Engage).
     nonisolated let links: SavedLinks
 
     init(sdkKey: String, options: ClikgateOptions, deps: ClikgateDependencies, logger: ClikgateLogger,
@@ -129,7 +129,7 @@ actor ClikgateCore {
         if state.firstLaunchAt == nil { state.firstLaunchAt = deps.clock.now() }
         if let previous = previous, previous != newId {
             state.keychainPreviousInstallationId = previous
-            // Change 26, R.1: the marker never survives a restore or Quick Start: without it, the ID is another phone's
+            // The marker never survives a restore or Quick Start: without it, the ID is another phone's
             state.keychainRestored = marker == nil
             logger.info("Reinstall detected (Keychain installation id present)")
         }
@@ -138,7 +138,7 @@ actor ClikgateCore {
         save()
     }
 
-    // MARK: - Existing users (change 26)
+    // MARK: - Existing users
 
     /// The phone's install date: the Documents directory's creation, or the debug date in Xcode builds with a test key.
     private func platformInstalledAt() -> Date? {
@@ -171,7 +171,7 @@ actor ClikgateCore {
         }
     }
 
-    // MARK: - Saved referral links (change 26, R.28; Engage creates them, `links` keeps them)
+    // MARK: - Saved referral links (Engage creates them, `links` keeps them)
 
     /** The signed-in customer (hashed) and the programs to prepare links for, or nil: nothing is saved or used. */
     private func refreshLinksOwner() {

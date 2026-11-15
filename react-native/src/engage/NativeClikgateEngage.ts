@@ -11,7 +11,7 @@ import { TurboModuleRegistry } from 'react-native';
 export interface Spec extends TurboModule {
   shareLink(args: UnsafeObject): Promise<boolean>;
   /**
-   * Change 26, R.28: the referral link the native SDK saved for the signed-in customer
+   * The referral link the native SDK saved for the signed-in customer
    * (`{link: JSON string | null, token: string | null}`); the first call also starts preparing links
    * after each `identifyUser()`.
    */

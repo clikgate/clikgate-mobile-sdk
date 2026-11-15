@@ -117,7 +117,7 @@ public data class ClikgateAttribution(
     val installId: String?,
     val link: ClikgateLink?,
     /**
-     * Change 26: true when the app was already on this phone before your first release with Clikgate (an
+     * True when the app was already on this phone before your first release with Clikgate (an
      * existing user, now tracked). [status] is then `organic`: existing users are never attributed.
      */
     val isExistingUser: Boolean = false,
@@ -211,7 +211,7 @@ public open class ClikgateError(
         public const val SDK_VERSION_BLOCKED: String = "sdk_version_blocked"
 
         /**
-         * Change 26: the installation is an existing user (the app was on the phone before the app's Clikgate
+         * The installation is an existing user (the app was on the phone before the app's Clikgate
          * start date), so it can't be referred. Always delivered as [ExistingUserError].
          */
         public const val EXISTING_USER: String = "existing_user"
@@ -219,7 +219,7 @@ public open class ClikgateError(
 }
 
 /**
- * Change 26 (RF.1): `applyCode` (or Engage `codes.redeem`) from an installation that already had the app
+ * `applyCode` (or Engage `codes.redeem`) from an installation that already had the app
  * before Clikgate was added: existing users can't be referred. A [ClikgateError] with code
  * [ClikgateError.EXISTING_USER], so existing `catch (e: ClikgateError)` code keeps working.
  */

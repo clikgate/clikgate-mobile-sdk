@@ -41,7 +41,7 @@ public enum class Attestation {
  *   out, the SDK version isn't blocked and consent allows it. Never asks for notification
  *   permission. A token passed to [Clikgate.setPushToken] in the same launch always wins.
  *   Default true; false = only [Clikgate.setPushToken] tokens are used.
- * @property existingUser Change 26: set true when your app's own storage shows this person used the app
+ * @property existingUser Set true when your app's own storage shows this person used the app
  *   before (for example a saved signed-in session), read **before** `configure()`. Clikgate uses the
  *   phone's install date first; this hint only counts when that date can't be read. Default false.
  * @property debugPlatformInstalledAt Debug builds with a test (sandbox) SDK key only: pretend the app

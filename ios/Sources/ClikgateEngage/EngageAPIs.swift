@@ -26,7 +26,7 @@ public final class ClikgateEngageReferrals: Sendable {
         register()
     }
 
-    /// Change 26, R.28: after each identifyUser(), the signed-in customer's missing links are created in the
+    /// After each identifyUser(), the signed-in customer's missing links are created in the
     /// background (the core keeps only the first registration).
     func register() {
         Clikgate.shared.onCustomerIdentified { [self] programs in

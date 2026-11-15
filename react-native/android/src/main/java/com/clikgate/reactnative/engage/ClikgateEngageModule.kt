@@ -48,7 +48,7 @@ class ClikgateEngageModule(reactContext: ReactApplicationContext) : NativeClikga
     }
   }
 
-  /** Change 26, R.28: the referral link saved for the signed-in customer, and its token. */
+  /** The referral link saved for the signed-in customer, and its token. */
   @OptIn(com.clikgate.ClikgateInternalApi::class)
   override fun savedLink(programId: String, promise: Promise) {
     ClikgateEngage.referrals // prepares links after identifyUser() from now on

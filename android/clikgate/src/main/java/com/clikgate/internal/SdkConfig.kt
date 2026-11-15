@@ -33,7 +33,7 @@ internal data class SdkConfig(
     val privateMode: Boolean = false,
     /** `allow_labels` (absent = on): false in private mode without "Allow labels in private mode". */
     val allowLabels: Boolean = true,
-    // ---- change 26 ----
+    // ---- existing users ----
     /** `environment` (`production` / `sandbox`), null when the server sent none. */
     val environment: String? = null,
     /** `existing_users.start_at` in ms: the app's Clikgate start date for this platform (R.3). */
