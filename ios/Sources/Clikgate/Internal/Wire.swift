@@ -203,7 +203,9 @@ struct ConsentPayload: Sendable {
     }
 }
 
-struct InstallRequest: Sendable {
+/// `@unchecked`: `existingUser` holds only strings, numbers and booleans (immutable values), built once per
+/// launch before the request is handed to the network queue.
+struct InstallRequest: @unchecked Sendable {
     var installationId: String
     var keychainPreviousInstallationId: String?
     var appVersion: String
