@@ -1,3 +1,9 @@
+## 2.1.2: Free plan link domain is ciz.ng
+
+- The Free plan's shared link domain is now `ciz.ng` (it was `clk.ng`, which Clikgate never put live). Links on
+  `ciz.ng` that aren't this app's open in the browser, the same as `ciz.to` and `dev.ciz.to`.
+  Nothing else changes (native SDKs 2.1.2).
+
 ## 2.1.0 (unreleased): Engage is part of the plugin
 
 - **The `clikgate_engage` package is merged into `clikgate_flutter`.** Import the Engage features with
@@ -115,7 +121,7 @@ Nothing has been published yet: this patch also carries everything under "Unrele
 
 - Requires the native SDKs 1.4.0 (`com.clikgate:clikgate-android:1.4.0`, `Clikgate ~> 1.4.0`).
 - New: `Clikgate.onBrowserHandoff` (`Stream<ClikgateBrowserHandoff>`, `url` + `host`): another
-  organisation's link on a shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) that the native SDK
+  organisation's link on a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) that the native SDK
   opened in an in-app browser (Custom Tabs / SFSafariViewController) instead of the app. `onDeepLink`
   doesn't fire for it. Buffered and replayed like deep links.
 - New `configure(platformDomainBrowserFallback: true)` option (false = old behaviour).

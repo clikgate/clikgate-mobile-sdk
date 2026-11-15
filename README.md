@@ -64,13 +64,13 @@ How to run each one and what to test on devices: [docs/TESTING_DEEP_LINKS.md](do
 
 ## Link domains
 
-Pass your app's **link subdomain** (`yourapp.ciz.to`, or `yourapp.clk.ng` on the Free plan; debug builds also `yourapp.dev.ciz.to`) and **every**
+Pass your app's **link subdomain** (`yourapp.ciz.to`, or `yourapp.ciz.ng` on the Free plan; debug builds also `yourapp.dev.ciz.to`) and **every**
 custom link domain of your domain group as `linkDomains` (aliases such as `ybr.ng` and `go.yourbrand.com` serve
 the same links) and declare each one in the app: iOS Associated Domains
 `applinks:<domain>`, and an Android `autoVerify` intent filter host. The OS opens the app only for
 declared domains. The SDKs also add the domains the server returns in `/v1/sdk/config`
 (`link_domains`) and log a warning for each one missing from `linkDomains`. Never declare a shared domain
-(`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`): from change 09 their app-links files list no customer app, so
+(`ciz.to`, `ciz.ng`, `dev.ciz.to`): from change 09 their app-links files list no customer app, so
 they can't open yours. Platform details are in each guide.
 
 ## Consent, privacy and growth features (SDK 1.2.0, change 03)
@@ -155,7 +155,7 @@ or link. A/B tests: the server picks the version and its path arrives as usual. 
 
 ## Shared-domain links of other organisations (native SDKs 1.4.0, Flutter 1.4.0, React Native 1.5.0)
 
-`ciz.to`, `clk.ng`, `clkg.to` and `dev.ciz.to` are Clikgate's shared platform domains, so the OS can
+`ciz.to`, `ciz.ng` and `dev.ciz.to` are Clikgate's shared platform domains, so the OS can
 open an app for another organisation's link on them. When `/resolve` answers `matched: false` for
 such a link, the SDKs open it in an in-app browser (Android Custom Tabs in an explicit browser
 package, iOS `SFSafariViewController`; never an implicit intent or `UIApplication.open`, which could
@@ -170,7 +170,7 @@ Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `
   `denied` (no more `tracking_allowed`).
 - Goals keep one random `Idempotency-Key` per request, reused by its retries.
 - Apps open links from their own **app link subdomain** (`yourapp.ciz.to`, debug builds `yourapp.dev.ciz.to`)
-  and the organisation's custom domains, never from the shared domains `ciz.to`, `clk.ng`, `clkg.to` or
+  and the organisation's custom domains, never from the shared domains `ciz.to`, `ciz.ng` or
   `dev.ciz.to`. The setup command writes that, and `doctor` flags shared domains left in a project.
 - Leaderboard trophies, challenges and progress are server API and webhooks only: no SDK has them.
 
@@ -181,9 +181,9 @@ Contract: [shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 09 additions"
 
 - Deep links into your app work on every plan, Free included: direct links without a limit, deferred deep
   links 1,000 a month on Free and 10,000 on Starter (no monthly cap on Growth and up).
-- On Free the app's link subdomain is `yourapp.clk.ng` in release builds (`yourapp.ciz.to` on Starter and up);
+- On Free the app's link subdomain is `yourapp.ciz.ng` in release builds (`yourapp.ciz.to` on Starter and up);
   debug builds use `yourapp.dev.ciz.to` on every plan. The setup command and `doctor` handle both. An app
-  subdomain under `clk.ng` is not a shared domain.
+  subdomain under `ciz.ng` is not a shared domain.
 - Since change 20, basic install attribution and goals work on every plan, up to the plan's allowance. Only when
   attribution is switched off for the app (deep-link-only mode) does `goal()` log one warning and do nothing (no
   error); attribution reads `organic`.

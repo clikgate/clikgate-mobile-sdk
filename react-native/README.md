@@ -50,7 +50,7 @@ never an email or phone number. Guide: https://clikgate.com/docs/identify-users
 ## Deep links on every plan
 
 Deep links work on every plan, Free included (deferred deep links: 1,000 a month on Free, 10,000 on Starter). On
-Free the app's link subdomain is `yourapp.clk.ng` in release builds; debug builds use `yourapp.dev.ciz.to`.
+Free the app's link subdomain is `yourapp.ciz.ng` in release builds; debug builds use `yourapp.dev.ciz.to`.
 Install attribution and `goal` work on every plan, Free through Enterprise, up to the plan's allowance: basic app
 attribution is included in all of them. `goal` does nothing only when app attribution is switched off for the app
 (deep-link-only mode), where it logs one warning (no error). See the platform guide.

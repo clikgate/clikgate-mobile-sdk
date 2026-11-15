@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 2.1.2: Free plan link domain is ciz.ng
+
+- The Free plan's shared link domain is now `ciz.ng` (it was `clk.ng`, which Clikgate never put live). Links on
+  `ciz.ng` that aren't this app's open in the browser, the same as `ciz.to` and `dev.ciz.to`.
+  Nothing else changes (native SDKs 2.1.2).
+
 ## 2.1.1 (unreleased): Existing users
 
 - **Existing users.** The first `/install` now says how and when the app arrived on the phone, so
@@ -123,7 +129,7 @@ Requires the native SDKs 1.4.0 (`com.clikgate:clikgate-android:1.4.0`, `Clikgate
 ### Added
 - `Clikgate.onBrowserHandoff(listener)` (returns the unsubscribe function; types `ClikgateBrowserHandoff
   {url, host}` and `BrowserHandoffListener`): another organisation's link on a shared domain (`ciz.to`,
-  `clk.ng`, `clkg.to`, `dev.ciz.to`) that the native SDK opened in an in-app browser (Android Custom Tabs,
+  `ciz.ng`, `dev.ciz.to`) that the native SDK opened in an in-app browser (Android Custom Tabs,
   iOS SFSafariViewController) instead of the app. `onDeepLink` doesn't fire for it. Buffered (latest 10)
   and replayed like deep links.
 - `ClikgateConfig.platformDomainBrowserFallback` (default `true`; `false` = old behaviour).

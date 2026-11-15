@@ -56,8 +56,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # An app's own link subdomain plus a custom domain: the CLI refuses shared domains (ciz.to, clk.ng,
-  # clkg.to, dev.ciz.to). Offline, debug builds get the app's test host <sub>.dev.ciz.to.
+  # An app's own link subdomain plus a custom domain: the CLI refuses shared domains (ciz.to, ciz.ng,
+  # dev.ciz.to). Offline, debug builds get the app's test host <sub>.dev.ciz.to.
   LIVE_DOMAINS: acme.ciz.to,go.example.com
   TEST_DOMAIN: acme.dev.ciz.to
   TEST_KEY: cg_sdk_test_ci0000000000

@@ -12,7 +12,7 @@ import UIKit
 @objc(Clikgate)
 public final class Clikgate: NSObject, @unchecked Sendable {
     /// The native SDK version.
-    public static let sdkVersion = "2.1.1"
+    public static let sdkVersion = "2.1.2"
 
     @objc public static let shared = Clikgate()
 

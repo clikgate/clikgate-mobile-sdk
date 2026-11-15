@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.2
+
+- Installs the 2.1.2 SDKs. Free plan apps get `yourapp.ciz.ng` (was `yourapp.clk.ng`) as their link domain, and
+  `ciz.ng` is treated as a shared domain. Constraints `^2.1.2` / `~> 2.1`.
+
 ## 2.1.1
 
 - Installs the 2.1.1 SDKs (existing users: the first launch says how and when the app arrived on the phone, so people
@@ -52,15 +57,15 @@
 ## 1.1.0 (unreleased): app link subdomains (change 09)
 
 - **Free plan app subdomains (change 10, folded into this unreleased version).** On the Free plan the app's live
-  hostname is `yourapp.clk.ng`: release builds get it from `app_link_domains.release`, debug builds still get
-  `yourapp.dev.ciz.to` from `app_link_domains.debug`. `yourapp.clk.ng` is an app subdomain, not a shared domain
-  (the shared-domain check stays an exact match on `ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`), so setup writes it
-  and doctor passes it. Offline mode accepts `--domain yourapp.clk.ng` and derives `yourapp.dev.ciz.to` for debug
-  builds. Prompts and messages name the plan's parent (`ciz.to` or `clk.ng`) from the server's `link_hostnames`.
+  hostname is `yourapp.ciz.ng`: release builds get it from `app_link_domains.release`, debug builds still get
+  `yourapp.dev.ciz.to` from `app_link_domains.debug`. `yourapp.ciz.ng` is an app subdomain, not a shared domain
+  (the shared-domain check stays an exact match on `ciz.to`, `ciz.ng`, `dev.ciz.to`), so setup writes it
+  and doctor passes it. Offline mode accepts `--domain yourapp.ciz.ng` and derives `yourapp.dev.ciz.to` for debug
+  builds. Prompts and messages name the plan's parent (`ciz.to` or `ciz.ng`) from the server's `link_hostnames`.
 
 - **App links on the app's own subdomain (N.1).** Release builds get the hosts in the app's
   `app_link_domains.release` (`yourapp.ciz.to` plus the organisation's active custom domains), debug builds
-  also `app_link_domains.debug` (`yourapp.dev.ciz.to`). Never a shared domain (`ciz.to`, `clk.ng`, `clkg.to`,
+  also `app_link_domains.debug` (`yourapp.dev.ciz.to`). Never a shared domain (`ciz.to`, `ciz.ng`,
   `dev.ciz.to`), on iOS entitlements and Android intent filters alike. Each platform's files get only its own
   app's hosts.
 - An unconfirmed link subdomain (apps from before change 09) is confirmed after asking, with

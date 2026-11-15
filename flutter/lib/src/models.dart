@@ -246,7 +246,7 @@ class ClikgateDeepLink {
       '${blockMessage != null ? ', blocked' : ''})';
 }
 
-/// A link on a shared Clikgate domain (`ciz.to`, `clk.ng`, `clkg.to`,
+/// A link on a shared Clikgate domain (`ciz.to`, `ciz.ng`,
 /// `dev.ciz.to`) that isn't this app's: the native SDK opened [url] in an
 /// in-app browser (Custom Tabs / SFSafariViewController) instead of
 /// delivering a deep link.

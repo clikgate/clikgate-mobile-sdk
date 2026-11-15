@@ -47,7 +47,7 @@ public struct ClikgateOptions: Sendable {
     public var attestation: Attestation
     /// How long `attribution()` waits for the first `/install` before resolving with `pending`.
     public var deferredDeepLinkTimeout: TimeInterval
-    /// A link on a shared Clikgate domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) that isn't this
+    /// A link on a shared Clikgate domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) that isn't this
     /// app's (`/resolve` says `matched: false`) opens in an in-app browser (SFSafariViewController)
     /// and is reported as `Clikgate.browserHandoffNotification`. Default true; false drops it (pre-1.4.0 behaviour).
     public var platformDomainBrowserFallback: Bool
