@@ -265,6 +265,8 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
         }
         options.platformDomainBrowserFallback = (args["platformDomainBrowserFallback"] as? Bool) ?? true
         options.automaticPushToken = automaticPushToken
+        options.existingUser = (args["existingUser"] as? Bool) ?? false
+        options.debugPlatformInstalledAt = (args["debugPlatformInstalledAtMs"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue / 1000) }
         Clikgate.setWrapper(name: "flutter", version: (args["wrapperVersion"] as? String) ?? "0.0.0")
         Clikgate.configure(sdkKey: sdkKey, options: options)
         result(nil)
@@ -315,6 +317,7 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
             "clickId": nullable(a.clickId),
             "clickedAt": nullable(a.clickedAtRaw),
             "isReinstall": a.isReinstall,
+            "isExistingUser": a.isExistingUser,
             "installId": nullable(a.installId),
             "link": nullable(a.link.map(map)),
         ]

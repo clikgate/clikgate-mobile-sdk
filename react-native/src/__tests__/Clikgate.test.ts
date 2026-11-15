@@ -4,6 +4,7 @@ import { resetClikgateForTesting } from '../Clikgate';
 import {
   Clikgate,
   ClikgateError,
+  ExistingUserError,
   VERSION,
   type ClikgateDeepLink,
 } from '../index';
@@ -47,6 +48,8 @@ describe('configure', () => {
       deferredDeepLinkTimeoutMs: 5000,
       platformDomainBrowserFallback: true,
       automaticPushToken: true,
+      existingUser: false,
+      debugPlatformInstalledAtMs: null,
       wrapperVersion: VERSION,
     });
   });
@@ -74,8 +77,12 @@ describe('configure', () => {
       deferredDeepLinkTimeoutMs: 2500,
       platformDomainBrowserFallback: false,
       automaticPushToken: false,
+      existingUser: true,
+      debugPlatformInstalledAt: new Date(1700000000000),
     });
     expect(mockModule.configure.mock.calls[0]?.[0]).toMatchObject({
+      existingUser: true,
+      debugPlatformInstalledAtMs: 1700000000000,
       apiBaseUrl: 'http://10.0.2.2:8000',
       logLevel: 'debug',
       environment: 'sandbox',
@@ -225,10 +232,35 @@ describe('method and argument mapping', () => {
       clickId: null,
       clickedAt: null,
       isReinstall: false,
+      isExistingUser: false,
       installId: null,
       link: null,
       isAttributed: false,
     });
+  });
+
+  it('reports an existing user as organic with the flag (change 26)', async () => {
+    mockModule.getAttribution.mockResolvedValueOnce({
+      status: 'organic',
+      isExistingUser: true,
+    });
+    const a = await Clikgate.getAttribution();
+    expect(a.status).toBe('organic');
+    expect(a.isExistingUser).toBe(true);
+  });
+});
+
+describe('existing users (change 26)', () => {
+  it('maps the existing_user rejection to ExistingUserError', () => {
+    const e = ClikgateError.fromNative({
+      code: 'existing_user',
+      message: 'already had the app',
+      userInfo: { status: 409 },
+    });
+    expect(e).toBeInstanceOf(ExistingUserError);
+    expect(e).toBeInstanceOf(ClikgateError);
+    expect(e.code).toBe(ClikgateError.existingUser);
+    expect(e.status).toBe(409);
   });
 });
 

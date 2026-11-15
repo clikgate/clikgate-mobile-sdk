@@ -179,3 +179,15 @@ from SDK endpoints and the hosted page; the app owner still sees them, flagged, 
   functionality, analytics), app activity (goals you send; analytics), and, if you enable
   uninstall tracking, the push token. Data is encrypted in transit; users can request deletion
   (via your app's process, which calls the privacy API).
+
+## Existing users (Change 26)
+
+To tell people who had the app before the business added Clikgate from new installs, the first `/install` also
+sends: how the app was installed (store, TestFlight, Xcode, side-loaded, debug build, preloaded), when it was put on
+this phone (rounded down to the hour; the server keeps the day only), Android's last-update time (hour) and version
+code, and the phone's clock time. Android also sends a keyed hash of `ANDROID_ID` (per app, never the ID itself) so a
+reinstall on the same phone isn't counted as a new phone. When the person opted out or denied attribution consent, only
+"installed before the start date: yes / no" is sent. iOS 16+, while referrals are on: Apple's signed app record
+(`AppTransaction`) once; the server keeps only the original download date. iOS reads the creation date of the app's
+own Documents directory (privacy manifest: file timestamp, `C617.1`). Engage keeps the signed-in customer's referral
+links on the phone, owned by a hash of the customer ID, deleted on sign-out.

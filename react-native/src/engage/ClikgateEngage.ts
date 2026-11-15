@@ -65,6 +65,8 @@ export interface ClikgateEngageOptions {
   linking?: EngageLinking;
   /** Default: the native `ClikgateEngage` module. */
   shareLink?: EngageLinkSharer;
+  /** Default: the native `ClikgateEngage` module (change 26 saved referral links). */
+  savedLinks?: EngageSavedLinks;
   /** Per-attempt timeout (default 10 000 ms, the contract's timeout). */
   timeoutMs?: number;
   /** Wait before the single network-error retry (default 500 ms). */
@@ -126,6 +128,7 @@ export class ClikgateEngage {
   private readonly shareSheet: EngageShareSheet;
   private readonly linking: EngageLinking;
   private readonly shareLink: EngageLinkSharer;
+  private readonly savedLinks: EngageSavedLinks;
 
   constructor(options: ClikgateEngageOptions = {}) {
     const fetchFn =
@@ -141,6 +144,7 @@ export class ClikgateEngage {
     this.shareSheet = options.shareSheet ?? Share;
     this.linking = options.linking ?? Linking;
     this.shareLink = options.shareLink ?? nativeShareLink;
+    this.savedLinks = options.savedLinks ?? nativeSavedLinks;
   }
 
   private async callShareLink(args: Record<string, unknown>): Promise<boolean> {
@@ -180,17 +184,15 @@ export class ClikgateEngage {
       displayName?: string | null;
     }): Promise<ReferralLink> => {
       const programId = requireString(options?.programId, 'programId');
-      const body: Record<string, unknown> = { program_id: programId };
-      if (options.displayName != null) body.display_name = options.displayName;
-      return this.client.call({
-        feature: 'referrals',
-        method: 'POST',
-        path: '/v1/sdk/referrals/link',
-        body,
-        identified: true,
-        cacheable: false,
-        parse: referralLinkFromJson,
-      });
+      const displayName = options.displayName ?? null;
+      // Change 26, R.28: the link saved for the signed-in customer answers at once (offline too)
+      // and is refreshed in the background
+      const saved = await this.savedLinks.saved(programId);
+      if (displayName == null && saved.link != null) {
+        this.fetchLink(programId, null, saved.token).catch(() => undefined);
+        return referralLinkFromJson(saved.link);
+      }
+      return this.fetchLink(programId, displayName, saved.token);
     },
 
     /** The user's code, link and counts. `referrer_not_found` before `createLink`. Cached 60 s. */
@@ -205,6 +207,29 @@ export class ClikgateEngage {
         parse: referralStatsFromJson,
       }),
   };
+
+  private async fetchLink(
+    programId: string,
+    displayName: string | null,
+    token: string | null
+  ): Promise<ReferralLink> {
+    const body: Record<string, unknown> = { program_id: programId };
+    if (displayName != null) body.display_name = displayName;
+    const raw = await this.client.call({
+      feature: 'referrals',
+      method: 'POST',
+      path: '/v1/sdk/referrals/link',
+      body,
+      identified: true,
+      cacheable: false,
+      parse: (b: unknown) => b,
+    });
+    const link = referralLinkFromJson(raw);
+    if (token != null) {
+      await this.savedLinks.save(programId, raw, token).catch(() => undefined);
+    }
+    return link;
+  }
 
   /**
    * Share helpers (no feature switch).
@@ -456,3 +481,35 @@ async function nativeShareLink(
   }
   return NativeClikgateEngage.shareLink(args);
 }
+
+/** Change 26, R.28: the referral links the native SDK keeps for the signed-in customer. */
+export interface EngageSavedLinks {
+  saved(programId: string): Promise<{ link: unknown; token: string | null }>;
+  save(programId: string, link: unknown, token: string): Promise<void>;
+}
+
+const nativeSavedLinks: EngageSavedLinks = {
+  async saved(programId) {
+    try {
+      const r = (await NativeClikgateEngage?.savedLink(programId)) as
+        { link?: unknown; token?: unknown } | undefined;
+      const link =
+        typeof r?.link === 'string' ? (JSON.parse(r.link) as unknown) : null;
+      return { link, token: typeof r?.token === 'string' ? r.token : null };
+    } catch {
+      // Not linked (tests, web) or an older native side: nothing saved
+      return { link: null, token: null };
+    }
+  },
+  async save(programId, link, token) {
+    try {
+      await NativeClikgateEngage?.saveLink(
+        programId,
+        JSON.stringify(link),
+        token
+      );
+    } catch {
+      // nothing saved
+    }
+  },
+};

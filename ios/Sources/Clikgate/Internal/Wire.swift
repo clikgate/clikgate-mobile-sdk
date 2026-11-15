@@ -41,6 +41,19 @@ struct RemoteConfig: Sendable {
     /// `private_mode`; absent = off. `allow_labels`; absent = on.
     var privateMode = false
     var allowLabels = true
+    /// Change 26: `existing_users.start_at` (the app's Clikgate start date for iOS, R.3), read from `raw` when
+    /// needed (no stored copy: the iOS size ceiling).
+    var sdkStartAt: Date? { ISO8601.parse((raw.anyValue as? JSONObject)?.obj("existing_users")?.str("start_at")) }
+
+    /// Change 26, R.28: active programs with `client_link_creation` (Engage prepares their links).
+    var linkProgramIds: [String] {
+        var ids: [String] = []
+        for case let p as JSONObject in ((raw.anyValue as? JSONObject)?["referral_programs"] as? [Any]) ?? []
+        where p.str("status") == "active" && p.bool("client_link_creation") == true {
+            if let id = p.str("id") { ids.append(id) }
+        }
+        return ids
+    }
 
     struct Batching: Sendable {
         var maxBatchSize = 100
@@ -214,6 +227,8 @@ struct InstallRequest: Sendable {
     var idfv: String?
     var odmInfo: String?
     var odmSdkVersion: String?
+    /// Change 26 fields (EX.3, R.1, R.3), already built.
+    var existingUser: JSONObject = [:]
 
     /// Optional fields are omitted when nil, which the schema allows.
     @_optimize(size)
@@ -243,6 +258,7 @@ struct InstallRequest: Sendable {
         if let odm = odmInfo {
             b.set("google_on_device_measurement", ["odm_info": odm, "sdk_version": odmSdkVersion ?? NSNull()] as JSONObject)
         }
+        for (k, v) in existingUser { b.set(k, v) }
         return b.object
     }
 }

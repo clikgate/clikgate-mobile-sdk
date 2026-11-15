@@ -10,6 +10,66 @@ const BOARD = 'lb_01JAB3C4D5E6F7G8H9JKMNPQRS';
 const ok = (body: string) => ({ status: 200, body });
 const err = (status: number, body: string) => ({ status, body });
 
+describe('saved referral links (change 26, R.28)', () => {
+  function store(initial: unknown = null) {
+    const saved: Array<{ programId: string; link: unknown; token: string }> =
+      [];
+    return {
+      saved,
+      links: {
+        saved: jest.fn(async () => ({ link: initial, token: 'tok_1' })),
+        save: jest.fn(
+          async (programId: string, link: unknown, token: string) => {
+            saved.push({ programId, link, token });
+          }
+        ),
+      },
+    };
+  }
+
+  it('answers with the saved link at once and refreshes it in the background', async () => {
+    const s = store(fixture('referral_link_response'));
+    const r = rig({ savedLinks: s.links });
+    r.on('POST /v1/sdk/referrals/link', err(503, '{}'));
+    const link = await r.engage.referrals.createLink({ programId: PROGRAM });
+    expect(link.code).toBe('ADA42X');
+    expect(link.shortUrl).toBe('https://inv.myapp.com/a8K2bq');
+  });
+
+  it('calls the API without a saved link and saves the answer with the token', async () => {
+    const s = store(null);
+    const r = rig({ savedLinks: s.links });
+    r.on(
+      'POST /v1/sdk/referrals/link',
+      ok(fixtureText('referral_link_response'))
+    );
+    const link = await r.engage.referrals.createLink({ programId: PROGRAM });
+    expect(link.code).toBe('ADA42X');
+    expect(r.calls).toHaveLength(1);
+    expect(s.saved).toEqual([
+      {
+        programId: PROGRAM,
+        link: fixture('referral_link_response'),
+        token: 'tok_1',
+      },
+    ]);
+  });
+
+  it('a display name always asks the API', async () => {
+    const s = store(fixture('referral_link_response'));
+    const r = rig({ savedLinks: s.links });
+    r.on(
+      'POST /v1/sdk/referrals/link',
+      ok(fixtureText('referral_link_response'))
+    );
+    await r.engage.referrals.createLink({
+      programId: PROGRAM,
+      displayName: 'Ada',
+    });
+    expect(r.calls).toHaveLength(1);
+  });
+});
+
 describe('referrals', () => {
   it('createLink posts program_id/display_name with the context headers', async () => {
     const r = rig();

@@ -1,5 +1,34 @@
 # Changelog — Clikgate Android SDK
 
+
+## 2.1.1 (unreleased): Existing users
+
+- **Existing users (Change 26).** The first `/install` now says how and when the app arrived on the phone, so
+  Clikgate can tell people who had the app before your first release with Clikgate ("existing users, now tracked")
+  from new installs. Existing users are never attributed and don't count as installs; their goals, uninstalls,
+  identify, referrals as referrers and deep links work as before.
+  - Sent: `install_channel` (`store`, `sideload`, `debug`), `debuggable`, `preinstalled` (preloaded apps),
+    `platform_installed_at` (Play's install-begin server time when present, else `PackageInfo.firstInstallTime`,
+    rounded down to the hour) with its source, `android_last_update_at` (hour), `android_updated_since_install`
+    (worked out from the exact times), `android_version_code`, `device_time`, and `android_device_key` (HMAC-SHA256
+    of `ANDROID_ID` with a per-app key from `/config`; never `ANDROID_ID` itself) so a reinstall on the same phone
+    isn't a new phone.
+  - Opted out (or attribution consent denied): only `installed_before_start` (worked out on the phone from the
+    `/config` start date), never the dates.
+- **Added:** `ClikgateOptions(existingUser = true)`, a hint your app sets when its own storage shows earlier use (only
+  counts when the phone's date can't be read), and `debugPlatformInstalledAt` (debuggable builds with a test key only).
+- **Added:** `ClikgateAttribution.isExistingUser`; an existing user's `status` is `organic`.
+- **Added:** `ExistingUserError` (a `ClikgateError` with code `existing_user`): `referrals.applyCode` from an existing
+  user's installation. `ClikgateError` is now `open`. Engage `codes.redeem` reports the same code as a plain
+  `ClikgateError` (Engage size budget).
+- **Added (Engage):** after `identifyUser()`, the signed-in customer's referral links for the app's active programs
+  are created in the background and saved on the phone (per program and customer, never the customer ID in clear;
+  cleared on sign-out or when another customer signs in). `createLink` answers with the saved link at once, even
+  offline, and refreshes it in the background. Preparation starts once Engage is used after `configure()`.
+- **Changed:** a wait the server puts in an error body (`retry_after_ms`, release-day load) wins over `Retry-After`, and
+  gets up to 25 % random extra.
+- Size (R8, public API kept): core 136.7 KB (< 150), Engage 44.0 KB (< 44 KB; was 43.3).
+
 ## 2.1.0 (unreleased): Engage is part of the SDK
 
 - **Fixed: apps building with Kotlin 1.9 failed to compile against the SDK** ("Module was compiled with an incompatible

@@ -35,6 +35,8 @@ public object ClikgateEngage {
     /** Version of the Engage features (the SDK version). */
     public const val version: String = com.clikgate.BuildConfig.SDK_VERSION
 
+    // Change 26, R.28: the client registers with the core to prepare the signed-in customer's referral links
+    // in the background after identifyUser() (EngageClient.prepareLink)
     internal val client = EngageClient()
 
     /** Referrer side: the user's referral link and stats (feature `referrals`). */
@@ -78,10 +80,15 @@ public object EngageReferrals {
      */
     public fun createLink(programId: String, displayName: String? = null, callback: ClikgateCallback<ReferralLink>) {
         if (programId.isBlank()) return client.invalid(callback, "programId is required", "program_id")
+        client.prepareLinks()
         val body = JSONObject().put("program_id", programId)
         if (displayName != null) body.put("display_name", displayName)
+        // Change 26, R.28: the link saved for this customer answers at once (offline too) and is refreshed
+        // in the background; the API is called first only when nothing is saved (or to set a display name).
+        val saved = if (displayName == null) com.clikgate.Clikgate.coreOrNull()?.savedLink(programId) else null
+        if (saved != null) client.deliver(callback, ClikgateResult.Success(EngageJson.referralLink(saved)))
         client.call(FEATURE, "POST", "/v1/sdk/referrals/link", body, userCall = true, cacheable = false, write = true,
-            kind = EngageJson.LINK, callback = callback)
+            kind = EngageJson.LINK, callback = if (saved != null) null else callback)
     }
 
     /** Suspending [createLink]. */

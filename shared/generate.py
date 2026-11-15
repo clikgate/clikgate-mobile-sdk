@@ -388,6 +388,15 @@ SCHEMAS: dict[str, dict] = {
             # ---- Change 14 (absent = true): false in private mode without "Allow labels in private mode";
             # the SDKs then drop labels on the device with one debug warning.
             "allow_labels": {"type": "boolean", "default": True},
+            # ---- Change 26 (optional; absent = no start date, no Android device key) ----
+            "existing_users": obj(
+                {
+                    # The app's Clikgate start date for this platform and environment (R.3), null until set.
+                    "start_at": nullable(TIMESTAMP),
+                    # Base64 per-app key for `android_device_key` (R.8), null when not used.
+                    "device_key_salt": NULLABLE_STRING,
+                }
+            ),
         },
         [
             "app_id",
@@ -457,6 +466,33 @@ SCHEMAS: dict[str, dict] = {
             # omitted when a check fails (old SDKs send fewer of them).
             "is_emulator": {"type": ["boolean", "null"]},
             "is_rooted": {"type": ["boolean", "null"]},
+            # ---- Change 26 (EX.3, R.1, R.3-R.8; all optional) ----
+            # How the app was installed: iOS from the receipt URL (`app_store`, `testflight`, `xcode`);
+            # Android `debug` (FLAG_DEBUGGABLE), `store` (an installer package) or `sideload` (none / the package installer).
+            "install_channel": {"enum": ["app_store", "testflight", "xcode", "store", "sideload", "debug"]},
+            "debuggable": {"type": "boolean"},
+            # Android FLAG_SYSTEM / FLAG_UPDATED_SYSTEM_APP: a preloaded app (its install date isn't used, R.5).
+            "preinstalled": {"type": "boolean"},
+            # When the app was put on this phone, rounded down to the hour (R.4).
+            "platform_installed_at": TIMESTAMP,
+            "platform_installed_source": {"enum": ["android_first_install_time", "play_install_begin_server", "ios_container_created"]},
+            "android_last_update_at": TIMESTAMP,
+            # Worked out on the phone from the exact times (more than 1 minute apart) before rounding (R.4).
+            "android_updated_since_install": {"type": "boolean"},
+            # PackageInfo.longVersionCode (R.6).
+            "android_version_code": {"type": "integer", "minimum": 0},
+            # The phone's clock when the request was built (the server corrects device-clock dates with it).
+            "device_time": TIMESTAMP,
+            # ClikgateOptions(existingUser = true): the app's own storage shows earlier use.
+            "existing_user_hint": {"type": "boolean"},
+            # Tracking consent denied or opted out (R.3): sent instead of the dates, worked out on the phone
+            # from /config `existing_users.start_at`; omitted when there's no start date yet.
+            "installed_before_start": {"type": "boolean"},
+            # iOS (R.1): the installation-ID Keychain item was found but the this-device-only marker wasn't
+            # (iCloud / encrypted restore, Quick Start): the previous ID is from another phone.
+            "keychain_restored_from_other_device": {"type": "boolean"},
+            # Android (R.8): hex HMAC-SHA256 of Settings.Secure.ANDROID_ID keyed with /config `device_key_salt`.
+            "android_device_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         },
         ["installation_id", "app_version", "sdk_version", "platform"],
         additional=False,
@@ -466,7 +502,9 @@ SCHEMAS: dict[str, dict] = {
             "install_id": ID,
             "attribution": obj(
                 {
-                    "status": {"enum": ["pending", "attributed", "organic"]},
+                    # Change 26: `existing` = an existing user now tracked (the app was on the phone before
+                    # Clikgate): never attributed, `is_reinstall` false.
+                    "status": {"enum": ["pending", "attributed", "organic", "existing"]},
                     "match_type": MATCH_TYPE,
                     "confidence": {"type": ["number", "null"]},
                     "click_id": NULLABLE_STRING,
@@ -484,6 +522,8 @@ SCHEMAS: dict[str, dict] = {
             "deep_link": nullable(DEEP_LINK),
             "referral": nullable(REFERRAL),
             "retry_after_ms": {"type": ["integer", "null"]},
+            # Change 26 (optional): how the server classified this first launch.
+            "install_kind": {"enum": ["new", "reinstall", "existing_user"]},
         },
         ["install_id", "attribution", "deep_link", "referral", "retry_after_ms"],
     ),
@@ -574,6 +614,17 @@ SCHEMAS: dict[str, dict] = {
     "consent_response": obj({"ok": {"type": "boolean"}}, ["ok"]),
     # Change 03 (B.3): anonymous install count when consent is required and `attribution` is denied
     # (only if config consent.anonymous_counts). No installation id header, no identifiers.
+    # Change 26, KC.6 / R.14 (iOS 16+): Apple's signed app record (AppTransaction.jwsRepresentation), sent
+    # once after the install, in the background. The server stores only the original purchase date.
+    "app_record_request": obj(
+        {
+            "installation_id": INSTALLATION_ID,
+            "signed_record": {"type": "string", "minLength": 20, "maxLength": 65536},
+        },
+        ["installation_id", "signed_record"],
+        additional=False,
+    ),
+    "app_record_response": obj({"accepted": {"type": "boolean"}}, ["accepted"]),
     "install_ping_request": obj(
         {
             "platform": {"enum": ["ios", "android"]},
@@ -800,7 +851,7 @@ FIXTURES: dict[str, dict] = {
     "install_request_android": {
         "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
         "app_version": "3.4.1",
-        "sdk_version": "2.1.0",
+        "sdk_version": "2.1.1",
         "platform": "android",
         "os_version": "14",
         "device_model": "Pixel 8",
@@ -836,7 +887,7 @@ FIXTURES: dict[str, dict] = {
         "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
         "keychain_previous_installation_id": None,
         "app_version": "3.4.1",
-        "sdk_version": "2.1.0",
+        "sdk_version": "2.1.1",
         "platform": "ios",
         "os_version": "18.1",
         "device_model": "iPhone15,2",
@@ -1101,7 +1152,7 @@ FIXTURES["install_request_ios_signals"] = {
 FIXTURES["install_request_opted_out"] = {
     "installation_id": FIXTURES["install_request_android"]["installation_id"],
     "app_version": "3.4.1",
-    "sdk_version": "2.1.0",
+    "sdk_version": "2.1.1",
     "platform": "android",
     "consent": {
         "analytics": "denied",
@@ -1187,7 +1238,7 @@ FIXTURES["consent_response"] = {"ok": True}
 FIXTURES["install_ping_request"] = {
     "platform": "android",
     "app_version": "3.4.1",
-    "sdk_version": "2.1.0",
+    "sdk_version": "2.1.1",
     "consent": {"analytics": "unknown", "attribution": "denied", "ad_user_data": "denied", "ad_personalization": "denied", "region": "DE", "updated_at": "2026-10-20T10:05:00Z"},
 }
 FIXTURES["install_ping_response"] = {"ok": True}
@@ -1317,6 +1368,101 @@ FIXTURE_SCHEMA = {
     "install_response_deep_link_only": "install_response",
     "install_response_deferred_cap": "install_response",
 }
+
+
+# ---- Change 26 fixtures (existing users) ----
+FIXTURES["install_request_android_existing"] = {
+    **FIXTURES["install_request_android"],
+    "sdk_version": "2.1.1",
+    "install_channel": "store",
+    "debuggable": False,
+    "preinstalled": False,
+    "platform_installed_at": "2025-03-02T09:00:00Z",
+    "platform_installed_source": "play_install_begin_server",
+    "android_last_update_at": "2026-11-10T08:00:00Z",
+    "android_updated_since_install": True,
+    "android_version_code": 341,
+    "device_time": "2026-11-14T19:02:11Z",
+    "existing_user_hint": True,
+    "android_device_key": "3f1c0a9e5b7d2c4e6a8b0d1f3e5c7a9b2d4f6e8a0c1b3d5f7e9a1c3b5d7f9e0a",
+}
+FIXTURES["install_request_ios_existing"] = {
+    **{k: v for k, v in FIXTURES["install_request_ios"].items() if k not in ("pasteboard_token", "pasteboard_outcome")},
+    "sdk_version": "2.1.1",
+    "keychain_previous_installation_id": "0f6b8a2c-3d4e-4f5a-8b6c-7d8e9f0a1b2c",
+    "keychain_restored_from_other_device": True,
+    "install_channel": "app_store",
+    "platform_installed_at": "2026-11-14T18:00:00Z",
+    "platform_installed_source": "ios_container_created",
+    "device_time": "2026-11-14T19:02:11Z",
+}
+# Tracking consent denied (R.3): no dates, only whether the app was installed before the start date.
+FIXTURES["install_request_android_consent_denied"] = {
+    **FIXTURES["install_request_opted_out"],
+    "sdk_version": "2.1.1",
+    "install_channel": "store",
+    "installer_package": "com.android.vending",
+    "debuggable": False,
+    "installed_before_start": True,
+    "existing_user_hint": False,
+}
+FIXTURES["install_response_existing_user"] = {
+    "install_id": f"ins_{ULID}",
+    "attribution": {
+        "status": "existing",
+        "match_type": None,
+        "confidence": None,
+        "click_id": None,
+        "clicked_at": None,
+        "is_reinstall": False,
+        "link": None,
+    },
+    "deep_link": None,
+    "referral": None,
+    "retry_after_ms": None,
+    "install_kind": "existing_user",
+}
+FIXTURES["config_response_existing_users"] = {
+    **FIXTURES["config_response"],
+    "existing_users": {"start_at": "2026-11-01T08:00:00Z", "device_key_salt": "c2FsdC1mb3ItYXBw"},
+}
+FIXTURES["app_record_request"] = {
+    "installation_id": FIXTURES["install_request_ios"]["installation_id"],
+    "signed_record": "eyJhbGciOiJFUzI1NiIsIng1YyI6WyJ0ZXN0Il19.eyJidW5kbGVJZCI6ImNvbS5leGFtcGxlIn0.c2ln",
+}
+FIXTURES["app_record_response"] = {"accepted": True}
+# apply-code from an existing-user installation (RF.1): every SDK maps it to its typed existing-user error.
+FIXTURES["error_existing_user"] = {
+    "error": {
+        "type": "conflict",
+        "code": "existing_user",
+        "message": "This app was already on the phone before the referral, so it can't be referred.",
+        "param": None,
+        "request_id": f"req_{ULID}",
+    }
+}
+# Release-day load (R.11): a 429 whose body says how long to wait; the SDKs add jitter.
+FIXTURES["error_rate_limited_retry_after"] = {
+    "error": {
+        "type": "rate_limited",
+        "code": "rate_limited",
+        "message": "Too many requests. Retry later.",
+        "param": None,
+        "request_id": f"req_{ULID}",
+        "retry_after_ms": 30000,
+    }
+}
+FIXTURE_SCHEMA.update({
+    "install_request_android_existing": "install_request",
+    "install_request_ios_existing": "install_request",
+    "install_request_android_consent_denied": "install_request",
+    "install_response_existing_user": "install_response",
+    "config_response_existing_users": "config_response",
+    "app_record_request": "app_record_request",
+    "app_record_response": "app_record_response",
+    "error_existing_user": "error",
+    "error_rate_limited_retry_after": "error",
+})
 
 
 # ---- Change 12 fixtures ----

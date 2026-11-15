@@ -21,17 +21,42 @@ private func requireNonBlank(_ value: String, _ name: String, param: String) thr
 public final class ClikgateEngageReferrals: Sendable {
     let client: EngageClient
 
-    init(client: EngageClient) { self.client = client }
+    init(client: EngageClient) {
+        self.client = client
+        register()
+    }
+
+    /// Change 26, R.28: after each identifyUser(), the signed-in customer's missing links are created in the
+    /// background (the core keeps only the first registration).
+    func register() {
+        Clikgate.shared.onCustomerIdentified { [self] programs in
+            Task { for p in programs { _ = try? await self.fetch(p, nil) } }
+        }
+    }
 
     /// Gets or creates the current user's referral link and code (`POST /v1/sdk/referrals/link`,
     /// idempotent per program and user). Errors include `client_link_creation_disabled` and
-    /// `referral_link_limit`.
+    /// `referral_link_limit`. The link saved on the phone for the signed-in customer answers at once (offline
+    /// too) and is refreshed in the background.
     public func createLink(programId: String, displayName: String? = nil) async throws -> ClikgateReferralLink {
         try requireNonBlank(programId, "programId", param: "program_id")
+        register()
+        if displayName == nil,
+           let link = EngageJSON(Clikgate.shared.savedLinkObject(programId: programId)).flatMap(ClikgateReferralLink.init(json:)) {
+            Task { _ = try? await self.fetch(programId, nil) }
+            return link
+        }
+        return try await fetch(programId, displayName)
+    }
+
+    private func fetch(_ programId: String, _ displayName: String?) async throws -> ClikgateReferralLink {
+        let token = Clikgate.shared.savedLinkJSON(programId: programId).1
         var body: [String: Any] = ["program_id": programId]
         if let d = displayName { body["display_name"] = d }
-        return try EngageClient.decode(await client.call(feature: referralsFeature, method: "POST", path: "v1/sdk/referrals/link", body: body,
-                                     needsUser: true, cacheable: false), ClikgateReferralLink.init(json:))
+        let j = try await client.call(feature: referralsFeature, method: "POST", path: "v1/sdk/referrals/link", body: body,
+                                      needsUser: true, cacheable: false)
+        Clikgate.shared.saveLinkObject(programId: programId, object: j.o, token: token)
+        return try EngageClient.decode(j, ClikgateReferralLink.init(json:))
     }
 
     /// The current user's code, link and stats (`GET /v1/sdk/referrals/me`; cached 60 s).
