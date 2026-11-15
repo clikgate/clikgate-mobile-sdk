@@ -132,6 +132,6 @@
 @@ -35,4 +35,5 @@
    # Use with the CupertinoIcons class for iOS style icons.
    cupertino_icons: ^1.0.8
-+  clikgate_flutter: ^2.1.0
++  clikgate_flutter: ^2.1.1
  
  dev_dependencies:

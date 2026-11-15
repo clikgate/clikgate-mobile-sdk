@@ -12,7 +12,7 @@ import UIKit
 @objc(Clikgate)
 public final class Clikgate: NSObject, @unchecked Sendable {
     /// The native SDK version.
-    public static let sdkVersion = "2.1.0"
+    public static let sdkVersion = "2.1.1"
 
     @objc public static let shared = Clikgate()
 
@@ -165,6 +165,38 @@ public final class Clikgate: NSObject, @unchecked Sendable {
         guard let c = currentCore else { return }
         if code == ClikgateError.featureDisabled, let f = feature { c.features.markDisabled(f) }
         Task { await c.reportServerError(code: code, feature: feature) }
+    }
+
+    /// **Internal**, for `ClikgateEngage`: the referral link saved for the signed-in customer
+    /// (JSON) and the token to pass back to ``saveLinkJSON(programId:json:token:)``.
+    @_spi(ClikgateEngage)
+    public func savedLinkJSON(programId: String) -> (Data?, String?) {
+        currentCore?.links.link(programId) ?? (nil, nil)
+    }
+
+    /// **Internal**, for `ClikgateEngage`: the saved link as a JSON object (nil when none).
+    @_spi(ClikgateEngage)
+    public func savedLinkObject(programId: String) -> [String: Any]? {
+        JSON.object(savedLinkJSON(programId: programId).0)
+    }
+
+    /// **Internal**, for `ClikgateEngage`: saves a link answer unless the customer changed since `token` was read.
+    @_spi(ClikgateEngage)
+    public func saveLinkJSON(programId: String, json: Data, token: String?) {
+        currentCore?.links.save(programId, json, token: token)
+    }
+
+    /// **Internal**, for `ClikgateEngage`: ``saveLinkJSON(programId:json:token:)`` with a JSON object.
+    @_spi(ClikgateEngage)
+    public func saveLinkObject(programId: String, object: [String: Any], token: String?) {
+        if let d = JSON.data(object) { saveLinkJSON(programId: programId, json: d, token: token) }
+    }
+
+    /// **Internal**, for `ClikgateEngage`: called with the programs to prepare links for after each identify
+    /// of a customer (and once at registration when one is already identified). The first registration counts.
+    @_spi(ClikgateEngage)
+    public func onCustomerIdentified(_ prepare: @escaping @Sendable ([String]) -> Void) {
+        currentCore?.links.setListener(prepare)
     }
 
     // MARK: - Deep links

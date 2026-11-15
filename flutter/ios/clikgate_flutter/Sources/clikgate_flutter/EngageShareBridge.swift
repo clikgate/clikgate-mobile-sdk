@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 #if canImport(ClikgateEngage)
-import Clikgate
+@_spi(ClikgateEngage) import Clikgate
 import ClikgateEngage
 #else
-import Clikgate // CocoaPods: the Engage sources are compiled into the Clikgate module
+@_spi(ClikgateEngage) import Clikgate // CocoaPods: the Engage sources are compiled into the Clikgate module
 #endif
 
 /// The Engage features' native side (`package:clikgate_flutter/engage.dart`), which need the share menu
@@ -32,6 +32,18 @@ final class EngageShareBridge: NSObject, FlutterPlugin {
         case "shareLink": shareLink(args, result)
         case "shareText": shareText(args, result)
         case "openUrl": openUrl(args, result)
+        // The link saved for the signed-in customer (Dart's createLink)
+        case "savedLink":
+            _ = ClikgateEngage.referrals   // prepares links after identifyUser() from now on
+            let programId = args["programId"] as? String ?? ""
+            let (data, token) = Clikgate.shared.savedLinkJSON(programId: programId)
+            result(["link": data.flatMap { String(data: $0, encoding: .utf8) } as Any, "token": token as Any])
+        case "saveLink":
+            let programId = args["programId"] as? String ?? ""
+            if let link = (args["link"] as? String)?.data(using: .utf8) {
+                Clikgate.shared.saveLinkJSON(programId: programId, json: link, token: args["token"] as? String)
+            }
+            result(nil)
         default: result(FlutterMethodNotImplemented)
         }
     }

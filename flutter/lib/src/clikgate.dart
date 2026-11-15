@@ -22,7 +22,7 @@ class Clikgate {
   Clikgate._();
 
   /// Version of this Flutter plugin (reported as `Clikgate-SDK-Version: flutter/<version>`).
-  static const String pluginVersion = '2.1.0';
+  static const String pluginVersion = '2.1.1';
 
   static DeepLinkHub _hub = DeepLinkHub();
 
@@ -67,6 +67,15 @@ class Clikgate {
   /// AppDelegate code). Android: it fetches the FCM token when Firebase
   /// Messaging is in the app. A token passed to [setPushToken] always wins.
   /// False leaves push registration to the app: call [setPushToken] yourself.
+  ///
+  /// [existingUser] (default false): set true when your app's own storage
+  /// shows this person used the app before (for example a saved signed-in
+  /// session). Clikgate uses the phone's install date first; this hint only
+  /// counts when that date can't be read.
+  ///
+  /// [debugPlatformInstalledAt]: debug / Xcode builds with a test (sandbox)
+  /// SDK key only: pretend the app was installed at this time, to test both
+  /// the "existing user" and "new install" paths. Ignored in store builds.
   static Future<void> configure({
     required String sdkKey,
     List<String> linkDomains = const [],
@@ -79,6 +88,8 @@ class Clikgate {
     Duration deferredDeepLinkTimeout = const Duration(seconds: 5),
     bool platformDomainBrowserFallback = true,
     bool automaticPushToken = true,
+    bool existingUser = false,
+    DateTime? debugPlatformInstalledAt,
   }) async {
     // Listen before configuring so no deep link is missed.
     _hub.start();
@@ -94,6 +105,9 @@ class Clikgate {
       'deferredDeepLinkTimeoutMs': deferredDeepLinkTimeout.inMilliseconds,
       'platformDomainBrowserFallback': platformDomainBrowserFallback,
       'automaticPushToken': automaticPushToken,
+      'existingUser': existingUser,
+      'debugPlatformInstalledAtMs':
+          debugPlatformInstalledAt?.millisecondsSinceEpoch,
       'wrapperVersion': pluginVersion,
     });
   }

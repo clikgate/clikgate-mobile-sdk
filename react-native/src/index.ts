@@ -7,7 +7,11 @@
 import { Clikgate } from './Clikgate';
 
 export { Clikgate };
-export { ClikgateError, type ClikgateErrorCode } from './errors';
+export {
+  ClikgateError,
+  ExistingUserError,
+  type ClikgateErrorCode,
+} from './errors';
 export { isClikgateMessage } from './isClikgateMessage';
 export { referrals, type ClikgateReferrals } from './referrals';
 export type { BrowserHandoffListener, DeepLinkListener } from './deepLinkHub';

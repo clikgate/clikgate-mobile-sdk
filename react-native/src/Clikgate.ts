@@ -104,6 +104,10 @@ export const Clikgate = {
       platformDomainBrowserFallback:
         config.platformDomainBrowserFallback ?? true,
       automaticPushToken: config.automaticPushToken ?? true,
+      existingUser: config.existingUser ?? false,
+      debugPlatformInstalledAtMs: config.debugPlatformInstalledAt
+        ? config.debugPlatformInstalledAt.getTime()
+        : null,
       wrapperVersion: VERSION,
     });
   },

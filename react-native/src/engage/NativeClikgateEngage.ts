@@ -10,6 +10,14 @@ import { TurboModuleRegistry } from 'react-native';
  */
 export interface Spec extends TurboModule {
   shareLink(args: UnsafeObject): Promise<boolean>;
+  /**
+   * The referral link the native SDK saved for the signed-in customer
+   * (`{link: JSON string | null, token: string | null}`); the first call also starts preparing links
+   * after each `identifyUser()`.
+   */
+  savedLink(programId: string): Promise<UnsafeObject>;
+  /** Saves a link answer (JSON string) unless another customer signed in since `token` was read. */
+  saveLink(programId: string, link: string, token: string): Promise<void>;
 }
 
 // react-native-web has no TurboModuleRegistry: importing this on the web (including Expo Router's

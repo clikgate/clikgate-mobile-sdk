@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:clikgate_flutter/clikgate_flutter.dart';
@@ -72,7 +73,7 @@ class ClikgateEngage {
   final EngageClient _client;
 
   /// Version of this package.
-  static const String version = '2.1.0';
+  static const String version = '2.1.1';
 
   /// Referrer side: the user's link and stats (feature `referrals`).
   final EngageReferrals referrals;
@@ -117,14 +118,32 @@ void _requireId(String value, String param) {
 
 /// Referrer-side referral calls (`engage.referrals`).
 class EngageReferrals {
-  EngageReferrals._(this._client);
+  EngageReferrals._(this._client, [_SavedLinks? savedLinks])
+      : _savedLinks = savedLinks ?? const _SavedLinks();
   final EngageClient _client;
+  final _SavedLinks _savedLinks;
 
   /// Gets or creates the current user's referral link and code. Needs
   /// `Clikgate.identifyUser`.
+  ///
+  /// The link saved on the phone for the signed-in customer answers at once
+  /// (offline too) and is refreshed in the background; links are prepared
+  /// after `Clikgate.identifyUser` once Engage is used, and cleared on
+  /// sign-out or when another customer signs in.
   Future<ReferralLink> createLink(
       {required String programId, String? displayName}) async {
     _requireId(programId, 'program_id');
+    final saved = await _savedLinks.saved(programId);
+    final link = saved.link;
+    if (displayName == null && link != null) {
+      unawaited(_fetch(programId, null, saved.token).then((_) {}, onError: (_) {}));
+      return ReferralLink.fromJson(link);
+    }
+    return _fetch(programId, displayName, saved.token);
+  }
+
+  Future<ReferralLink> _fetch(
+      String programId, String? displayName, String? token) async {
     final j = await _client.call(
       feature: ClikgateFeatures.referrals,
       method: 'POST',
@@ -133,6 +152,7 @@ class EngageReferrals {
       needsUser: true,
       write: true,
     );
+    await _savedLinks.save(programId, j, token);
     return ReferralLink.fromJson(j);
   }
 
@@ -381,5 +401,42 @@ class EngageCodes {
       write: true,
     );
     return Redemption.fromJson(j);
+  }
+}
+
+/// The referral links the native SDK keeps for the signed-in
+/// customer (`com.clikgate/engage` channel). Missing channel (tests, web) =
+/// nothing saved.
+class _SavedLinks {
+  const _SavedLinks();
+
+  static const MethodChannel _channel = MethodChannel('com.clikgate/engage');
+
+  Future<({Map<String, dynamic>? link, String? token})> saved(
+      String programId) async {
+    try {
+      final r = await _channel.invokeMapMethod<String, Object?>(
+          'savedLink', {'programId': programId});
+      final raw = r?['link'] as String?;
+      final decoded = raw == null ? null : jsonDecode(raw);
+      return (
+        link: decoded is Map<String, dynamic> ? decoded : null,
+        token: r?['token'] as String?,
+      );
+    } catch (_) {
+      // No native side (tests, web) or no binding yet: nothing saved
+      return (link: null, token: null);
+    }
+  }
+
+  Future<void> save(
+      String programId, Map<String, dynamic> link, String? token) async {
+    if (token == null) return;
+    try {
+      await _channel.invokeMethod<void>('saveLink',
+          {'programId': programId, 'link': jsonEncode(link), 'token': token});
+    } catch (_) {
+      // nothing saved
+    }
   }
 }

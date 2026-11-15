@@ -74,6 +74,8 @@ public final class ClikgateRNImpl: NSObject {
         }
         options.platformDomainBrowserFallback = (args["platformDomainBrowserFallback"] as? Bool) ?? true
         options.automaticPushToken = (args["automaticPushToken"] as? Bool) ?? true
+        options.existingUser = (args["existingUser"] as? Bool) ?? false
+        options.debugPlatformInstalledAt = (args["debugPlatformInstalledAtMs"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue / 1000) }
         Clikgate.setWrapper(name: ClikgateRN.wrapperName, version: (args["wrapperVersion"] as? String) ?? "0.0.0")
         Clikgate.configure(sdkKey: sdkKey, options: options)
         ClikgateRN.didConfigure()
@@ -264,6 +266,7 @@ public final class ClikgateRNImpl: NSObject {
             "clickId": nullable(a.clickId),
             "clickedAt": nullable(a.clickedAtRaw),
             "isReinstall": a.isReinstall,
+            "isExistingUser": a.isExistingUser,
             "installId": nullable(a.installId),
             "link": nullable(a.link.map(map)),
         ]

@@ -329,6 +329,29 @@
     "allow_labels": {
       "type": "boolean",
       "default": true
+    },
+    "existing_users": {
+      "type": "object",
+      "properties": {
+        "start_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device_key_salt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true,

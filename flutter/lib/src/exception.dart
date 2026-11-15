@@ -24,6 +24,9 @@ class ClikgateException implements Exception {
       feature = details['feature'] as String?;
       offlineTouchId = details['offlineTouchId'] as String?;
     }
+    if (e.code == existingUser) {
+      return ExistingUserException(e.message ?? e.code, status: status, param: param);
+    }
     return ClikgateException(e.code, e.message ?? e.code,
         status: status,
         param: param,
@@ -61,9 +64,24 @@ class ClikgateException implements Exception {
   /// [feature].
   static const featureDisabled = 'feature_disabled';
 
+  /// The installation already had the app before Clikgate was added, so it
+  /// can't be referred (`applyCode`, Engage `codes.redeem`). Thrown as
+  /// [ExistingUserException].
+  static const existingUser = 'existing_user';
+
   @override
   String toString() =>
       'ClikgateException($code${status != null ? ', $status' : ''}'
       '${param != null ? ', param: $param' : ''}'
       '${feature != null ? ', feature: $feature' : ''}): $message';
+}
+
+/// `applyCode` (or Engage `codes.redeem`) from an installation that already
+/// had the app before Clikgate was added: existing users can't be referred.
+/// A [ClikgateException] with code [ClikgateException.existingUser], so
+/// existing `on ClikgateException` handlers keep working.
+class ExistingUserException extends ClikgateException {
+  const ExistingUserException(String message, {int? status, String? param})
+      : super(ClikgateException.existingUser, message,
+            status: status, param: param);
 }

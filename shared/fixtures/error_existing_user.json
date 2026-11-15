@@ -1,0 +1,9 @@
+{
+  "error": {
+    "type": "conflict",
+    "code": "existing_user",
+    "message": "This app was already on the phone before the referral, so it can't be referred.",
+    "param": null,
+    "request_id": "req_01JAB3C4D5E6F7G8H9JKMNPQRS"
+  }
+}

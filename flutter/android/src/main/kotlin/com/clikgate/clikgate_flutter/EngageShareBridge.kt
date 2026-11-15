@@ -45,7 +45,22 @@ internal class EngageShareBridge : FlutterPlugin, ActivityAware, MethodChannel.M
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) { activity = binding.activity }
     override fun onDetachedFromActivity() { activity = null }
 
+    @OptIn(com.clikgate.ClikgateInternalApi::class)
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        // The link saved for the signed-in customer (Dart's createLink)
+        when (call.method) {
+            "savedLink" -> {
+                ClikgateEngage.referrals // prepares links after identifyUser() from now on
+                val (link, token) = com.clikgate.Clikgate.savedLinkJson(call.argument<String>("programId") ?: "")
+                return result.success(mapOf("link" to link, "token" to token))
+            }
+            "saveLink" -> {
+                com.clikgate.Clikgate.saveLinkJson(
+                    call.argument<String>("programId") ?: "", call.argument<String>("link") ?: "", call.argument<String>("token"),
+                )
+                return result.success(null)
+            }
+        }
         if (call.method !in METHODS) return result.notImplemented()
         val ctx: Context = activity ?: context ?: return result.error(ClikgateError.NOT_CONFIGURED, "Plugin not attached", null)
         when (call.method) {

@@ -78,6 +78,8 @@ void main() {
         'deferredDeepLinkTimeoutMs': 3000,
         'platformDomainBrowserFallback': true,
         'automaticPushToken': true,
+        'existingUser': false,
+        'debugPlatformInstalledAtMs': null,
         'wrapperVersion': Clikgate.pluginVersion,
       });
     });
