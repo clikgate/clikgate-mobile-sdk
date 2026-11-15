@@ -79,6 +79,9 @@ internal open class DeviceInfo(private val context: Context) {
         null
     }
 
+    /** Change 26: when the app arrived on this phone (package times, version code, preload flag, ANDROID_ID). */
+    open fun installFacts(): AppInstallFacts = AppInstallFactsReader.read(context)
+
     open fun isEmulator(): Boolean = Emulator.isEmulator(
         fingerprint = Build.FINGERPRINT.orEmpty(),
         model = Build.MODEL.orEmpty(),

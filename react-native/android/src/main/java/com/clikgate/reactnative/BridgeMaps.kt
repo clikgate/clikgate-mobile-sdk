@@ -62,6 +62,7 @@ internal object BridgeMaps {
     "clickId" to a.clickId,
     "clickedAt" to a.clickedAt,
     "isReinstall" to a.isReinstall,
+    "isExistingUser" to a.isExistingUser,
     "installId" to a.installId,
     "link" to link(a.link),
   )

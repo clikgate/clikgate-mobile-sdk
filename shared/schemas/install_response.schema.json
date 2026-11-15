@@ -15,7 +15,8 @@
           "enum": [
             "pending",
             "attributed",
-            "organic"
+            "organic",
+            "existing"
           ]
         },
         "match_type": {
@@ -249,6 +250,13 @@
       "type": [
         "integer",
         "null"
+      ]
+    },
+    "install_kind": {
+      "enum": [
+        "new",
+        "reinstall",
+        "existing_user"
       ]
     },
     "status": {

@@ -1,6 +1,7 @@
 package com.clikgate.internal
 
 import com.clikgate.ClikgateError
+import com.clikgate.ExistingUserError
 import org.json.JSONObject
 import java.io.IOException
 import java.io.InputStream
@@ -89,6 +90,7 @@ internal class HttpClient(
             var message: String? = null
             var param: String? = null
             var offlineTouchId: String? = null
+            var bodyRetryAfterMs: Long? = null
             try {
                 val json = JSONObject(body)
                 val err = json.optJSONObject("error")
@@ -103,6 +105,10 @@ internal class HttpClient(
                     // /codes/redeem: the touch was recorded although the referral failed.
                     offlineTouchId = if (err.isNull("offline_touch_id")) null else err.optString("offline_touch_id").takeIf { it.isNotEmpty() }
                 }
+                // Change 26, R.11: a rate-limited answer may say how long to wait in its body
+                bodyRetryAfterMs = listOfNotNull(err, json).firstNotNullOfOrNull { o ->
+                    if (o.has("retry_after_ms") && !o.isNull("retry_after_ms")) o.optLong("retry_after_ms", -1).takeIf { it >= 0 } else null
+                }
             } catch (_: Exception) {
             }
             val resolvedCode = code ?: when {
@@ -112,9 +118,14 @@ internal class HttpClient(
                 else -> "http_$status"
             }
             val retryable = status == 408 || status == 429 || status >= 500 || resolvedCode == "install_in_progress"
-            val retryAfterMs = retryAfterHeader?.trim()?.toLongOrNull()?.takeIf { it >= 0 }?.times(1000)
+            val retryAfterMs = bodyRetryAfterMs ?: retryAfterHeader?.trim()?.toLongOrNull()?.takeIf { it >= 0 }?.times(1000)
+            val error = if (resolvedCode == ClikgateError.EXISTING_USER) {
+                ExistingUserError(message ?: "This app was on the phone before the referral", status, param)
+            } else {
+                ClikgateError(resolvedCode, message ?: "HTTP $status", status, param, offlineTouchId = offlineTouchId)
+            }
             return ApiResult.Failure(
-                ClikgateError(resolvedCode, message ?: "HTTP $status", status, param, offlineTouchId = offlineTouchId),
+                error,
                 retryable = retryable,
                 retryAfterMs = retryAfterMs,
             )
@@ -134,4 +145,10 @@ internal class Backoff(
         val factor = 1.0 + (random.nextDouble() * 2 - 1) * jitter
         return (exp * factor).toLong().coerceAtLeast(0)
     }
+
+    /**
+     * Change 26, R.11: a server-requested wait plus up to 25 % random extra, so a whole user base that
+     * was told to wait the same time doesn't come back in the same second.
+     */
+    fun withJitter(serverMs: Long): Long = serverMs + (serverMs * 0.25 * random.nextDouble()).toLong()
 }

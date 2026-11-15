@@ -1,0 +1,19 @@
+{
+  "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
+  "app_version": "3.4.1",
+  "sdk_version": "2.1.1",
+  "platform": "android",
+  "consent": {
+    "analytics": "denied",
+    "attribution": "denied",
+    "ad_user_data": "denied",
+    "ad_personalization": "denied",
+    "region": null,
+    "updated_at": null
+  },
+  "install_channel": "store",
+  "installer_package": "com.android.vending",
+  "debuggable": false,
+  "installed_before_start": true,
+  "existing_user_hint": false
+}

@@ -1250,3 +1250,28 @@ Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` U, S, R.1, R.2
   fields. An unknown name sent with `provider` and `reference` in strict mode gets `unknown_goal`.
 - **Fixtures:** `goals_response_refused_unknown_goal` (`goals_response`), `goal_refusal_unknown_goal` and
   `goal_refusal_goal_archived` (`goal_refusal`).
+
+## Change 26 additions (existing users)
+
+Spec: `clikgate_api/docs/spec/clikgate-change-26-existing-users.md` EX.3, KC.6, RF.1, R.1, R.3–R.8, R.11, R.14,
+R.23, R.28 (R wins). All fields optional; older servers ignore them only where their schema allows (the backend's
+`/install` accepts them from Change 26).
+
+- **`POST /v1/sdk/install`** adds: `install_channel` (iOS `app_store|testflight|xcode`; Android
+  `store|sideload|debug`), `debuggable`, `preinstalled`, `platform_installed_at` (hour-rounded) and
+  `platform_installed_source` (`android_first_install_time|play_install_begin_server|ios_container_created`),
+  `android_last_update_at` (hour), `android_updated_since_install`, `android_version_code`, `device_time`,
+  `existing_user_hint`, `installed_before_start` (instead of the dates when opted out / attribution consent denied),
+  `keychain_restored_from_other_device` (iOS), `android_device_key` (64 hex). Fixtures
+  `install_request_android_existing`, `install_request_ios_existing`, `install_request_android_consent_denied`.
+- **`/install` answer:** `attribution.status` may be `existing` and `install_kind` (`new|reinstall|existing_user`) is
+  added (`install_response_existing_user`). The SDKs report `existing` as `organic` with `isExistingUser: true`.
+- **`GET /v1/sdk/config`** adds `existing_users: {start_at, device_key_salt}` (`config_response_existing_users`).
+- **`POST /v1/sdk/app-record`** (iOS 16+) `{installation_id, signed_record}` → `{accepted}` (`app_record_request`,
+  `app_record_response`).
+- **`409 existing_user`** from `apply-code` (`error_existing_user`): Android `ExistingUserError`, iOS
+  `ClikgateError.isExistingUser`, Flutter `ExistingUserException`, React Native `ExistingUserError`.
+- **`retry_after_ms` in an error body** (`error_rate_limited_retry_after`) wins over `Retry-After`; the SDKs add up to
+  25 % random extra.
+- **Not changed:** `POST /v1/sdk/install-ping` (anonymous counts when consent is denied) keeps its body: the server's
+  schema forbids extra fields, so it carries no `installed_before_start`.

@@ -109,6 +109,8 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
       deferredDeepLinkTimeoutMs = args.number("deferredDeepLinkTimeoutMs")?.toLong() ?: 5_000,
       platformDomainBrowserFallback = args.bool("platformDomainBrowserFallback", true),
       automaticPushToken = args.bool("automaticPushToken", true),
+      existingUser = args.bool("existingUser", false),
+      debugPlatformInstalledAt = args.number("debugPlatformInstalledAtMs")?.let { java.util.Date(it.toLong()) },
     )
     // pasteboardMode / waitForATT are iOS-only and ignored here.
     if (!Clikgate.isConfigured) {

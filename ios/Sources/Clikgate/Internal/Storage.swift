@@ -56,6 +56,11 @@ final class PersistedState: @unchecked Sendable {
     /// The launch URL was already delivered locally (consent buffering): don't deliver the
     /// install response's direct deep link for it again.
     var launchUrlDeliveredLocally = false
+    /// Change 26, R.1: only the restored Keychain item came back (another phone); sent until `/install` succeeds.
+    var keychainRestored = false
+    /// Change 26, KC.6: Apple's app record tries (at most 2: this launch and the next) and whether it was accepted.
+    var appRecordTries = 0
+    var appRecordSent = false
 
     var installDone: Bool { installId != nil }
 
@@ -116,6 +121,9 @@ final class PersistedState: @unchecked Sendable {
         pendingOpenClickIds = GoogleClickIds(json: j.obj("pending_open_click_ids"))
         keptUrls = j.strings("kept_urls")
         launchUrlDeliveredLocally = j.bool("launch_url_delivered_locally") ?? false
+        keychainRestored = j.bool("keychain_restored") ?? false
+        appRecordTries = j.int("app_record_tries") ?? 0
+        appRecordSent = j.bool("app_record_sent") ?? false
     }
 
     @_optimize(size)
@@ -168,6 +176,9 @@ final class PersistedState: @unchecked Sendable {
         b.set("pending_open_click_ids", pendingOpenClickIds?.json(source: "deep_link"))
         if !keptUrls.isEmpty { b.set("kept_urls", keptUrls) }
         b.set("launch_url_delivered_locally", launchUrlDeliveredLocally)
+        b.set("keychain_restored", keychainRestored)
+        b.set("app_record_tries", appRecordTries)
+        b.set("app_record_sent", appRecordSent)
         return b.object
     }
 }
@@ -274,5 +285,62 @@ final class EventQueue {
 
     private func persist() {
         if events.isEmpty { file.delete() } else { file.save(events.map { $0.json }) }
+    }
+}
+
+/// Change 26, R.28: the signed-in customer's referral links (`links.json`: `{"c": owner, "l": {programId: link}}`),
+/// read and written synchronously by Engage (and the Flutter / React Native bridges). `owner` is the hashed
+/// customer ID the core sets; a link is only answered or saved for the current owner, and another owner (sign-out,
+/// another customer, opt-out, private mode) empties the file.
+final class SavedLinks: @unchecked Sendable {
+    private let lock = NSLock()
+    private let file: JSONFile
+    private var owner: String?
+    private var programs: [String] = []
+    private var listener: (@Sendable ([String]) -> Void)?
+
+    init(file: JSONFile) { self.file = file }
+
+    func setOwner(_ o: String?, programs p: [String]) {
+        lock.lock(); defer { lock.unlock() }
+        owner = o; programs = p
+        if let c = (file.load() as? JSONObject)?.str("c"), c != o { file.delete() }
+    }
+
+    /// The saved link (JSON) for `programId` and the token to save an answer with.
+    func link(_ programId: String) -> (Data?, String?) {
+        lock.lock(); defer { lock.unlock() }
+        guard let o = owner, let j = file.load() as? JSONObject, j.str("c") == o, let l = j.obj("l")?.obj(programId)
+        else { return (nil, owner) }
+        return (JSON.data(l), o)
+    }
+
+    func save(_ programId: String, _ data: Data, token: String?) {
+        lock.lock(); defer { lock.unlock() }
+        guard let o = owner, token == o, let link = JSON.object(data) else { return }
+        var j = (file.load() as? JSONObject).flatMap { $0.str("c") == o ? $0 : nil } ?? ["c": o]
+        var l = j.obj("l") ?? [:]
+        l[programId] = link
+        j["l"] = l
+        file.save(j)
+    }
+
+    /// Engage's "prepare these programs' links" (kept once); called now when a customer is already signed in.
+    func setListener(_ l: @escaping @Sendable ([String]) -> Void) {
+        lock.lock()
+        guard listener == nil else { return lock.unlock() }
+        listener = l
+        lock.unlock()
+        prepare()
+    }
+
+    /// After an identify: asks Engage for the programs whose link isn't saved yet.
+    func prepare() {
+        lock.lock()
+        let l = listener, p = programs, o = owner
+        lock.unlock()
+        guard let l = l, o != nil else { return }
+        let missing = p.filter { link($0).0 == nil }
+        if !missing.isEmpty { l(missing) }
     }
 }

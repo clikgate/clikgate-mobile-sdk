@@ -25,6 +25,7 @@ export type ClikgateErrorCode =
   | 'window_expired'
   | 'self_referral'
   | 'program_paused'
+  | 'existing_user'
   | (string & {});
 
 /**
@@ -49,6 +50,11 @@ export class ClikgateError extends Error {
   static readonly featureDisabled = 'feature_disabled';
   static readonly rateLimited = 'rate_limited';
   static readonly codeNotFound = 'code_not_found';
+  /**
+   * The installation already had the app before Clikgate was added, so it can't be referred
+   * (`applyCode`, Engage `codes.redeem`). Rejected as `ExistingUserError`.
+   */
+  static readonly existingUser = 'existing_user';
 
   readonly code: ClikgateErrorCode;
   /** HTTP status when the error came from the API. */
@@ -125,6 +131,9 @@ export class ClikgateError extends Error {
           : null;
     const offlineTouchId =
       typeof info.offlineTouchId === 'string' ? info.offlineTouchId : null;
+    if (code === ClikgateError.existingUser) {
+      return new ExistingUserError(message, { status, param });
+    }
     return new ClikgateError(code, message, {
       status,
       param,
@@ -143,4 +152,20 @@ export class ClikgateError extends Error {
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
+}
+
+/**
+ * `applyCode` (or Engage `codes.redeem`) from an installation that already had the app before
+ * Clikgate was added: existing users can't be referred. A `ClikgateError` with code
+ * `existing_user`, so `instanceof ClikgateError` checks keep working.
+ */
+export class ExistingUserError extends ClikgateError {
+  constructor(
+    message: string,
+    options: { status?: number | null; param?: string | null } = {}
+  ) {
+    super(ClikgateError.existingUser, message, options);
+    this.name = 'ExistingUserError';
+    Object.setPrototypeOf(this, ExistingUserError.prototype);
+  }
 }

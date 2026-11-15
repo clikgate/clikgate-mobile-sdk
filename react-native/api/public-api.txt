@@ -2,6 +2,7 @@ export CLIKGATE_PROVIDERS
 export Clikgate
 export ClikgateError
 export ClikgateProvider
+export ExistingUserError
 export GoalKind
 export GoalStatus
 export VERSION
@@ -35,6 +36,7 @@ Clikgate.setTrackingEnabled
 Clikgate.referrals.applyCode
 Clikgate.referrals.referredBy
 ClikgateError.codeNotFound
+ClikgateError.existingUser
 ClikgateError.featureDisabled
 ClikgateError.fromNative
 ClikgateError.installPending

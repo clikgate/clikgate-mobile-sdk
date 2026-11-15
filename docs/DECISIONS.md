@@ -3,6 +3,50 @@
 Platform-specific decisions stay in each platform's `DECISIONS.md` (`android/`, `ios/`, `flutter/`, `react-native/`,
 `cli/`). This file holds the ones that span the SDKs.
 
+
+## Change 26 — existing users (C26-S1 mobile part, 2026-11-14)
+
+Spec: `clikgate_api/docs/spec/clikgate-change-26-existing-users.md` (R wins). Wire names: the shared contract
+(`shared/API_CONTRACT.md` "Change 26 additions"), agreed with the backend.
+
+- **Status shape (no breaking change in a patch).** The wire's `attribution.status: existing` is reported as
+  `organic` plus a new `isExistingUser` flag on every platform. A new iOS enum case or Dart / TS union member would
+  break exhaustive switches; Flutter and React Native mapped unknown statuses to `pending`.
+- **Typed error.** Android `ExistingUserError extends ClikgateError` (`ClikgateError` became `open`); Flutter
+  `ExistingUserException`, React Native `ExistingUserError`. iOS keeps one error type (`ClikgateError` is a struct):
+  `ClikgateError.existingUser` + `isExistingUser`. Android Engage `codes.redeem` gives a plain `ClikgateError` with the
+  code (Engage size budget; 0.2 KB).
+- **Consent denied.** With attribution consent denied there is no `/install` (only the anonymous install ping), and
+  the server's ping schema forbids extra fields, so `installed_before_start` rides only on the opted-out first
+  `/install` and when consent isn't required but attribution was set to denied. The opted-out install uses the cached
+  config's start date (it doesn't fetch config); none cached = the field is omitted.
+- **Android channel.** `debug` when FLAG_DEBUGGABLE, `sideload` with no installer or the package installer / shell,
+  else `store`; the server decides "store launch" from its staff-editable installer list. `platform_installed_at`
+  prefers Play's `install_begin_timestamp_server_seconds`, else `firstInstallTime`. Debug date: debuggable build and a
+  `sandbox` environment from `/config`.
+- **iOS channel.** Simulator or an embedded provisioning profile = `xcode`; `sandboxReceipt` = `testflight`; else
+  `app_store` (R.14: the receipt check only). The install date is the Documents directory's creation date.
+- **R.1 marker.** Phones that ran an earlier SDK get the this-device-only marker on their next launch, so a later
+  reinstall is still a reinstall. A reinstall of a phone that never ran 2.1.1 looks "restored" (classified by date).
+- **KC.6 timeout (deviation).** `AppTransaction.shared` is awaited without a 10 s timeout wrapper: a TaskGroup race cost
+  5.4 KB and a two-Task race 3.6 KB, over the 410 KB iOS ceiling. The call runs after the launch work, blocks
+  nothing, never calls `refresh()`, and is tried at most twice (this launch and the next). Sent only while the
+  `referrals` feature is on.
+- **R.28 saved links.** The core keeps the links (Android: `clikgate.prefs` key `saved_referral_links`; iOS:
+  `links.json`, a small synchronous class), owned by sha256 of the customer ID; Engage creates them. Answers are
+  saved only for the customer they were made for (Android: the request context's customer; iOS / wrappers: a token
+  read before the call). Preparation needs Engage to have been used after `configure()` in the process (core never
+  depends on Engage; Android registers when `ClikgateEngage` is first used or on `createLink`, iOS when
+  `ClikgateEngage.referrals` is first used, the wrappers on their first saved-link lookup). Only active programs with
+  `client_link_creation`.
+- **Sizes.** Android Engage 44.0 KB (< 44 KB, was 43.3): link listener folded into `EngageClient`, saving done in the
+  core, background calls take a null callback. iOS core 407.4 KB, Engage 94.7 KB: `existing_users` / program IDs read
+  lazily from the cached config, saved links synchronous.
+- **Versions.** Native, Flutter and React Native 2.1.1; `cli/src/constants.ts` SDK versions 2.1.1; the setup command
+  stays 2.1.0 (no CLI change; its release binaries and checksums are for 2.1.0).
+- **Binary compatibility.** Android `ClikgateOptions` / `ClikgateAttribution` data classes gain trailing parameters
+  (source-compatible; Java callers of the full constructor recompile).
+
 ## One package per SDK: the Engage add-on merged into the core (2026-11-12)
 
 Owner decision (2026-11-12): "there should not be a clikgate engage library". From 2.1.0 every SDK ships one package

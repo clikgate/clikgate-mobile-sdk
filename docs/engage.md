@@ -108,3 +108,12 @@ answers back so the core reacts as it does for its own calls. Details:
 [shared/PLATFORM_CHANNEL.md](../shared/PLATFORM_CHANNEL.md) ("Engage split"). CI checks the split
 with `scripts/check_sdk_boundaries.sh` (public-API snapshots, "no Engage API in core", "core code
 never uses Engage", size budgets for core and Engage separately).
+
+## Saved referral links (2.1.1)
+
+After `identifyUser()`, the signed-in customer's referral links for the app's active programs (with client link
+creation on) are created in the background and saved on the phone, per program and customer (never the customer ID in
+clear). `createLink` then answers at once, even offline, and refreshes the link in the background; with a
+`displayName` it always asks the server. Saved links are deleted on sign-out (`identifyUser(customerId: null)`), when
+another customer signs in, on opt-out and in private mode, so another customer on the same phone never sees them.
+Preparation starts once Engage is used after `configure()` in that app process.

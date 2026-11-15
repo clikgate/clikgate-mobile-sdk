@@ -30,7 +30,7 @@ final class PrivacyTests: XCTestCase {
         XCTAssertEqual(body["locale"] as? String, "en-NG")
         XCTAssertEqual(body["timezone"] as? String, "Africa/Lagos")
         // Every key is in the 1.2.0 iOS fixture (or optional in the schema).
-        let fixture = Fixtures.json("install_request_ios")
+        let fixture = Fixtures.json("install_request_ios").merging(Fixtures.json("install_request_ios_existing")) { a, _ in a }
         let optional: Set<String> = ["attestation", "apple_search_ads_token", "app_instance_id", "idfv", "keychain_previous_installation_id"]
         XCTAssertTrue(Set(body.keys).isSubset(of: Set(fixture.keys).union(optional)), "\(Set(body.keys).subtracting(fixture.keys))")
     }

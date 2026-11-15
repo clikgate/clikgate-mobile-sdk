@@ -27,6 +27,20 @@
   }];
 }
 
+- (void)savedLink:(NSString *)programId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [ClikgateEngageRN savedLink:programId resolve:^(NSDictionary *result) {
+    resolve(result);
+  }];
+}
+
+- (void)saveLink:(NSString *)programId link:(NSString *)link token:(NSString *)token resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [ClikgateEngageRN saveLink:programId link:link token:token resolve:^{
+    resolve(nil);
+  }];
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {

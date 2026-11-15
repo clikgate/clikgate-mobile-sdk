@@ -15,6 +15,10 @@ protocol ClikgateClock: Sendable {
 protocol KeychainStoring: Sendable {
     func readInstallationId() -> String?
     func writeInstallationId(_ id: String)
+    /// Change 26, R.1: a second item (`AfterFirstUnlockThisDeviceOnly`) that never comes back after an
+    /// iCloud / encrypted restore or Quick Start, unlike the installation ID item.
+    func readDeviceMarker() -> String?
+    func writeDeviceMarker(_ id: String)
 }
 
 protocol PasteboardReading: Sendable {
@@ -107,6 +111,8 @@ struct ClikgateDependencies: Sendable {
     var browser: BrowserPresenting = SystemBrowser()
     /// APNs registration for uninstall checks (`automaticPushToken`).
     var remoteNotifications: RemoteNotificationRegistering = SystemRemoteNotifications()
+    /// Change 26: when the app arrived on the phone, how it was installed, and Apple's signed app record.
+    var installFacts: AppInstallFactsProviding = SystemAppInstallFacts()
 
     static func live() -> ClikgateDependencies {
         ClikgateDependencies(

@@ -49,6 +49,7 @@ export function rig(
     features?: Record<string, boolean>;
     ctx?: Partial<ClikgateRequestContext>;
     contextError?: Error;
+    savedLinks?: import('../../engage/ClikgateEngage').EngageSavedLinks;
   } = {}
 ) {
   const routes = new Map<string, Reply[]>();
@@ -101,6 +102,7 @@ export function rig(
     shareSheet,
     linking,
     retryDelayMs: 0,
+    savedLinks: options.savedLinks,
   });
   return {
     engage,

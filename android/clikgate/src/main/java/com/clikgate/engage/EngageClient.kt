@@ -50,7 +50,26 @@ internal class EngageClient(
     @Volatile var source: ContextSource = CoreContextSource,
     @Volatile var clock: () -> Long = System::currentTimeMillis,
     @Volatile var retryDelayMs: Long = 500,
-) {
+) : com.clikgate.internal.LinkPreparer {
+    /**
+     * Change 26, R.28: the core's "prepare this program's link" listener after `identifyUser()` (the core saves
+     * every link answer for the customer it was made for). Here rather than in a class of its own: the Engage
+     * size budget.
+     */
+    override fun prepareLink(programId: String) = call<ReferralLink>(
+        "referrals", "POST", "/v1/sdk/referrals/link", JSONObject().put("program_id", programId),
+        userCall = true, cacheable = false, write = true, kind = EngageJson.LINK, callback = null,
+    )
+
+    /** Registers [prepareLink] with the core (the core keeps only the first registration of a configured SDK). */
+    fun prepareLinks() {
+        Clikgate.coreOrNull()?.setIdentifyListener(this)
+    }
+
+    init {
+        prepareLinks()
+    }
+
     private class Entry(val at: Long, val value: Any?)
 
     private val cache = ConcurrentHashMap<String, Entry>()
@@ -64,8 +83,11 @@ internal class EngageClient(
 
     fun clearCache() = cache.clear()
 
-    fun <T> fail(callback: ClikgateCallback<T>, error: ClikgateError) {
-        main.post { callback.onResult(ClikgateResult.Failure(error)) }
+    fun <T> fail(callback: ClikgateCallback<T>?, error: ClikgateError) = deliver(callback, ClikgateResult.Failure(error))
+
+    /** [callback] null: a background call whose answer only the core keeps (change 26 saved links). */
+    fun <T> deliver(callback: ClikgateCallback<T>?, result: ClikgateResult<T>) {
+        if (callback != null) main.post { callback.onResult(result) }
     }
 
     fun <T> invalid(callback: ClikgateCallback<T>, message: String, param: String) =
@@ -85,7 +107,7 @@ internal class EngageClient(
         cacheable: Boolean,
         write: Boolean,
         kind: Int,
-        callback: ClikgateCallback<T>,
+        callback: ClikgateCallback<T>?,
     ) {
         val src = source
         // An empty feature (share events) has no switch.
@@ -107,7 +129,7 @@ internal class EngageClient(
                         if (hit != null && clock() - hit.at in 0 until CACHE_TTL_MS) {
                             @Suppress("UNCHECKED_CAST")
                             val value = hit.value as T
-                            main.post { callback.onResult(ClikgateResult.Success(value)) }
+                            deliver(callback, ClikgateResult.Success(value))
                             return@requestContext
                         }
                     }
@@ -118,7 +140,7 @@ internal class EngageClient(
                             if (cacheable) cache[key] = Entry(clock(), result.value)
                             if (write) cache.clear()
                         }
-                        main.post { callback.onResult(result) }
+                        deliver(callback, result)
                     }
                 }
             }
@@ -158,7 +180,10 @@ internal class EngageClient(
                 } else {
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        ClikgateResult.Success(EngageJson.parse(kind, json) as T)
+                        val value = EngageJson.parse(kind, json) as T
+                        // Change 26, R.28: a link answer is saved for the customer it was made for
+                        if (kind == EngageJson.LINK) Clikgate.coreOrNull()?.saveLinkAnswer(body, ctx.customerUserId, json)
+                        ClikgateResult.Success(value)
                     } catch (e: ClikgateError) {
                         ClikgateResult.Failure(e)
                     } catch (e: Exception) {

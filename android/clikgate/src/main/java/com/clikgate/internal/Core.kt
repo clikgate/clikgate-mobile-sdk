@@ -283,7 +283,7 @@ internal class Core(
             runSerial {
                 if (r is ApiResult.Failure) {
                     applyGlobalError(r.error)
-                    val delay = r.retryAfterMs ?: deps.backoff.delayMs(attempt)
+                    val delay = r.retryAfterMs?.let(deps.backoff::withJitter) ?: deps.backoff.delayMs(attempt)
                     if (r.retryable && attempt + 1 < maxAttempts && delay <= maxRetryDelayMs && !invalidKey && !serial.isShutdown) {
                         Log.d("${req.path.substringBefore('?')} failed (${r.error.code}); retry in ${delay} ms")
                         val next = forRetry(req)
@@ -785,6 +785,42 @@ internal class Core(
         put("sdk_version", nativeVersion)
         put("platform", "android")
         put("consent", consentBody(optedOut = true))
+        // Change 26, R.3: classified before the opt-out step, without the dates
+        putExistingUserFields(this, datesAllowed = false)
+    }
+
+    /**
+     * Change 26 (EX.3, R.3-R.8): how and when the app arrived on this phone. With [datesAllowed] false
+     * (opted out, attribution consent denied) only whether it was there before the app's Clikgate start date.
+     * A failing read leaves its field out; the install is never held up.
+     */
+    private fun putExistingUserFields(body: JSONObject, datesAllowed: Boolean) {
+        try {
+            val d = deps.device
+            val playBegin = storage.referrerJson?.let {
+                try { JSONObject(it).optLong("install_begin_timestamp_server_seconds", 0L) } catch (_: Exception) { 0L }
+            } ?: 0L
+            val installer = d.installerPackage()
+            if (datesAllowed || !body.has("installer_package")) body.put("installer_package", installer ?: JSONObject.NULL)
+            ExistingUserFields.put(
+                body,
+                ExistingUserFields.Inputs(
+                    facts = d.installFacts(),
+                    installerPackage = installer,
+                    debuggable = d.isDebuggableApp,
+                    playInstallBeginServerSeconds = playBegin,
+                    nowMs = deps.clock(),
+                    hint = options.existingUser,
+                    datesAllowed = datesAllowed,
+                    startAtMs = config.sdkStartAtMs ?: featureConfig.sdkStartAtMs,
+                    deviceKeySalt = config.deviceKeySalt,
+                    debugInstalledAtMs = options.debugPlatformInstalledAt?.time,
+                    testEnvironment = (config.environment ?: options.environment.name.lowercase(Locale.US)) == "sandbox",
+                ),
+            )
+        } catch (e: Exception) {
+            Log.d("Existing-user fields skipped (${e.javaClass.simpleName})")
+        }
     }
 
     /** Version policy `blocked`: required fields, consent, referrer and launch URL only. */
@@ -824,6 +860,7 @@ internal class Core(
         // Fraud signals (hints): computed once per request body; a failing check omits its field.
         signal { d.isEmulator() }?.let { put("is_emulator", it) }
         signal { d.isRooted() }?.let { put("is_rooted", it) }
+        putExistingUserFields(this, datesAllowed = purposeAllowed(consentValues.attribution))
     }
 
     private inline fun signal(check: () -> Boolean): Boolean? = try {
@@ -1493,6 +1530,8 @@ internal class Core(
         if (customer && featureConfig.privateMode) warnPrivateMode()
         if (l == null && (!customer || featureConfig.privateMode)) return@runSerial
         if (customer && !featureConfig.privateMode) {
+            // Change 26, R.28: another customer (or sign-out) never sees the previous customer's saved links
+            if (customerSet && customerId != storage.customerUserId) storage.savedLinksJson = null
             if (customerSet) storage.customerUserId = customerId
             storage.identityToken = if (storage.customerUserId == null) null else identityToken
         }
@@ -1521,6 +1560,7 @@ internal class Core(
 
     /** Private mode: a pending (unsent) identify loses its user id and token (and its label unless allowed). */
     private fun discardIdentify() {
+        storage.savedLinksJson = null
         storage.customerUserId = null
         storage.identityToken = null
         if (!featureConfig.allowLabels) storage.pendingLabel = null
@@ -1584,6 +1624,7 @@ internal class Core(
             if (done && seq == identifySeq) {
                 storage.identifyPending = false
                 if (storage.pendingLabel == label) storage.pendingLabel = null
+                if (r is ApiResult.Success) notifyIdentified()
             }
             if (seq == identifySeq) {
                 val ws = ArrayList(identifyWaiters)
@@ -1592,6 +1633,64 @@ internal class Core(
             }
             pump()
         }
+    }
+
+    // ------------------------------------------------------------------ saved referral links (change 26, R.28)
+    // Core never creates links: Engage registers [identifyListener] and does it. These only keep its answers.
+
+    /** Engage's "prepare this program's link" listener (serial thread), called after a customer is identified. */
+    private var identifyListener: LinkPreparer? = null
+
+    /** Engage registers once per configured SDK; registering again (each createLink) changes nothing. */
+    fun setIdentifyListener(listener: LinkPreparer) = runSerial {
+        if (identifyListener != null) return@runSerial
+        identifyListener = listener
+        // Registered after this launch's identify (Engage first used later): prepare the links now
+        if (!storage.identifyPending) notifyIdentified()
+    }
+
+    /** Asks Engage for each active program's link the signed-in customer has none saved for yet. */
+    private fun notifyIdentified() {
+        val listener = identifyListener ?: return
+        if (storage.customerUserId == null || !storage.trackingEnabled || config.privateMode || !isFeatureEnabled("referrals")) return
+        for (p in config.linkProgramIds) if (savedLink(p) == null) listener.prepareLink(p)
+    }
+
+
+    /** The saved link JSON for [programId] when it belongs to the customer signed in now (any thread). */
+    fun savedLink(programId: String): JSONObject? {
+        if (!storage.trackingEnabled || config.privateMode || !isFeatureEnabled("referrals")) return null
+        val customer = storage.customerUserId ?: return null
+        val saved = storage.savedLinksJson?.let { try { JSONObject(it) } catch (_: Exception) { null } } ?: return null
+        if (saved.optString("c") != hash(customer)) return null
+        return saved.optJSONObject("l")?.optJSONObject(programId)
+    }
+
+    /** An Engage link answer to the request [body] (its `program_id`), made for [customerId]. */
+    fun saveLinkAnswer(body: JSONObject?, customerId: String?, link: JSONObject) {
+        saveLink(body?.optString("program_id") ?: return, customerId, link)
+    }
+
+    /** Saves [link] for [programId] if [customerId] is still the customer signed in (any thread). */
+    fun saveLink(programId: String, customerId: String?, link: JSONObject) {
+        saveLinkFor(programId, customerId?.let(::hash) ?: return, link)
+    }
+
+    /** The signed-in customer's token for [saveLinkFor] (wrappers' Engage), null when nobody is signed in. */
+    fun linkToken(): String? = storage.customerUserId?.let(::hash)
+
+    /** Saves [link] if the customer whose [token] it is (sha256 of the ID) is still signed in. */
+    @Synchronized
+    fun saveLinkFor(programId: String, token: String, link: JSONObject) {
+        val customer = storage.customerUserId ?: return
+        if (!storage.trackingEnabled) return
+        val h = hash(customer)
+        if (token != h) return
+        val saved = storage.savedLinksJson?.let { try { JSONObject(it) } catch (_: Exception) { null } }
+            ?.takeIf { it.optString("c") == h } ?: JSONObject().put("c", h)
+        val links = saved.optJSONObject("l") ?: JSONObject()
+        links.put(programId, link)
+        storage.savedLinksJson = saved.put("l", links).toString()
     }
 
     // ------------------------------------------------------------------ push
@@ -1941,4 +2040,9 @@ internal class Core(
             return ThreadFactory { r -> Thread(r, "$prefix-${n.incrementAndGet()}").apply { isDaemon = true } }
         }
     }
+}
+
+/** Change 26, R.28: Engage's "prepare this program's referral link" (the core never creates links itself). */
+internal interface LinkPreparer {
+    fun prepareLink(programId: String)
 }

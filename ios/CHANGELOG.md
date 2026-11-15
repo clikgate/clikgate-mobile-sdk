@@ -1,5 +1,32 @@
 # Changelog — Clikgate iOS SDK
 
+
+## 2.1.1 (unreleased): Existing users
+
+- **Existing users (Change 26).** The first `/install` now says how and when the app arrived on the phone, so
+  Clikgate can tell people who had the app before your first release with Clikgate ("existing users, now tracked")
+  from new installs. Existing users are never attributed and don't count as installs; their goals, uninstalls,
+  identify, referrals as referrers and deep links work as before.
+  - Sent: `install_channel` (`app_store`, `testflight`, `xcode`, from the receipt URL and the embedded profile),
+    `platform_installed_at` (the creation date of the app's Documents directory, rounded down to the hour) and
+    `device_time`. Opted out or attribution consent denied: only `installed_before_start`, never the dates.
+  - Restores: a second Keychain item (`AfterFirstUnlockThisDeviceOnly`) is written next to the installation ID. When
+    only the restored installation-ID item comes back (iCloud / encrypted restore, Quick Start), `/install` sends
+    `keychain_restored_from_other_device: true` and the installation counts as a new phone, not a reinstall.
+  - Privacy manifest: `NSPrivacyAccessedAPICategoryFileTimestamp` with reason `C617.1`.
+- **Added:** Apple's signed app record (`AppTransaction.shared`, iOS 16+), sent once with `POST /v1/sdk/app-record`
+  after the install, only while referrals are on (it's used only to block existing users from being referred). Tried
+  at the install and the next launch, then never again; never `AppTransaction.refresh()` (which can ask the person to
+  sign in).
+- **Added:** `ClikgateOptions(existingUser:)` (a hint; with no readable install date it also skips the pasteboard and
+  the AdServices token) and `debugPlatformInstalledAt` (Xcode builds with a test key only).
+- **Added:** `ClikgateAttribution.isExistingUser` (`status` stays `.organic`, so no new enum case) and
+  `ClikgateError.existingUser` / `isExistingUser` for `applyCode` from an existing user's installation.
+- **Added (Engage):** the signed-in customer's referral links are prepared after `identifyUser()` and saved on the
+  phone (`links.json`, owner hashed); `createLink` answers with the saved link at once, even offline, and refreshes it.
+- **Changed:** a wait in the error body (`retry_after_ms`) wins over `Retry-After`, plus up to 25 % random extra.
+- Size (-Osize): core 407.4 KB (< 410 KB), Engage 94.7 KB (< 95 KB).
+
 ## 2.1.0 (unreleased): Engage is part of the SDK
 
 - **The Engage add-on is merged into the SDK.** The `Clikgate` Swift package product now contains both modules,

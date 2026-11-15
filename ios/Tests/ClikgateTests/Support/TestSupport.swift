@@ -154,9 +154,26 @@ final class FakeClock: ClikgateClock, @unchecked Sendable {
 final class FakeKeychain: KeychainStoring, @unchecked Sendable {
     private let lock = NSLock()
     var value: String?
-    init(_ v: String? = nil) { value = v }
+    /// The this-device-only marker (change 26, R.1); same as `value` unless a test says otherwise (a restore).
+    var marker: String?
+    init(_ v: String? = nil) { value = v; marker = v }
     func readInstallationId() -> String? { lock.lock(); defer { lock.unlock() }; return value }
     func writeInstallationId(_ id: String) { lock.lock(); value = id; lock.unlock() }
+    func readDeviceMarker() -> String? { lock.lock(); defer { lock.unlock() }; return marker }
+    func writeDeviceMarker(_ id: String) { lock.lock(); marker = id; lock.unlock() }
+}
+
+/// Change 26: the phone's install facts and Apple's app record.
+final class FakeInstallFacts: AppInstallFactsProviding, @unchecked Sendable {
+    private let lock = NSLock()
+    var channelValue = "app_store"
+    var createdAt: Date?
+    var record: String?
+    private var _recordCalls = 0
+    func channel() -> String { channelValue }
+    func containerCreatedAt() -> Date? { createdAt }
+    func appRecord() async -> String? { lock.lock(); _recordCalls += 1; lock.unlock(); return record }
+    var recordCalls: Int { lock.lock(); defer { lock.unlock() }; return _recordCalls }
 }
 
 final class FakePasteboard: PasteboardReading, @unchecked Sendable {
@@ -273,6 +290,7 @@ final class Harness: @unchecked Sendable {
     var firebase = FakeFirebase()
     var deviceCheck = FakeDeviceCheck()
     var odm = FakeODM()
+    let installFacts = FakeInstallFacts()
     var vendorId: String? = "6F9619FF-8B86-D011-B42D-00C04FC964FF"
     private var uuidCounter = 0
     private let uuidLock = NSLock()
@@ -301,7 +319,8 @@ final class Harness: @unchecked Sendable {
             apnsEnvironment: { "sandbox" }, appURLSchemes: ["myapp"], storageDirectory: dir,
             uuid: { [unowned self] in self.nextUUID() }, jitter: { 0 },
             firebase: firebase, deviceCheck: deviceCheck, onDeviceMeasurement: odm,
-            vendorId: { [vendorId] in vendorId }, browser: browser, remoteNotifications: remoteNotifications)
+            vendorId: { [vendorId] in vendorId }, browser: browser, remoteNotifications: remoteNotifications,
+            installFacts: installFacts)
     }
 
     /// Tests default to `.automatic` pasteboard reads (the SDK default is `.off` since 1.2.0).

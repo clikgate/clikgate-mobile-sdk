@@ -116,6 +116,11 @@ public data class ClikgateAttribution(
     /** Clikgate install id (`ins_...`); null until `/install` succeeded. */
     val installId: String?,
     val link: ClikgateLink?,
+    /**
+     * Change 26: true when the app was already on this phone before your first release with Clikgate (an
+     * existing user, now tracked). [status] is then `organic`: existing users are never attributed.
+     */
+    val isExistingUser: Boolean = false,
 ) {
     public val isAttributed: Boolean get() = status == STATUS_ATTRIBUTED
 
@@ -156,7 +161,7 @@ public enum class PushProvider(public val wireName: String) {
  * `self_referral`, `identity_required`, `not_identified`, `program_paused`, ...) or one of the SDK codes in the companion object ([FEATURE_DISABLED] when
  * the feature is switched off for the app).
  */
-public class ClikgateError(
+public open class ClikgateError(
     public val code: String,
     message: String,
     /** HTTP status when the error came from the API. */
@@ -204,8 +209,25 @@ public class ClikgateError(
 
         /** This SDK version is blocked by Clikgate's version policy for this call; update the SDK. */
         public const val SDK_VERSION_BLOCKED: String = "sdk_version_blocked"
+
+        /**
+         * Change 26: the installation is an existing user (the app was on the phone before the app's Clikgate
+         * start date), so it can't be referred. Always delivered as [ExistingUserError].
+         */
+        public const val EXISTING_USER: String = "existing_user"
     }
 }
+
+/**
+ * Change 26 (RF.1): `applyCode` (or Engage `codes.redeem`) from an installation that already had the app
+ * before Clikgate was added: existing users can't be referred. A [ClikgateError] with code
+ * [ClikgateError.EXISTING_USER], so existing `catch (e: ClikgateError)` code keeps working.
+ */
+public class ExistingUserError(
+    message: String,
+    status: Int? = 409,
+    param: String? = null,
+) : ClikgateError(EXISTING_USER, message, status, param)
 
 /** Result of an asynchronous SDK call: a value or a [ClikgateError]. */
 public sealed class ClikgateResult<out T> {

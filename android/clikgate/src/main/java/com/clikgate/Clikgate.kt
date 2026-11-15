@@ -547,6 +547,26 @@ public object Clikgate {
         core?.reportServerError(code, feature)
     }
 
+    /**
+     * Internal (Flutter / React Native Engage, change 26 R.28): the link JSON saved for [programId] for the
+     * signed-in customer (or null) and the token to pass to [saveLinkJson]. Not for apps.
+     */
+    @ClikgateInternalApi
+    @JvmStatic
+    public fun savedLinkJson(programId: String): Pair<String?, String?> {
+        val c = core ?: return null to null
+        return c.savedLink(programId)?.toString() to c.linkToken()
+    }
+
+    /** Internal: saves a link answer unless another customer signed in since [token] was read. */
+    @ClikgateInternalApi
+    @JvmStatic
+    public fun saveLinkJson(programId: String, json: String, token: String?) {
+        val t = token ?: return
+        val o = try { org.json.JSONObject(json) } catch (_: Exception) { return }
+        core?.saveLinkFor(programId, t, o)
+    }
+
     // ---------------------------------------------------------------- tests
 
     internal fun resetForTesting() {
