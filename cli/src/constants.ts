@@ -5,7 +5,7 @@
 
 import type { Platform } from './args';
 
-export const CLI_VERSION = '2.1.0';
+export const CLI_VERSION = '2.1.1';
 
 export const DEFAULT_API_URL = 'https://api.clikgate.com';
 export const DASHBOARD_URL = 'https://app.clikgate.com';

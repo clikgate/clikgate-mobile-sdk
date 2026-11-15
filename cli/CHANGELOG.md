@@ -1,6 +1,11 @@
 # Changelog
 
-## 2.1.0 (unreleased)
+## 2.1.1
+
+- Installs the 2.1.1 SDKs (existing users: the first launch says how and when the app arrived on the phone, so people
+  who had the app before Clikgate aren't counted as new installs). Constraints `^2.1.1` / `~> 2.1`.
+
+## 2.1.0
 
 - **Also runs as `dart run clikgate_flutter`** (Flutter projects, no Node.js): the same code compiled with Bun into
   self-contained binaries (`scripts/build_setup_binaries.sh`), downloaded and verified by `clikgate_flutter`. When
