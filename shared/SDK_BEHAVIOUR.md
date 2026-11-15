@@ -511,7 +511,7 @@ The consent gate for goals:
 
 ## Change 06 (SDK 1.4.0): shared-domain browser fallback
 
-Shared platform domains: `ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to` (API_CONTRACT.md "Shared
+Shared platform domains: `ciz.to`, `ciz.ng`, `dev.ciz.to` (API_CONTRACT.md "Shared
 platform domains"; one constant per native SDK, checked against `fixtures/shared_link_domains.json`).
 
 - Trigger: a direct `/resolve` (a URL the app was opened with or passed to `handle(url)`) answers
@@ -571,7 +571,7 @@ platform domains"; one constant per native SDK, checked against `fixtures/shared
 - `/install` at the monthly deferred deep link cap answers `deep_link: null`: the normal "no deferred link"
   result (no callback, no error, no retry). Attribution in this mode is always `organic`.
 - `deep_linking` joins the catalogue defaults that count as on before the first config fetch.
-- Free app subdomains: `yourapp.clk.ng` (release builds) and `yourapp.dev.ciz.to` (debug builds), from
+- Free app subdomains: `yourapp.ciz.ng` (release builds) and `yourapp.dev.ciz.to` (debug builds), from
   `app_link_domains` (`docs/SETUP_COMMAND.md`). Not shared domains.
 
 ## Change 12 (folded into the unreleased versions): one `goal()` method, Payment goals

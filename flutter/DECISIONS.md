@@ -251,8 +251,8 @@ The plugin's earlier decisions (bridge, composite build, example pins) are recor
 
 ## Change 06 — shared-domain browser fallback (plugin 1.4.0, native 1.4.0, 2026-10-26)
 
-- **What**: the native SDKs open another organisation's unmatched shared-domain link (`ciz.to`, `clk.ng`,
-  `clkg.to`, `dev.ciz.to`) in an in-app browser; the plugin only passes the option and the event through
+- **What**: the native SDKs open another organisation's unmatched shared-domain link (`ciz.to`, `ciz.ng`,
+  `dev.ciz.to`) in an in-app browser; the plugin only passes the option and the event through
   (shared/SDK_BEHAVIOUR.md "Change 06 (SDK 1.4.0)"). The shared-domain list lives in the native SDKs only.
 - **Event transport**: the handoff rides the existing `com.clikgate/deep_links` EventChannel as a tagged
   map `{event: "browserHandoff", url, host}` instead of a second EventChannel, so the native buffers

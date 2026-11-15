@@ -20,7 +20,7 @@ export interface ClikgatePluginProps {
    * Clikgate link domains (e.g. `["yourapp.ciz.to", "go.myapp.com"]`: your app's link subdomain and
    * your verified custom domains): iOS `applinks:` associated domains and Android App Link intent
    * filters with `android:autoVerify="true"`. Pass the same domains to
-   * `Clikgate.configure({ linkDomains })`. Never a shared domain (`ciz.to`, `clk.ng`, `clkg.to`,
+   * `Clikgate.configure({ linkDomains })`. Never a shared domain (`ciz.to`, `ciz.ng`,
    * `dev.ciz.to`): shared domains can't open your app.
    */
   linkDomains?: string[];

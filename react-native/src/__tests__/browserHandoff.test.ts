@@ -29,7 +29,7 @@ const handoff = (url: string, host: string) => ({
 });
 
 const directLink = {
-  url: 'https://clk.ng/mine',
+  url: 'https://ciz.ng/mine',
   path: '/products/42',
   data: { product_id: '42' },
   isDeferred: false,
@@ -87,14 +87,14 @@ describe('onBrowserHandoff', () => {
 
   it('buffers handoffs until the first listener and replays them', async () => {
     await Clikgate.configure({ sdkKey: 'cg_sdk_test' });
-    emit(handoff('https://clk.ng/x', 'clk.ng'));
+    emit(handoff('https://ciz.ng/x', 'ciz.ng'));
     emit(directLink);
     const handoffs: ClikgateBrowserHandoff[] = [];
     const links: ClikgateDeepLink[] = [];
     const off = Clikgate.onBrowserHandoff((h) => handoffs.push(h));
     Clikgate.onDeepLink((l) => links.push(l));
     await flush();
-    expect(handoffs.map((h) => h.host)).toEqual(['clk.ng']);
+    expect(handoffs.map((h) => h.host)).toEqual(['ciz.ng']);
     expect(links).toHaveLength(1);
     off();
     emit(handoff('https://ciz.to/y', 'ciz.to'));

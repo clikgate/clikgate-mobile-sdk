@@ -151,16 +151,16 @@ Clikgate.onDeepLink { link ->
 
 **App link subdomain (change 09).** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
 shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
-builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `clk.ng`,
-`clkg.to`, `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
+builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
+`dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
 **Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
-`yourapp.clk.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.clk.ng` is your
-app's own subdomain, not the shared domain `clk.ng`, so declare it like `yourapp.ciz.to`; the setup command does.
+`yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
+app's own subdomain, not the shared domain `ciz.ng`, so declare it like `yourapp.ciz.to`; the setup command does.
 Basic install attribution (which link, campaign or creator brought each install) and goals work on every plan, up to
 the plan's allowance; re-engagement and the advanced app reports need Growth. Only when attribution is
 switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal(...)` then logs one warning and does
@@ -171,7 +171,7 @@ the click they came from, so one tap is one click (change 21).
 
 ### Shared-domain links of other organisations (1.4.0)
 
-`ciz.to`, `clk.ng`, `clkg.to` and `dev.ciz.to` are shared by many Clikgate customers, so Android can
+`ciz.to`, `ciz.ng` and `dev.ciz.to` are shared by many Clikgate customers, so Android can
 open your app for another organisation's link on them. When the server says the link isn't yours
 (`/resolve` → `matched: false`), the SDK opens it in **Custom Tabs** (or, without Custom Tabs, the
 browser app), always in an explicit browser package so it can't loop back into your App Links. No

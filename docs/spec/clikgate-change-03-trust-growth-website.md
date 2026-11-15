@@ -1,4 +1,4 @@
-> **Workspace note (coordinator):** repositories in this workspace — backend `clikgate_api` (code in `src/<domain>/`; `app/...` paths map there, e.g. `app/integrations/google_aap/` → `src/integrations/google_aap/`), SDKs `clikgate_mobile_sdk` (the spec's `clikgate/sdks/`; the web script is served by the backend from `src/static`/`src/snippet`), dashboard `clikgate_frontend` (the spec's `clikgate-dashboard`), website + status page `clikgate_website` (new, the spec's `clikgate-website`). Changes 01 and 02 specs are in `docs/spec/`. Production deploys through `distyla_config` (docker swarm + nginx), except the status page which must run on Cloudflare (W.7). Email goes through the ZeptoMail adapter (Change 02). Link-domain hosts in production: `clik.gt` (existing platform domain), `clk.ng` (new), `test.clik.gt` (test mode), `dsty.la` (Distyla's own custom domain — must keep working).
+> **Workspace note (coordinator):** repositories in this workspace — backend `clikgate_api` (code in `src/<domain>/`; `app/...` paths map there, e.g. `app/integrations/google_aap/` → `src/integrations/google_aap/`), SDKs `clikgate_mobile_sdk` (the spec's `clikgate/sdks/`; the web script is served by the backend from `src/static`/`src/snippet`), dashboard `clikgate_frontend` (the spec's `clikgate-dashboard`), website + status page `clikgate_website` (new, the spec's `clikgate-website`). Changes 01 and 02 specs are in `docs/spec/`. Production deploys through `distyla_config` (docker swarm + nginx), except the status page which must run on Cloudflare (W.7). Email goes through the ZeptoMail adapter (Change 02). Link-domain hosts in production: `clik.gt` (existing platform domain), `ciz.ng` (new), `test.clik.gt` (test mode), `dsty.la` (Distyla's own custom domain — must keep working).
 
 # Clikgate Change 03 — Link Domain Split, Privacy & Consent, Partner Readiness, Sales Tracking, Agencies, Migration, Status Page & Website
 
@@ -19,7 +19,7 @@
 ## A. Overview (read first)
 
 ### A.1 What this change does
-1. **Link domain split.** Free-plan links use **`clk.ng`**. Paid plans and staff-verified organisations use **`clik.gt`**. Stronger abuse controls on `clk.ng` keep scammers from getting `clik.gt` blocklisted.
+1. **Link domain split.** Free-plan links use **`ciz.ng`**. Paid plans and staff-verified organisations use **`clik.gt`**. Stronger abuse controls on `ciz.ng` keep scammers from getting `clik.gt` blocklisted.
 2. **iOS matching change.** Probabilistic (fingerprint) matching is switched off on iOS, permanently. Identity checks on iOS use Apple DeviceCheck/App Attest and IDFV only. Android probabilistic matching needs owner acknowledgement **and** consent.
 3. **Consent and privacy.** A consent API in the SDKs and server API, consent modes by region (EEA/UK/CH on by default), enforcement everywhere data leaves Clikgate, consent logs, data requests and NDPA documents.
 4. **Google partner readiness.** `gclid`/`gbraid`/`wbraid` carried end to end (click → deep link → install → conversion → Google upload), consent signals on uploads, iOS on-device measurement pass-through, lookback windows of at least 24 hours, a minimum SDK version policy, and an App Attribution Partner adapter behind a flag.
@@ -34,7 +34,7 @@
 
 | Feature key / allowance | Free | Starter | Growth | Pro | Enterprise |
 |---|---|---|---|---|---|
-| Link domain | `clk.ng` | `clik.gt` | `clik.gt` + own domains (2) | `clik.gt` + own domains (10) | all |
+| Link domain | `ciz.ng` | `clik.gt` | `clik.gt` + own domains (2) | `clik.gt` + own domains (10) | all |
 | `consent_tools` (consent API, modes, logs, data requests) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `sales_tracking` | — | ✓ | ✓ | ✓ | ✓ |
 | allowance `sales_connections` | 0 | 1 | 3 | unlimited | unlimited |
@@ -56,24 +56,24 @@
 
 ## B. Backend (`clikgate`)
 
-### B.1 Link domain split (`clk.ng` / `clik.gt`)
+### B.1 Link domain split (`ciz.ng` / `clik.gt`)
 
 **Configuration**
-- Replace `DEFAULT_LINK_DOMAIN` with `FREE_LINK_DOMAIN=clk.ng` and `PAID_LINK_DOMAIN=clik.gt`. Both are **platform short domains** in the Part 3 domain model (role `short`, owner `platform`), with TLS, AASA/assetlinks and root/not-found pages.
-- `clk.ng` root → `https://clikgate.com/products/short-links`. `clik.gt` root → `https://clikgate.com`. `clk.ng/report` → the abuse report page on the website (W.6).
+- Replace `DEFAULT_LINK_DOMAIN` with `FREE_LINK_DOMAIN=ciz.ng` and `PAID_LINK_DOMAIN=clik.gt`. Both are **platform short domains** in the Part 3 domain model (role `short`, owner `platform`), with TLS, AASA/assetlinks and root/not-found pages.
+- `ciz.ng` root → `https://clikgate.com/products/short-links`. `clik.gt` root → `https://clikgate.com`. `ciz.ng/report` → the abuse report page on the website (W.6).
 
 **Eligibility**
 - `clik.gt` requires an `active` or `grace` paid subscription **or** `organizations.verified_at` set by staff.
 - **Organisation verification** (for free organisations that need `clik.gt`, e.g. NGOs and schools, and as a trust signal for everyone): `POST /v1/organization/verification` with legal name, CAC registration number (or other country registry), website, business email domain, contact phone, optional documents (object storage, max 3 files, 5 MB each). Staff review in the console (🔐 approve or reject with reason). The organisation gets a `verified` badge shown in the dashboard and on link preview pages.
-- Link creation picks the default domain automatically: own default domain → `clik.gt` if eligible → `clk.ng`. Requests for an ineligible domain return `403 plan_limit_reached` with `param: "domain"`.
+- Link creation picks the default domain automatically: own default domain → `clik.gt` if eligible → `ciz.ng`. Requests for an ineligible domain return `403 plan_limit_reached` with `param: "domain"`.
 
 **Existing links and plan changes (links never break)**
-- Migration: links on `clik.gt` owned by free, unverified organisations keep working. They are flagged `legacy_free_on_paid_domain: true`, their destinations are re-scanned, and new links for those organisations go to `clk.ng`.
-- Downgrade or expiry: existing `clik.gt` links keep redirecting. New links go to `clk.ng`. Destination edits on `clik.gt` links are allowed but always pass blocking destination scanning and are rate-limited to 20 a day; an abuse flag on the organisation freezes edits.
-- Upgrade: new links use `clik.gt`. `POST /v1/links/move-domain` (bulk, paid only) creates `clik.gt` copies of selected `clk.ng` links with the same slugs where free. The old `clk.ng` links keep redirecting.
+- Migration: links on `clik.gt` owned by free, unverified organisations keep working. They are flagged `legacy_free_on_paid_domain: true`, their destinations are re-scanned, and new links for those organisations go to `ciz.ng`.
+- Downgrade or expiry: existing `clik.gt` links keep redirecting. New links go to `ciz.ng`. Destination edits on `clik.gt` links are allowed but always pass blocking destination scanning and are rate-limited to 20 a day; an abuse flag on the organisation freezes edits.
+- Upgrade: new links use `clik.gt`. `POST /v1/links/move-domain` (bulk, paid only) creates `clik.gt` copies of selected `ciz.ng` links with the same slugs where free. The old `ciz.ng` links keep redirecting.
 
-**Abuse controls (stricter on `clk.ng`, applied to `clik.gt` as well)**
-| Control | `clk.ng` (free) | `clik.gt` (paid/verified) |
+**Abuse controls (stricter on `ciz.ng`, applied to `clik.gt` as well)**
+| Control | `ciz.ng` (free) | `clik.gt` (paid/verified) |
 |---|---|---|
 | Account checks before first link | Verified email **and** phone (OTP) | Paid or staff-verified organisation |
 | New-account limits | First 7 days: 10 links/day, 200 clicks/hour per link before review | Plan limits only |
@@ -81,12 +81,12 @@
 | Reputation lookups | Google Web Risk (or Safe Browsing where licensing allows; record the choice) plus Clikgate blocklists on create, on edit, and re-checked daily for active links | Same, re-checked weekly |
 | Disallowed destinations | Other URL shorteners (redirect chains), raw IPs, lookalike domains of banks, fintechs and government (a curated list), data/js URLs | Raw IPs, data/js URLs |
 | Community reports | 3 distinct reports in 24 h → link paused pending review | 5 reports → staff alert (no auto-pause) |
-| Link preview | Appending `+` to any link (`clk.ng/abc+`) shows a safe preview page: destination, organisation name, verified badge, report button | Same |
+| Link preview | Appending `+` to any link (`ciz.ng/abc+`) shows a safe preview page: destination, organisation name, verified badge, report button | Same |
 | Signup throttling | Per IP/ASN and device limits; repeat-abuser detection by verified phone, email domain and device | — |
 
 - **Abuse reports:** public `POST /v1/public/abuse-reports` `{link_url, reason (phishing|scam|malware|spam|impersonation|illegal|other), details, reporter_email?}` (captcha, rate-limited), and `abuse@clikgate.com` parsed into the same queue.
 - **Staff abuse queue** (support+): report list with link, destination snapshot, scan results, organisation history. Actions: dismiss, pause link, disable link 🔐, suspend organisation 🔐, ban destination domain 🔐. The target response time of 2 hours is shown on the queue.
-- **Domain reputation monitor** (worker, every 6 h): checks `clk.ng`, `clik.gt` and every customer branded domain against Google Web Risk/Safe Browsing status and major blocklists where an API exists. Records results in `domain_reputation_checks`. Raises a **critical system alert** to super admins and the status page component "Link domains" if `clk.ng` or `clik.gt` is listed.
+- **Domain reputation monitor** (worker, every 6 h): checks `ciz.ng`, `clik.gt` and every customer branded domain against Google Web Risk/Safe Browsing status and major blocklists where an API exists. Records results in `domain_reputation_checks`. Raises a **critical system alert** to super admins and the status page component "Link domains" if `ciz.ng` or `clik.gt` is listed.
 - Data model additions: `organizations.verified_at`, `organizations.verification` (jsonb), `organization_verifications` (submissions), `abuse_reports`, `link_moderation_actions`, `domain_reputation_checks`, `destination_blocklist` (domain, reason, added_by), `lookalike_watchlist`.
 
 ### B.2 iOS matching change
@@ -204,14 +204,14 @@
 
 ### B.9 Leaving Clikgate
 - `POST /v1/organization/export-all` → job builds a zip of all datasets (links, clicks summary, installs, conversions, sales, referrals, spend, fraud flags, settings JSON, audit log) and emails owners a download link valid 7 days. Allowed on every plan; rate-limited to once a day.
-- **Goodbye redirects:** on cancellation or deletion, paid organisations' `clik.gt` links keep redirecting to their current destinations **without tracking** for 90 days (then show the not-found page). Branded domains: the organisation repoints DNS. Free `clk.ng` links stop when the organisation is deleted.
+- **Goodbye redirects:** on cancellation or deletion, paid organisations' `clik.gt` links keep redirecting to their current destinations **without tracking** for 90 days (then show the not-found page). Branded domains: the organisation repoints DNS. Free `ciz.ng` links stop when the organisation is deleted.
 - **Organisation deletion:** `POST /v1/organization/delete` (owner, password + email confirmation) → 30-day grace (restorable) → permanent deletion job across all tables and object storage, keeping only billing records required by law. Webhook `organization.deleted`.
 - The SDK removal guide lives on the website (W.4) and is linked from the dashboard (F.5). Each SDK's README gains a "Removing the SDK" section (S.1).
 
 ### B.10 Status monitoring (backend side)
 - Deep health endpoints (no secrets, cached 10 s): `GET /health/redirect` (redirects a canary link on each platform domain internally), `GET /health/api`, `GET /health/sdk`, `GET /health/workers` (queue lag per queue), `GET /health/webhooks` (delivery lag p95). Protected by a shared token `STATUS_PROBE_TOKEN`; summaries only.
 - **Heartbeat push:** every minute the backend pushes a signed summary (component → ok/degraded/down, key metrics) to the status app's ingest endpoint (W.7). A missing heartbeat for 3 minutes marks components "degraded" automatically.
-- Canary links: `clk.ng/_canary` and `clik.gt/_canary` (excluded from analytics and billing).
+- Canary links: `ciz.ng/_canary` and `clik.gt/_canary` (excluded from analytics and billing).
 - Staff console: "Incidents" shortcut that opens the status app's admin (W.7). The backend doesn't store incidents (they must survive a backend outage).
 
 ### B.11 Staff console additions
@@ -267,7 +267,7 @@ New secrets: `SALES_KEY_ENCRYPTION_KEY`, `GA4_SECRET_ENCRYPTION_KEY` (or reuse a
 ## F. Frontend (`clikgate-dashboard`)
 
 ### F.1 Links and domains
-- The link create/edit domain picker shows only eligible domains. Free organisations see `clk.ng` with an inline note: "Paid plans and verified organisations use clik.gt. Upgrade or get verified." with buttons.
+- The link create/edit domain picker shows only eligible domains. Free organisations see `ciz.ng` with an inline note: "Paid plans and verified organisations use clik.gt. Upgrade or get verified." with buttons.
 - Link list: a domain column, a `legacy` badge for flagged links, and a bulk action "Move to clik.gt" (paid).
 - **Settings → Organisation → Verification:** form (legal name, CAC number, website, email domain, phone, documents) → status (Pending, Verified badge, Rejected with reason, resubmit).
 - Paused-link states with reason and "Request review".
@@ -430,10 +430,10 @@ Verification queue, abuse queue with link preview and actions, domain reputation
 - **Product pages:** one per menu item (hero, how it works diagram, screenshots, FAQs, related docs).
 - **`/products/short-links` — the dedicated URL shortener page:**
   - Headline "Branded short links that measure everything".
-  - Covers `clk.ng` on the free plan, `clik.gt` for paid and verified organisations, your own domain on Growth and up, QR codes, link analytics, deep links, link preview with `+`, and abuse protection with "Report a link".
+  - Covers `ciz.ng` on the free plan, `clik.gt` for paid and verified organisations, your own domain on Growth and up, QR codes, link analytics, deep links, link preview with `+`, and abuse protection with "Report a link".
   - This is the only page that targets "URL shortener" search terms (meta title "Free URL shortener for Nigeria and Africa — Clikgate short links"), and it links to the measurement platform as the next step.
   - Reachable from Product → Smart links & QR and the footer, never from the hero.
-- **`/report`:** the public abuse report form (B.1). `clk.ng/report` redirects here.
+- **`/report`:** the public abuse report form (B.1). `ciz.ng/report` redirects here.
 - **Solutions pages** per sector, with that sector's channels, metrics and a sample dashboard.
 - **`/agencies`:** the agency programme (multi-client dashboard, white label, discounts, Growth for your agency, referral fee), with an "Apply as an agency" form that creates an agency lead for staff.
 - **`/switch/appsflyer`** (and `/switch/branch`):
@@ -478,7 +478,7 @@ A navy footer in three bands:
 - **Runs outside Clikgate's main infrastructure:** Cloudflare Pages for the page, a Cloudflare Worker with a cron every minute for monitors, and Cloudflare D1/KV for data. If a hosted status product is cheaper and meets these requirements, the team may choose it instead; record the decision.
 - **Components:**
   - Redirects – clik.gt
-  - Redirects – clk.ng
+  - Redirects – ciz.ng
   - Branded domains
   - API
   - SDK API
@@ -518,7 +518,7 @@ A navy footer in three bands:
 ---
 
 ## Definition of done
-- New free-plan links use `clk.ng`, and paid or verified organisations use `clik.gt`. No existing link breaks. Abuse controls, reporting, staff takedown and reputation monitoring are live.
+- New free-plan links use `ciz.ng`, and paid or verified organisations use `clik.gt`. No existing link breaks. Abuse controls, reporting, staff takedown and reputation monitoring are live.
 - Probabilistic matching cannot run on iOS, and iOS identity checks use only Apple-sanctioned signals.
 - Consent is captured by SDKs and APIs, enforced wherever data leaves Clikgate, and logged. Data requests work end to end.
 - Google click IDs flow end to end with consent signals. Lookback windows are at least 24 hours. iOS on-device measurement passes through. The SDK version policy is live. The AAP adapter is ready behind a flag.

@@ -358,8 +358,8 @@ unreleased work, and the CLI constants stay equal to the SDKs.
 | "No deferred link" at the cap | **already done**: `deep_link: null` with organic attribution is the normal empty install result (no callback, no error, no retry). Now covered by tests | `DeepLinkOnlyTest`, `DeepLinkOnlyTests` |
 | `deep_linking` feature key | added to the catalogue defaults (on before the first config fetch and on older servers). No new public constant or method | `SdkConfig.kt`, `FeatureSwitches.swift` |
 | Contract fixtures | `config_response_deep_link_only`, `events_response_feature_disabled`, `goals_response_feature_disabled`, `install_response_deep_link_only`, `install_response_deferred_cap` | `shared/generate.py`, `API_CONTRACT.md` / `SDK_BEHAVIOUR.md` "Change 10" |
-| Setup command on Free | done: release builds get `app_link_domains.release` (`yourapp.clk.ng` on Free), debug builds `app_link_domains.debug` (`yourapp.dev.ciz.to`). `appSubdomainOf` accepts `<sub>.clk.ng`; prompts name the plan's parent from `link_hostnames`; offline `--domain yourapp.clk.ng` derives the debug host. The shared-domain check stays an exact host match | `cli/src/constants.ts`, `cli/src/setup.ts` |
-| `doctor` on Free | done: `<sub>.clk.ng` passes `*.shared_domains`, the release-domain checks and the server link-subdomain check; fix texts mention `clk.ng` | `cli/src/doctor.ts`, `cli/test/doctor.test.ts` |
+| Setup command on Free | done: release builds get `app_link_domains.release` (`yourapp.ciz.ng` on Free), debug builds `app_link_domains.debug` (`yourapp.dev.ciz.to`). `appSubdomainOf` accepts `<sub>.ciz.ng`; prompts name the plan's parent from `link_hostnames`; offline `--domain yourapp.ciz.ng` derives the debug host. The shared-domain check stays an exact host match | `cli/src/constants.ts`, `cli/src/setup.ts` |
+| `doctor` on Free | done: `<sub>.ciz.ng` passes `*.shared_domains`, the release-domain checks and the server link-subdomain check; fix texts mention `ciz.ng` | `cli/src/doctor.ts`, `cli/test/doctor.test.ts` |
 | Docs | platform guides (Android, iOS, Flutter, React Native), README, the Flutter and React Native READMEs, `SETUP_COMMAND.md`, CHANGELOGs | |
 
 ## Test runs (2026-10-27)
@@ -374,7 +374,7 @@ unreleased work, and the CLI constants stay equal to the SDKs.
 
 ## Owner actions
 
-- `*.clk.ng` wildcard DNS and certificate (backend contract): until then `yourapp.clk.ng` doesn't resolve, so Free app links can't verify in production. Nothing was configured here.
+- `*.ciz.ng` wildcard DNS and certificate (backend contract): until then `yourapp.ciz.ng` doesn't resolve, so Free app links can't verify in production. Nothing was configured here.
 
 ---
 

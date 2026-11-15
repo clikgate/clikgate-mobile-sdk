@@ -1,6 +1,12 @@
 # Changelog — Clikgate Android SDK
 
 
+## 2.1.2: Free plan link domain is ciz.ng
+
+- The Free plan's shared link domain is now `ciz.ng` (it was `clk.ng`, which Clikgate never put live). Links on
+  `ciz.ng` that aren't this app's open in the browser, the same as `ciz.to` and `dev.ciz.to`.
+  Nothing else changes.
+
 ## 2.1.1 (unreleased): Existing users
 
 - **Existing users (Change 26).** The first `/install` now says how and when the app arrived on the phone, so
@@ -174,7 +180,7 @@ this would need 2.0.0.
 ## 1.4.0 (unreleased): shared-domain browser fallback
 
 ### Added
-- **Shared platform domains** `ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to` (one constant,
+- **Shared platform domains** `ciz.to`, `ciz.ng`, `dev.ciz.to` (one constant,
   `internal/BrowserHandoff.kt` `SharedDomains`, tested against `shared/fixtures/shared_link_domains.json`).
   When `/resolve` answers `matched: false` for a link on one of them (another organisation's link that
   opened the app), the SDK opens the original URL in **Custom Tabs** in an explicit browser package (the

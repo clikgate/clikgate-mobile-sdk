@@ -309,8 +309,8 @@ Apache 2.0 (see "Licence: Apache 2.0 (2026-10-26)" below).
 
 ## Change 06 — shared-domain browser fallback (1.5.0, native 1.4.0, 2026-10-26)
 
-- **What**: the native SDKs open another organisation's unmatched shared-domain link (`ciz.to`, `clk.ng`,
-  `clkg.to`, `dev.ciz.to`) in an in-app browser (Custom Tabs / SFSafariViewController); the bridge passes
+- **What**: the native SDKs open another organisation's unmatched shared-domain link (`ciz.to`, `ciz.ng`,
+  `dev.ciz.to`) in an in-app browser (Custom Tabs / SFSafariViewController); the bridge passes
   the option and the event through (shared/SDK_BEHAVIOUR.md "Change 06 (SDK 1.4.0)"). The list lives in
   the native SDKs only.
 - **Event transport**: the handoff is emitted as the existing `ClikgateDeepLink` event, tagged

@@ -86,7 +86,7 @@ enum DeepLinkPath {
 /// compare it with the `shared_link_domains` fixture). An unmatched link there is another
 /// organisation's and opens in an in-app browser.
 enum SharedDomains {
-    static let hosts = ["ciz.to", "clk.ng", "clkg.to", "dev.ciz.to"]
+    static let hosts = ["ciz.to", "ciz.ng", "dev.ciz.to"]
 
     static func host(_ url: URL) -> String? {
         guard let s = url.scheme?.lowercased(), s == "https" || s == "http",

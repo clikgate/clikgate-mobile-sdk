@@ -14,7 +14,7 @@ final class SharedDomainFallbackTests: XCTestCase {
     }
 
     private func options(fallback: Bool = true) -> ClikgateOptions {
-        ClikgateOptions(linkDomains: ["inv.myapp.com", "ciz.to", "clk.ng"], logLevel: .none, platformDomainBrowserFallback: fallback)
+        ClikgateOptions(linkDomains: ["inv.myapp.com", "ciz.to", "ciz.ng"], logLevel: .none, platformDomainBrowserFallback: fallback)
     }
 
     private var observers: [NSObjectProtocol] = []
@@ -78,7 +78,7 @@ final class SharedDomainFallbackTests: XCTestCase {
         let handoffs = collectHandoffs()
         let core = h.makeCore(options: options())
         await core.start(startTimers: false)
-        await core.resolve(url: URL(string: "https://clk.ng/mine")!)
+        await core.resolve(url: URL(string: "https://ciz.ng/mine")!)
         await eventually { links.items.count == 1 }
         XCTAssertEqual(links.items.first?.path, "/products/42")
         await drainMain()
@@ -129,9 +129,9 @@ final class SharedDomainFallbackTests: XCTestCase {
         let sdk = Clikgate()
         sdk.configure(sdkKey: "cg_sdk_test", options: options(), deps: h.deps(), startTimers: false)
         await eventually { self.server.requests("POST /v1/sdk/install").count == 1 }
-        XCTAssertTrue(sdk.handle(url: URL(string: "https://clk.ng/abc")!))
+        XCTAssertTrue(sdk.handle(url: URL(string: "https://ciz.ng/abc")!))
         await eventually { box.items.count == 1 }
-        XCTAssertEqual(box.items.first?.host, "clk.ng")
+        XCTAssertEqual(box.items.first?.host, "ciz.ng")
     }
 }
 

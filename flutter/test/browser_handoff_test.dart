@@ -37,7 +37,7 @@ void main() {
       {'event': 'browserHandoff', 'url': url, 'host': host};
 
   Map<String, Object?> directLink() => {
-        'url': 'https://clk.ng/mine',
+        'url': 'https://ciz.ng/mine',
         'path': '/products/42',
         'data': {'product_id': '42'},
         'isDeferred': false,
@@ -91,7 +91,7 @@ void main() {
   test('handoffs before anyone listens are replayed to the first subscriber', () async {
     await Clikgate.configure(sdkKey: 'cg_sdk_test');
     await drain();
-    sink.success(handoff('https://clk.ng/x', 'clk.ng'));
+    sink.success(handoff('https://ciz.ng/x', 'ciz.ng'));
     sink.success(directLink());
     await drain();
     final handoffs = <ClikgateBrowserHandoff>[];
@@ -99,7 +99,7 @@ void main() {
     final a = Clikgate.onBrowserHandoff.listen(handoffs.add);
     final b = Clikgate.onDeepLink.listen(links.add);
     await drain();
-    expect(handoffs.single.host, 'clk.ng');
+    expect(handoffs.single.host, 'ciz.ng');
     expect(links, hasLength(1));
     await a.cancel();
     await b.cancel();

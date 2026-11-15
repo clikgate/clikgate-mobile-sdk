@@ -80,7 +80,7 @@ describe.each(FIXTURE_NAMES)('offline setup on %s', (fixture) => {
     // iOS: every configuration links an entitlements file; only Debug has the test subdomain.
     for (const c of iosConfigs(root)) {
       expect(c.hosts).toEqual(expect.arrayContaining(['acme.ciz.to', 'go.acme.com']));
-      for (const shared of ['ciz.to', 'clk.ng', 'clkg.to', 'dev.ciz.to']) expect(c.hosts).not.toContain(shared);
+      for (const shared of ['ciz.to', 'ciz.ng', 'dev.ciz.to']) expect(c.hosts).not.toContain(shared);
       expect(c.hosts.includes(TEST), `${c.name}`).toBe(c.debug);
       expect(c.aps, `${c.name} aps-environment`).toBe(c.debug ? 'development' : 'production');
     }

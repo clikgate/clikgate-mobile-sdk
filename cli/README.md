@@ -13,7 +13,7 @@ What it does:
 - signs in through your browser;
 - picks or creates your Clikgate app;
 - adds the SDK and the start-up code;
-- configures app links: your app's link subdomain (`yourapp.ciz.to`) and custom domains in every build, the test subdomain `yourapp.dev.ciz.to` in **debug builds only**, never a shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`);
+- configures app links: your app's link subdomain (`yourapp.ciz.to`) and custom domains in every build, the test subdomain `yourapp.dev.ciz.to` in **debug builds only**, never a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`);
 - sends your app's signing details to Clikgate;
 - checks that events arrive.
 

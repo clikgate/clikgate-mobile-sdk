@@ -126,13 +126,13 @@ describe('doctor --json', () => {
     expect(JSON.stringify(report)).not.toContain('zyx987');
   });
 
-  it('warns when the SDK constraint is below the minimum (Flutter ^1.3.0 < 2.1.1)', async () => {
+  it('warns when the SDK constraint is below the minimum (Flutter ^1.3.0 < 2.1.2)', async () => {
     const dir = await setUp('flutter');
     const pub = path.join(dir, 'pubspec.yaml');
-    fs.writeFileSync(pub, fs.readFileSync(pub, 'utf8').replace('clikgate_flutter: ^2.1.1', 'clikgate_flutter: ^1.3.0'));
+    fs.writeFileSync(pub, fs.readFileSync(pub, 'utf8').replace('clikgate_flutter: ^2.1.2', 'clikgate_flutter: ^1.3.0'));
     const { code, report } = await doctorJson(dir);
     expect(byId(report, 'sdk.version')).toMatchObject({ status: 'warn', title: 'SDK version ^1.3.0' });
-    expect(byId(report, 'sdk.version')?.detail).toBe('below the minimum 2.1.1');
+    expect(byId(report, 'sdk.version')?.detail).toBe('below the minimum 2.1.2');
     expect(code).toBe(0); // a warning, not a failure
   });
 
@@ -150,15 +150,15 @@ describe('doctor --json', () => {
   it('warns on shared domains left in a project: "remove this: shared domains can\'t open your app" (change 09)', async () => {
     const dir = await setUp('react-native');
     const main_ = path.join(dir, 'android/app/src/main/AndroidManifest.xml');
-    fs.writeFileSync(main_, fs.readFileSync(main_, 'utf8').replace('<data android:host="go.acme.com" />', '<data android:host="go.acme.com" />\n            <data android:host="clk.ng" />'));
+    fs.writeFileSync(main_, fs.readFileSync(main_, 'utf8').replace('<data android:host="go.acme.com" />', '<data android:host="go.acme.com" />\n            <data android:host="ciz.ng" />'));
     const rel = path.join(dir, 'ios/RnApp/RnAppDebug.entitlements');
     fs.writeFileSync(rel, fs.readFileSync(rel, 'utf8').replace('</array>', '\t<string>applinks:dev.ciz.to</string>\n\t</array>'));
     const { code, report } = await doctorJson(dir, ['--domain', 'acme.ciz.to,go.acme.com']);
     expect(code).toBe(0); // warnings, not failures
     expect(byId(report, 'android.shared_domains')).toMatchObject({ status: 'warn' });
-    expect(byId(report, 'android.shared_domains')?.title).toContain("clk.ng: remove this: shared domains can't open your app");
+    expect(byId(report, 'android.shared_domains')?.title).toContain("ciz.ng: remove this: shared domains can't open your app");
     expect(byId(report, 'ios.shared_domains')?.title).toContain("applinks:dev.ciz.to: remove this: shared domains can't open your app");
-    for (const shared of ['ciz.to', 'clkg.to']) {
+    for (const shared of ['ciz.to']) {
       const d2 = await setUp('expo-blank');
       const app = path.join(d2, 'app.json');
       const j = JSON.parse(fs.readFileSync(app, 'utf8'));
@@ -177,14 +177,14 @@ describe('doctor --json', () => {
     expect(byId(report, 'android.debug_test_domain')?.title).toContain('acme.dev.ciz.to');
   });
 
-  it('accepts a Free plan app subdomain (<sub>.clk.ng) in release builds (change 10)', async () => {
+  it('accepts a Free plan app subdomain (<sub>.ciz.ng) in release builds (change 10)', async () => {
     const dir = copyFixture('flutter');
-    expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'acme.clk.ng', '--yes'], { ui: new ScriptedUI() })).toBe(0);
-    const { code, report } = await doctorJson(dir, ['--domain', 'acme.clk.ng']);
+    expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'acme.ciz.ng', '--yes'], { ui: new ScriptedUI() })).toBe(0);
+    const { code, report } = await doctorJson(dir, ['--domain', 'acme.ciz.ng']);
     expect(code).toBe(0);
     expect(byId(report, 'android.shared_domains')?.status).toBe('pass');
     expect(byId(report, 'ios.shared_domains')?.status).toBe('pass');
-    expect(byId(report, 'android.release_domains')).toMatchObject({ status: 'pass', title: 'Android: release builds cover acme.clk.ng' });
+    expect(byId(report, 'android.release_domains')).toMatchObject({ status: 'pass', title: 'Android: release builds cover acme.ciz.ng' });
     expect(byId(report, 'android.debug_test_domain')?.title).toContain('acme.dev.ciz.to');
     expect(report.checks.filter((c) => c.status === 'fail')).toEqual([]);
   });
@@ -228,11 +228,11 @@ describe("doctor: Clikgate's setup check", () => {
   });
   it('a Free plan app subdomain from the server passes (change 10)', () => {
     const r = serverChecks(app, {
-      app: { fingerprints_present: true, link_subdomain: 'acme', link_subdomain_confirmed: true, link_hostnames: { live: 'acme.clk.ng', test: 'acme.dev.ciz.to' } },
-      domains: [{ hostname: 'acme.clk.ng', assetlinks: ok, aasa: other }],
+      app: { fingerprints_present: true, link_subdomain: 'acme', link_subdomain_confirmed: true, link_hostnames: { live: 'acme.ciz.ng', test: 'acme.dev.ciz.to' } },
+      domains: [{ hostname: 'acme.ciz.ng', assetlinks: ok, aasa: other }],
     });
-    expect(r.checks.find((c) => c.id === 'clikgate.android.link_subdomain')).toMatchObject({ status: 'pass', title: 'Android app: link subdomain acme.clk.ng (debug builds acme.dev.ciz.to)' });
-    expect(r.checks.find((c) => c.id === 'clikgate.domain.acme.clk.ng.assetlinks')?.status).toBe('pass');
+    expect(r.checks.find((c) => c.id === 'clikgate.android.link_subdomain')).toMatchObject({ status: 'pass', title: 'Android app: link subdomain acme.ciz.ng (debug builds acme.dev.ciz.to)' });
+    expect(r.checks.find((c) => c.id === 'clikgate.domain.acme.ciz.ng.assetlinks')?.status).toBe('pass');
   });
   it('not served, missing fingerprints / Team ID, SDK warnings and next steps', () => {
     const r = serverChecks(app, {

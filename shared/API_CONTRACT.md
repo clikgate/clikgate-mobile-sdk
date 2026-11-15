@@ -259,7 +259,7 @@ domain is opened in an in-app browser (below).
 
 #### Shared platform domains (change 06, SDK 1.4.0)
 
-`ciz.to` (paid), `clk.ng` (free), `clkg.to` (spare) and `dev.ciz.to` (test) are Clikgate's
+`ciz.to` (paid), `ciz.ng` (free) (spare) and `dev.ciz.to` (test) are Clikgate's
 platform short domains. Many organisations' links live on them, and their AASA / assetlinks list
 every app that uses the domain, so iOS or Android can open *this* app for *another*
 organisation's link. `/resolve` then answers `200` with the `matched: false` body above
@@ -922,7 +922,7 @@ app with attribution switched off. The SDK key works on every plan (`403 sdk_dis
 
 | Call | Response in deep-link-only mode | SDK behaviour |
 |---|---|---|
-| `GET /v1/sdk/config` | Normal shape; `link_domains` has the app subdomain, `yourapp.clk.ng` on Free or `yourapp.ciz.to` (fixture `config_response_deep_link_only`) | Cache as usual; `isFeatureEnabled("app_attribution")` is false |
+| `GET /v1/sdk/config` | Normal shape; `link_domains` has the app subdomain, `yourapp.ciz.ng` on Free or `yourapp.ciz.to` (fixture `config_response_deep_link_only`) | Cache as usual; `isFeatureEnabled("app_attribution")` is false |
 | `POST /v1/sdk/install` | Normal shape; `attribution` is always the organic shape (`channel: "organic"`, no link, click or source); `deep_link` is the deferred link when one matched (fixture `install_response_deep_link_only`) | Deliver `deep_link` as today; attribution reads organic |
 | `POST /v1/sdk/install` at the monthly deferred deep link cap (Free 1,000, Starter 10,000) | The same with `deep_link: null` (fixture `install_response_deferred_cap`) | The normal "no deferred link" result: the app opens its home screen. Never an error, never retried |
 | `POST /v1/sdk/resolve` and the other calls | Normal; `is_reengagement` is always `false` | Unchanged |
@@ -930,7 +930,7 @@ app with attribution switched off. The SDK key works on every plan (`403 sdk_dis
 
 `goal()` in deep-link-only mode logs **one** warning per launch ("app attribution is switched off") and does
 nothing: nothing is queued or sent and no error is returned. Free app
-subdomains are under `clk.ng` (`yourapp.clk.ng`); like `yourapp.ciz.to` they are app subdomains, **not** shared
+subdomains are under `ciz.ng` (`yourapp.ciz.ng`); like `yourapp.ciz.to` they are app subdomains, **not** shared
 platform domains (the shared-domain check stays an exact host match), so the browser fallback never applies to them.
 
 ## Change 12 additions (one `goal()` method, Payment goals, enums)

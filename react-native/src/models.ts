@@ -142,7 +142,7 @@ export interface ClikgateConfig {
   /** How long `getAttribution` waits for the server on first launch. Default 5000 ms. */
   deferredDeepLinkTimeoutMs?: number;
   /**
-   * A link on a shared Clikgate domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) that belongs to
+   * A link on a shared Clikgate domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) that belongs to
    * another organisation opens in an in-app browser (Android Custom Tabs, iOS
    * SFSafariViewController) and is reported to `onBrowserHandoff`, never to `onDeepLink`. Default
    * `true`; `false` drops it, as before 1.5.0.
@@ -178,7 +178,7 @@ export interface ClikgateConfig {
 export interface ClikgateBrowserHandoff {
   /** The link as it opened the app. */
   url: string;
-  /** Its shared domain, lowercased (`ciz.to`, `clk.ng`, `clkg.to` or `dev.ciz.to`). */
+  /** Its shared domain, lowercased (`ciz.to`, `ciz.ng` or `dev.ciz.to`). */
   host: string;
 }
 

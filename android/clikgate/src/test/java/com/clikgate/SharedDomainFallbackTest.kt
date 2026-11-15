@@ -44,7 +44,7 @@ class SharedDomainFallbackTest {
 
     private fun view(url: String) = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
-    private fun installed(options: ClikgateOptions = env.options("inv.myapp.com", "ciz.to", "clk.ng")) {
+    private fun installed(options: ClikgateOptions = env.options("inv.myapp.com", "ciz.to", "ciz.ng")) {
         env.configure(options)
         eventually { env.storage.installDone }
     }
@@ -88,7 +88,7 @@ class SharedDomainFallbackTest {
     fun matchedSharedDomainLinkIsDeliveredAsBefore() {
         env.api.on("POST /v1/sdk/resolve", ok(Fixtures.text("resolve_response_matched")))
         installed()
-        assertTrue(Clikgate.handleIntent(null, view("https://clk.ng/mine")))
+        assertTrue(Clikgate.handleIntent(null, view("https://ciz.ng/mine")))
         eventually { links.size == 1 }
         assertEquals("/products/42", links.single().path)
         settle(200)
@@ -174,7 +174,7 @@ class SharedDomainFallbackTest {
     fun fallsBackToAPlainExplicitBrowserIntentWithoutCustomTabs() {
         addBrowser(app.packageName, customTabs = true) // never this app (its App Links would loop)
         addBrowser("org.plain.browser", customTabs = false)
-        assertTrue(CustomTabsOpener(app).open("https://clk.ng/x"))
+        assertTrue(CustomTabsOpener(app).open("https://ciz.ng/x"))
         val i = lastStarted()
         assertEquals("org.plain.browser", i.`package`)
         assertFalse(i.extras?.containsKey(CustomTabsOpener.EXTRA_SESSION) ?: false)
@@ -182,7 +182,7 @@ class SharedDomainFallbackTest {
 
     @Test
     fun noBrowserInstalledOpensNothing() {
-        assertFalse(CustomTabsOpener(app).open("https://clk.ng/x"))
+        assertFalse(CustomTabsOpener(app).open("https://ciz.ng/x"))
         assertNull(shadowOf(app).nextStartedActivity)
     }
 }

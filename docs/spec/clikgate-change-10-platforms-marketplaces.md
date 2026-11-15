@@ -18,7 +18,7 @@
 - **The website pricing page:** Change 09 renamed "Add-ons and overage" to "Overage". G.6 adds a real "Add-ons for Growth" section back.
 - **The "How Clikgate works" home section** is a light panel band with the map in a navy card, by the owner's choice. Keep it.
 - **Names:** don't name Distyla or any real company as a customer. Use clearly fictional names.
-- **Wildcard certificate for `*.clk.ng`:** an owner purchase or DNS decision. Don't buy or configure anything outside the repos; list it as an owner action.
+- **Wildcard certificate for `*.ciz.ng`:** an owner purchase or DNS decision. Don't buy or configure anything outside the repos; list it as an owner action.
 - **House rules:**
   - No git writes; the owner commits.
   - Never print secrets, keys, TOTP secrets or recovery codes. Never cat `.env` files, and don't create `.env` files.
@@ -297,14 +297,14 @@ New apps should be able to add the Clikgate SDK and have working deep links from
 | Direct deep links into the app's own screens when the app is already installed (Universal Links, App Links, URI schemes) | **No limit** | **No limit** | No limit |
 | **Deferred deep links** (someone without the app taps a link, installs it, and the app opens on the intended screen) | **1,000 a month** | **10,000 a month** | Unlimited |
 | Tracked clicks a month (all links) | **1,200** (was 2,000; D.1a) | 25,000 | As today |
-| App link subdomain | `{app}.clk.ng` | `{app}.ciz.to` | `{app}.ciz.to` (change 09) |
+| App link subdomain | `{app}.ciz.ng` | `{app}.ciz.to` | `{app}.ciz.to` (change 09) |
 | Test app link subdomain | `{app}.dev.ciz.to` | `{app}.dev.ciz.to` | `{app}.dev.ciz.to` |
 | Link behaviour per link (open app or store / open app or website / web only), iOS helper page, validator, debugger | ✓ | ✓ | ✓ |
 | Mobile SDKs, setup command and `doctor`, AI setup guides, test mode | ✓ | ✓ | ✓ |
 | **Install attribution** (which link, campaign or creator brought each install), in-app events and SDK goals, re-engagement, referrals, leaderboards, challenges, uninstall tracking, Apple Search Ads, SKAdNetwork, install fraud scoring | — | — | ✓ (as today) |
 
 - Implement as a new feature key `deep_linking` (Free and up) separate from `app_attribution` (Growth and up), plus limits `apps` and `deferred_deep_links_per_month`, through a **new plan version** (change 01 workflow, 🔐🔑).
-- The app subdomain rules from change 09 N.1 apply to all plans; on Free the hostname is under `clk.ng` and gets `clk.ng`'s abuse controls (verified email and phone before the first app, reputation checks, reserved names). Wildcard DNS and a certificate for `*.clk.ng` (first-level wildcard). Shared domains still never list customer apps.
+- The app subdomain rules from change 09 N.1 apply to all plans; on Free the hostname is under `ciz.ng` and gets `ciz.ng`'s abuse controls (verified email and phone before the first app, reputation checks, reserved names). Wildcard DNS and a certificate for `*.ciz.ng` (first-level wildcard). Shared domains still never list customer apps.
 
 ### D.1a Free plan click allowance: 2,000 → 1,200 (owner decision, 2026-10-27)
 - New plan version (change 01 workflow, 🔐🔑) sets Free tracked clicks to **1,200 a month**. All other Free allowances stay.
@@ -330,11 +330,11 @@ New apps should be able to add the Clikgate SDK and have working deep links from
 
 ### D.5 SDKs
 - No new SDK methods. Confirm every SDK handles "deep linking on, attribution off" (no install or event reports sent, or they are accepted and discarded server-side without errors) and the "no deferred link" result at the cap. `goal()` and event methods on Free/Starter log a one-time console warning ("needs Growth") and do nothing. Update SDK READMEs and docs.
-- The setup command and AI guides work on Free: they configure deep links and the app subdomain (`{app}.clk.ng` in release builds on Free, `{app}.dev.ciz.to` in debug builds).
+- The setup command and AI guides work on Free: they configure deep links and the app subdomain (`{app}.ciz.ng` in release builds on Free, `{app}.dev.ciz.to` in debug builds).
 
 ### D.6 Downgrades and upgrades
-- Growth → Starter or Free: deep links keep working; attribution data becomes read-only per the existing downgrade rules; a second app beyond the limit becomes read-only (its links keep redirecting to the store or website, deep links into it stop) — the owner chooses which app stays active. The app's subdomain moves from `ciz.to` to `clk.ng` only when downgrading to Free, with old links kept redirecting for 180 days.
-- Free → Starter: `{app}.clk.ng` links keep working; new links use `{app}.ciz.to` ("Move to ciz.to" as for other links).
+- Growth → Starter or Free: deep links keep working; attribution data becomes read-only per the existing downgrade rules; a second app beyond the limit becomes read-only (its links keep redirecting to the store or website, deep links into it stop) — the owner chooses which app stays active. The app's subdomain moves from `ciz.to` to `ciz.ng` only when downgrading to Free, with old links kept redirecting for 180 days.
+- Free → Starter: `{app}.ciz.ng` links keep working; new links use `{app}.ciz.to` ("Move to ciz.to" as for other links).
 
 ### D.7 Tests
 - Feature split (`deep_linking` vs `app_attribution`) on every plan; app limits; subdomains on each plan and their well-known files.
@@ -373,7 +373,7 @@ Extend G.5's **Pro candidates** into one staff list, **Billing → Upgrade oppor
 - **Tests:** each rule and threshold, suggested plan logic, automatic "upgraded", hard-limit alerts, digest, Do not contact flag, audit log.
 
 ### D.10 Milestones
-1. **C10-B3** D.1–D.7 and D.11 (opportunity rules, alerts, digest, Do not contact flag, reports): plan version, feature split, limits, `*.clk.ng` app subdomains, counting and cap, hidden match data and 30-day reveal, teaser totals, summary line, SDK checks and docs, tests; regenerate `openapi.json`.
+1. **C10-B3** D.1–D.7 and D.11 (opportunity rules, alerts, digest, Do not contact flag, reports): plan version, feature split, limits, `*.ciz.ng` app subdomains, counting and cap, hidden match data and 30-day reveal, teaser totals, summary line, SDK checks and docs, tests; regenerate `openapi.json`.
 2. **C10-F4** D.9 dashboard screens and the staff **Upgrade opportunities** list with its three tabs, actions and Home card (D.11; replaces the separate Pro candidates screen from G.8), tests.
 3. **C10-W5** D.8 website pricing rows, product page section, docs; Lighthouse and accessibility checks.
 

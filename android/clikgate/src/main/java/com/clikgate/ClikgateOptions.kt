@@ -31,8 +31,8 @@ public enum class Attestation {
  *   deep link itself is delivered whenever it arrives.
  * @property cloudProjectNumber Google Cloud project number for Play Integrity (needed only for
  *   apps distributed outside Google Play).
- * @property platformDomainBrowserFallback When a link on a shared Clikgate domain (`ciz.to`, `clk.ng`,
- *   `clkg.to`, `dev.ciz.to`) opens the app but belongs to another organisation (`/resolve` answers
+ * @property platformDomainBrowserFallback When a link on a shared Clikgate domain (`ciz.to`, `ciz.ng`,
+ *   `dev.ciz.to`) opens the app but belongs to another organisation (`/resolve` answers
  *   `matched: false`), open it in an in-app browser (Custom Tabs) and report it to
  *   [Clikgate.onBrowserHandoff]. Default true; false = the link is dropped (pre-1.4.0 behaviour).
  * @property automaticPushToken When the app ships Firebase Cloud Messaging, fetch its token on each

@@ -20,7 +20,7 @@ Dated decisions and documentation findings for the setup command. It moved here 
 
 - **Location:** `cli/` at the root of `clikgate_sdks`, the owner's repo choice, instead of the spec's `sdks/cli/`. *Superseded on 2026-10-26: moved to `clikgate_mobile_sdk/cli/` (above).*
 - **Licence:** MIT. The `clikgate_sdks` root `LICENSE` (MIT) is copied into `cli/` so it ships in the npm tarball; it stays there after the move.
-- **Domains:** `ciz.to` (paid), `clk.ng` (free) and `dev.ciz.to` (test). `dev.ciz.to` goes only into debug manifests and Debug entitlements, and into code behind `kDebugMode` / `__DEV__` / `FLAG_DEBUGGABLE` / `#if DEBUG`.
+- **Domains:** `ciz.to` (paid), `ciz.ng` (free) and `dev.ciz.to` (test). `dev.ciz.to` goes only into debug manifests and Debug entitlements, and into code behind `kDebugMode` / `__DEV__` / `FLAG_DEBUGGABLE` / `#if DEBUG`.
 - **Package:** `@clikgate/setup`, bin `clikgate-setup`, version 1.0.0, Node ≥ 18.
 - **Bundle:** tsup 8.5.1 builds one CommonJS file, `dist/cli.cjs`, with a shebang. Every dependency is bundled, so the published package has **no runtime dependencies**. All devDependencies are pinned exactly.
 - **No telemetry.** The only network calls go to the Clikgate API, after sign-in.
@@ -44,7 +44,7 @@ Dated decisions and documentation findings for the setup command. It moved here 
     - app problems: `missing_team_id`, `missing_fingerprints`, `app_not_listed`, `wrong_fingerprint`;
     - shared-domain problems: `not_listed_on_shared_domain`, `shared_domain_file_full`.
 - `403 cli_scope` is shown as "This needs the dashboard: https://app.clikgate.com".
-- **Shared platform domains:** `ciz.to`, `clk.ng` and `clkg.to` list an app only on opt-in. The CLI asks, with the privacy note, and PATCHes on yes. On no, it leaves that domain out of the manifest and entitlement edits: on Android 11 and lower, one unverifiable host fails verification for the whole app. Offline mode prints the dashboard step instead.
+- **Shared platform domains:** `ciz.to`, `ciz.ng` list an app only on opt-in. The CLI asks, with the privacy note, and PATCHes on yes. On no, it leaves that domain out of the manifest and entitlement edits: on Android 11 and lower, one unverifiable host fails verification for the whole app. Offline mode prints the dashboard step instead.
 
 ### Parsers (S.1)
 

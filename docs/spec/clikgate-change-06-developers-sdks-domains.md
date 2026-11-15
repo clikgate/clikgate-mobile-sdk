@@ -3,7 +3,7 @@
 > - **Change 05 (goals, funnels, private mode) is already built** — it was built under the label "Change 06" on 2026-10-24. Any code comment, DECISIONS entry or doc that says "Change 06" about goals/funnels/private mode means Change 05; fix those labels as part of the documentation audit (W.4). The web script has `Clikgate.clickId()` and `Clikgate.getClickId()`; mobile SDKs are at 1.3.0 with `goal()`.
 > - **Custom-domain CNAME target:** the owner chose `clikgate.com` names over `clikgate-edge.net` (Part 3 decision, 2026-10-22): the shared target is `links.clikgate.com`. For B.9's per-domain targets use **`<domain_key>.links.clikgate.com`** (wildcard `*.links.clikgate.com` on the clikgate.com zone), never `clikgate-edge.net`.
 > - **Path proxy:** built in Part 3 (`proxy.clikgate.com`, signed `X-Forwarded-Host` requests). Remove it as A.2 says; Distyla does not use it. Distyla's own custom link domain `dsty.la` must keep working throughout.
-> - **Current link domains in code/config:** `clik.gt` (paid), `test.clik.gt` (test), `clk.ng` (free), `dsty.la` (Distyla's custom domain). Replace per A.4: `ciz.to`, `dev.ciz.to`, `clk.ng`, spare `clkg.to`.
+> - **Current link domains in code/config:** `clik.gt` (paid), `test.clik.gt` (test), `ciz.ng` (free), `dsty.la` (Distyla's custom domain). Replace per A.4: `ciz.to`, `dev.ciz.to`, `ciz.ng`, spare `clkg.to`.
 > - **Website is light mode only** (owner decision 2026-10-23): no theme switch in the docs header and no dark code theme, whatever W.1 says. The currency switch appears only under "Pricing" headings. Keep the website's current home layout (hero with the journey diagram, dashboard section) and calm spacing.
 > - **Licence:** MIT for all SDKs and the setup command.
 > - **Toolchains:** PHP, Composer, Maven and the .NET SDK are installed with Homebrew on the dev Mac (2026-10-26); Java 17, Node, Python and Swift are present. CI must still cover the minimum runtimes in S.9.
@@ -45,7 +45,7 @@
 4. Official server SDKs for **Node.js, Python, PHP, Java and C#/.NET**. Installing and sending a goal takes three lines in each, with background sending, safe retries, helpers that keep the click ID in common web frameworks, one-line webhook verification and a private-mode guard.
 
 **Part 3 — Link domains and test links**
-5. Final link domains (A.4): `ciz.to` for paid customers (the "premium domain"), `clk.ng` for the free plan, `dev.ciz.to` for test links only, `clkg.to` as a spare.
+5. Final link domains (A.4): `ciz.to` for paid customers (the "premium domain"), `ciz.ng` for the free plan, `dev.ciz.to` for test links only as a spare.
 6. Test links can only point to Clikgate's 4 test pages, the organisation's verified websites, the developer's own computer or Wi-Fi, and verified tunnels. They have limits and expire. Nobody can use them for real traffic.
 7. Faster custom subdomain setup: one CNAME record that also proves ownership, "Connect automatically" (Domain Connect), instructions for each DNS provider, live checks every 10 seconds, automatic mistake detection, "Send to my IT team" with a change-request PDF, and switching from another provider without downtime.
 8. Starter gets **one** custom subdomain.
@@ -80,7 +80,7 @@
 |---|---|---|
 | `ciz.to` | Paid customers everywhere, and staff-verified organisations (`PAID_LINK_DOMAIN`) | The "premium domain". Say "ciz" as "sees": `ciz.to` reads "sees to". Checked clean on 8 blacklists and Google Safe Browsing on 2026-10-25 |
 | `dev.ciz.to` | Test-mode links only (`TEST_LINK_DOMAIN`) | B.7–B.8; added to apps' **debug builds only** (S.4) |
-| `clk.ng` | Free plan (`FREE_LINK_DOMAIN`) | Stricter abuse controls (change 03) |
+| `ciz.ng` | Free plan (`FREE_LINK_DOMAIN`) | Stricter abuse controls (change 03) |
 | `clkg.to` | Spare (`SPARE_FREE_LINK_DOMAIN`) | Fully set up, unused until staff switch new free links to it (B.7) |
 | Customer subdomain or domain | Branded links | Starter: 1 subdomain; Growth: 2 domains; Pro: 10; Enterprise: custom |
 | `clikgate.com` | Website, dashboard, API, docs, status, staff console | Unchanged |
@@ -162,9 +162,9 @@ SDKs use it to switch on their private-mode guard, know the click-ID parameter, 
 - Feeds the staff console "SDKs in use" table and the customer's Developers → SDKs view (F.4, F.9).
 
 ### B.7 Link domains: configuration and the spare
-- Environment: `PAID_LINK_DOMAIN=ciz.to`, `FREE_LINK_DOMAIN=clk.ng`, `TEST_LINK_DOMAIN=dev.ciz.to`, `SPARE_FREE_LINK_DOMAIN=clkg.to`. All four are platform short domains in the Part 3 model (owner `platform`) with TLS, AASA/assetlinks, root and not-found pages. Root redirects: `ciz.to` → `https://clikgate.com`; `clk.ng` → `https://clikgate.com/products/short-links`; `dev.ciz.to` → `https://clikgate.com/docs/test-mode`; `clkg.to` → `https://clikgate.com/products/short-links`.
+- Environment: `PAID_LINK_DOMAIN=ciz.to`, `FREE_LINK_DOMAIN=ciz.ng`, `TEST_LINK_DOMAIN=dev.ciz.to`, `SPARE_FREE_LINK_DOMAIN=clkg.to`. All four are platform short domains in the Part 3 model (owner `platform`) with TLS, AASA/assetlinks, root and not-found pages. Root redirects: `ciz.to` → `https://clikgate.com`; `ciz.ng` → `https://clikgate.com/products/short-links`; `dev.ciz.to` → `https://clikgate.com/docs/test-mode`; `clkg.to` → `https://clikgate.com/products/short-links`.
 - **Mode rules:** test-mode links can only use `TEST_LINK_DOMAIN`, and live links can never use it. A request for the wrong one returns `422 domain_mode_mismatch`. Customer domains stay live-only.
-- **The spare:** `clkg.to` is served and monitored like the others (reputation checks from change 03 included) but no link uses it. Staff console action **"Move new free links to the spare domain"** 🔑 (super admin; reason required; audit-logged; emails all staff) sets `free_link_domain_override = clkg.to`. From then on, new free links use `clkg.to`; existing `clk.ng` links keep working and keep their URLs. A matching **"Move back"** action 🔑 reverses it. The website short-links page and docs read the active free domain from the public plans API, so copy stays correct.
+- **The spare:** `clkg.to` is served and monitored like the others (reputation checks from change 03 included) but no link uses it. Staff console action **"Move new free links to the spare domain"** 🔑 (super admin; reason required; audit-logged; emails all staff) sets `free_link_domain_override = clkg.to`. From then on, new free links use `clkg.to`; existing `ciz.ng` links keep working and keep their URLs. A matching **"Move back"** action 🔑 reverses it. The website short-links page and docs read the active free domain from the public plans API, so copy stays correct.
 - **Responses** for `ciz.to` links include `domain_badge: "premium"` so the dashboard can show the badge (F.5).
 
 ### B.8 Test links
@@ -222,7 +222,7 @@ SDKs use it to switch on their private-mode guard, know the click-ID parameter, 
 
 ### B.10 Link safety
 **Transport security on every link domain**
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains` on `ciz.to`, `clk.ng` and `clkg.to` (consider HSTS preload for these platform domains and record the decision); `max-age=31536000` (no `includeSubDomains`, no preload) on customer domains, because Clikgate doesn't control their other subdomains.
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` on `ciz.to`, `ciz.ng` (consider HSTS preload for these platform domains and record the decision); `max-age=31536000` (no `includeSubDomains`, no preload) on customer domains, because Clikgate doesn't control their other subdomains.
 - Minimum TLS 1.2 on every hostname.
 - Redirect responses carry `Referrer-Policy: strict-origin-when-cross-origin` by default and `no-referrer` for regulated organisations.
 
@@ -304,7 +304,7 @@ Exit codes: 0 success, 1 problems found or a step failed, 2 cancelled, 3 sign-in
    Open the browser automatically when possible; poll `/v1/cli/token` respecting `interval` and `slow_down`.
 4. **Pick the Clikgate app(s):** read Android `applicationId` and iOS `PRODUCT_BUNDLE_IDENTIFIER` / `DEVELOPMENT_TEAM` (ask when ambiguous; Expo reads `android.package` and `ios.bundleIdentifier`), match existing apps, or offer to create them.
 5. **Signing details:** add the debug keystore SHA-256 (via `keytool` when available) and explain that production App Links need the **Play App Signing** SHA-256 (offer to paste it or remind later); read or ask for the iOS Team ID. Send with `PATCH /v1/apps/{id}`.
-6. **Link domains:** live domains = the organisation's active link domains (`ciz.to` or `clk.ng` by plan, plus custom domains); the test domain = `dev.ciz.to`. The user can deselect live domains.
+6. **Link domains:** live domains = the organisation's active link domains (`ciz.to` or `ciz.ng` by plan, plus custom domains); the test domain = `dev.ciz.to`. The user can deselect live domains.
 7. **Build the plan** (S.4); steps already done show "✓ already set up".
 8. **Show and confirm:**
    ```
@@ -570,9 +570,9 @@ Settings → Security (or wherever API keys live): a "Command-line sessions" tab
 - The chosen language is shared between these screens (localStorage, wrapped in try/catch).
 
 ### F.5 Link domains, premium wording and test links
-- **Free organisation's domain picker:** `clk.ng`, plus a locked option "ciz.to 🔒 Premium — paid plans" with the note "Get ciz.to premium links — reserved for paid businesses, for better delivery. **Upgrade →**".
+- **Free organisation's domain picker:** `ciz.ng`, plus a locked option "ciz.to 🔒 Premium — paid plans" with the note "Get ciz.to premium links — reserved for paid businesses, for better delivery. **Upgrade →**".
 - **Paid organisation:** a "✦ Premium domain" badge next to `ciz.to` short links; tooltip: "ciz.to (say 'sees to') is reserved for paid and verified businesses. Every click, seen to."
-- **Upgrade confirmation** (change 01 in-app message and change 04 email): "You're on Starter. New links now use ciz.to — Clikgate's premium domain for paid businesses. Your existing clk.ng links keep working."
+- **Upgrade confirmation** (change 01 in-app message and change 04 email): "You're on Starter. New links now use ciz.to — Clikgate's premium domain for paid businesses. Your existing ciz.ng links keep working."
 - **Test mode link form:** the domain is fixed to `dev.ciz.to`. The destination field has a chooser: **Clikgate test page** (Click inspector, Test checkout, App-open tester, Test store page) · **My verified website** (picker; "Verify a website" link) · **My computer or Wi-Fi** (`localhost`, a Wi-Fi address; tip: "Android emulator? Use 10.0.2.2") · **Tunnel** (verified tunnels). Inline errors explain `test_destination_not_allowed`. A small meter shows today's test clicks (of 500) and each link's expiry date.
 - **Developers → Test websites:** add a hostname, choose DNS record or file, copy the value, "Check now", status and expiry; tunnels marked with a 7-day expiry.
 - **Plans page and comparison** (change 01 F.2): the "Link domain" row from W.4.
@@ -650,12 +650,12 @@ Inspired by Mixpanel's SDK docs: use the whole screen, dense and readable, no wi
 
 ### W.4 Link domains, link safety, brand and the documentation audit
 - **Short-links page (`/products/short-links`)**, new section **"Two domains, one rule: keep good links clean"**:
-  - **clk.ng:** free short links for everyone, protected by link scanning and fast abuse takedown.
+  - **ciz.ng:** free short links for everyone, protected by link scanning and fast abuse takedown.
   - **ciz.to:** the **premium domain**, reserved for paid and verified businesses. "Fewer strangers on your domain means fewer spam blocks and better delivery for your links."
   - *"Why ciz.to? Say it out loud: **sees to**. Clikgate sees to every click."*
   - "Want your own name? Connect go.yourbrand.com from Starter."
   - The active free domain is read from the public plans API (so it updates if staff switch to the spare).
-- **Pricing:** comparison row **"Link domain"**: Free `clk.ng` · Starter `ciz.to` + 1 own subdomain · Growth `ciz.to` + own domains (2) · Pro `ciz.to` + own domains (10) · Enterprise custom. Plan cards (Starter and up): "✓ ciz.to premium links — shared only with paid, verified businesses". Row tooltip: "What's the ciz.to premium domain? Free links share clk.ng with everyone. ciz.to is reserved for paid and verified businesses, so your links aren't sitting next to strangers' links, and they're less likely to be flagged by spam filters and messaging apps."
+- **Pricing:** comparison row **"Link domain"**: Free `ciz.ng` · Starter `ciz.to` + 1 own subdomain · Growth `ciz.to` + own domains (2) · Pro `ciz.to` + own domains (10) · Enterprise custom. Plan cards (Starter and up): "✓ ciz.to premium links — shared only with paid, verified businesses". Row tooltip: "What's the ciz.to premium domain? Free links share ciz.ng with everyone. ciz.to is reserved for paid and verified businesses, so your links aren't sitting next to strangers' links, and they're less likely to be flagged by spam filters and messaging apps."
 - **New docs pages:**
   - **Link domains:** which domain each plan uses, the premium domain, what `ciz.to` means, the spare, and that test links use `dev.ciz.to` and never count as live traffic.
   - **Test mode and test links:** the 4 Clikgate test pages, verified websites (DNS or file), testing on `localhost`, a phone on the same Wi-Fi (use the computer's Wi-Fi address), the Android emulator (`10.0.2.2`), tunnels (verify the tunnel address), limits and expiry, and any browser notes recorded in B.8.
@@ -680,13 +680,13 @@ Inspired by Mixpanel's SDK docs: use the whole screen, dense and readable, no wi
 - A developer runs `npx @clikgate/setup` in a Flutter, React Native, Expo, Android or iOS project, approves in the browser, reviews the changes, and sees "Clikgate is receiving events" without editing files by hand; the test domain is only in debug builds.
 - An AI coding assistant (Claude Code verified during the build; Cursor and Codex checked by the owner) can set up Clikgate correctly from the published guide.
 - A developer installs the Node.js, Python, PHP, Java or C#/.NET SDK and sends a goal in three lines; all five pass the same conformance suite and nightly live tests and ship with SBOMs and signed or provenance-backed releases.
-- Paid links use `ciz.to`, free links `clk.ng`, test links `dev.ciz.to` (restricted destinations, limits, expiry, never counted), and staff can move new free links to `clkg.to` in an emergency.
+- Paid links use `ciz.to`, free links `ciz.ng`, test links `dev.ciz.to` (restricted destinations, limits, expiry, never counted), and staff can move new free links to `clkg.to` in an emergency.
 - A customer connects a subdomain with one record, automatically where the DNS provider supports it, sees live checks and plain fixes, can send the setup to their IT team, and can switch from another provider without downtime.
 - Link safety settings (allowlist, locked links, two-person approval, alerts, regulated defaults) work, and Clikgate staff can't change customer link destinations.
 - The website and docs use the wide layout, show the setup command, SDKs, link domains and link safety, explain `ciz.to`, repeat the brand lines within the placement rules, and contain nothing outdated.
 
 ## Before building: things only the owner can provide
-- **Domains:** `ciz.to` bought and on Cloudflare (with `dev.ciz.to`); `clk.ng` and `clkg.to` renewed with registrar lock; all three in Google Search Console.
+- **Domains:** `ciz.to` bought and on Cloudflare (with `dev.ciz.to`); `ciz.ng` renewed with registrar lock; all three in Google Search Console.
 - **npm:** the `@clikgate` organisation with 2FA (publishing uses trusted publishing; no token).
 - **GitHub:** a `clikgate` organisation with public repositories `clikgate-skills`, `clikgate-php` and `clikgate-laravel`; adding the deploy keys and secrets that `docs/SERVER_SDKS.md` lists.
 - **PyPI** account with 2FA (add the pending publisher during C6-S6); **Packagist** account signed in with GitHub (submit the two PHP packages after the first release).

@@ -255,7 +255,7 @@ public fun interface DeepLinkListener {
 }
 
 /**
- * A link on a shared Clikgate domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) that isn't this
+ * A link on a shared Clikgate domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) that isn't this
  * app's (`/resolve` answered `matched: false`): the SDK opened [url] in an in-app browser (Custom Tabs)
  * instead of the app. No deep link is delivered for it.
  */

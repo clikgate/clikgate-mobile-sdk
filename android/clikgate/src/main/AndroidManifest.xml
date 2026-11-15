@@ -7,7 +7,7 @@
 
     <!--
       Android 11+ package visibility: the SDK opens shared-domain links of other organisations
-      (ciz.to, clk.ng, ...) in an explicit browser package with Custom Tabs, never through an
+      (ciz.to, ciz.ng, ...) in an explicit browser package with Custom Tabs, never through an
       implicit intent that could loop back into the app's own App Links.
     -->
     <queries>

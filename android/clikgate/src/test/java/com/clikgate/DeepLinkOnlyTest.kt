@@ -91,7 +91,7 @@ class DeepLinkOnlyTest {
         env.api.on("GET /v1/sdk/config", ok(Fixtures.text("config_response_deep_link_only")))
         env.api.on("POST /v1/sdk/install", ok(Fixtures.text("install_response_deep_link_only")))
         val links = CopyOnWriteArrayList<ClikgateDeepLink>()
-        env.configure(env.options("yourapp.clk.ng"))
+        env.configure(env.options("yourapp.ciz.ng"))
         eventually { env.storage.installDone }
         Clikgate.onDeepLink { links.add(it) }
         eventually { links.size == 1 }

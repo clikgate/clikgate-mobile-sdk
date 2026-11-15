@@ -45,7 +45,7 @@ final class DeepLinkOnlyTests: XCTestCase {
     func testFacadeGoalIsRefusedWithoutAnError() async {
         server.on("GET /v1/sdk/config", .fixture("config_response_deep_link_only"))
         let sdk = Clikgate()
-        sdk.configure(sdkKey: "cg_sdk_test", options: ClikgateOptions(linkDomains: ["yourapp.clk.ng"], logLevel: .none),
+        sdk.configure(sdkKey: "cg_sdk_test", options: ClikgateOptions(linkDomains: ["yourapp.ciz.ng"], logLevel: .none),
                       deps: h.deps(), startTimers: false)
         // Wait for the cached config to say deep-link-only.
         for _ in 0..<300 {
@@ -82,7 +82,7 @@ final class DeepLinkOnlyTests: XCTestCase {
         server.on("GET /v1/sdk/config", .fixture("config_response_deep_link_only"))
         server.on("POST /v1/sdk/install", .fixture("install_response_deep_link_only"))
         let box = collect(h.dispatcher)
-        let core = h.makeCore(options: ClikgateOptions(linkDomains: ["yourapp.clk.ng"], logLevel: .none))
+        let core = h.makeCore(options: ClikgateOptions(linkDomains: ["yourapp.ciz.ng"], logLevel: .none))
         await core.start(startTimers: false)
         await eventually { box.items.count == 1 }
         let r = try XCTUnwrap(box.items.first)
@@ -98,7 +98,7 @@ final class DeepLinkOnlyTests: XCTestCase {
         server.on("POST /v1/sdk/install", .fixture("install_response_deferred_cap"))
         server.on("POST /v1/sdk/resolve", .fixture("resolve_response_unmatched"))
         let box = collect(h.dispatcher)
-        let core = h.makeCore(options: ClikgateOptions(linkDomains: ["yourapp.clk.ng"], logLevel: .none))
+        let core = h.makeCore(options: ClikgateOptions(linkDomains: ["yourapp.ciz.ng"], logLevel: .none))
         await core.start(startTimers: false)
         let a = await core.attribution(timeout: 1)
         XCTAssertEqual(a.status, .organic)
