@@ -78,6 +78,16 @@ class Change26Test {
     // ------------------------------------------------------------------ EX.3
 
     @Test
+    fun `start dates parse with Z, an offset or a fraction, on every API level`() {
+        val utc = ExistingUserFields.parseTime("2026-11-01T10:00:00Z")
+        assertEquals(1_793_527_200_000L, utc)
+        assertEquals(utc, ExistingUserFields.parseTime("2026-11-01T11:00:00+01:00"))
+        assertEquals(utc, ExistingUserFields.parseTime("2026-11-01T10:00:00.123Z"))
+        assertEquals(utc, ExistingUserFields.parseTime("2026-11-01T05:30:00-04:30"))
+        assertEquals(null, ExistingUserFields.parseTime("not a date"))
+    }
+
+    @Test
     fun firstInstallSendsThePhonesInstallFacts() {
         env.device = Device(facts)
         val b = installBody()
