@@ -171,7 +171,7 @@ internal object ExistingUserFields {
     /** Parses `/config existing_users.start_at` (ISO 8601 with `Z` or an offset, optional fraction). */
     fun parseTime(value: String?): Long? {
         if (value.isNullOrBlank()) return null
-        // `Z` (RFC 822, +0100) instead of `XXX` (+01:00), which needs API 24: the offset's colon is dropped first
+        // The RFC 822 offset (+0100) parses on every API level; the ISO 8601 one (+01:00) needs API 24, so the colon goes
         val v = value.trim().replace(Regex("\\.\\d+"), "").replace(Regex("Z$"), "+0000")
             .replace(Regex("([+-]\\d{2}):(\\d{2})$"), "$1$2")
         return try {
