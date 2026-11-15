@@ -34,8 +34,8 @@ export interface MockOptions {
   /** Link subdomains another organisation already uses. */
   takenSubdomains?: string[];
   setupCheck?: (app: MockApp, polls: number) => unknown;
-  /** Parent of the apps' live link subdomain: `ciz.to` (Starter and up, default) or `clk.ng` (Free, change 10). */
-  liveParent?: 'ciz.to' | 'clk.ng';
+  /** Parent of the apps' live link subdomain: `ciz.to` (Starter and up, default) or `ciz.ng` (Free, change 10). */
+  liveParent?: 'ciz.to' | 'ciz.ng';
 }
 
 export interface MockServer {
@@ -53,7 +53,7 @@ export async function startMockServer(opts: MockOptions = {}): Promise<MockServe
   const apps: MockApp[] = opts.apps ? structuredClone(opts.apps) : [];
   const domains = opts.domains ?? [
     { id: 'dom_1', hostname: 'ciz.to', status: 'active', mode: 'live', kind: 'platform', platform_tier: 'paid', eligible_for_new_links: true },
-    { id: 'dom_2', hostname: 'clk.ng', status: 'active', mode: 'live', kind: 'platform', platform_tier: 'free', eligible_for_new_links: false },
+    { id: 'dom_2', hostname: 'ciz.ng', status: 'active', mode: 'live', kind: 'platform', platform_tier: 'free', eligible_for_new_links: false },
     { id: 'dom_3', hostname: 'go.acme.com', status: 'active', mode: 'live', kind: 'custom', platform_tier: null, eligible_for_new_links: null },
     { id: 'dom_5', hostname: 'old.acme.com', status: 'pending', mode: 'live', kind: 'custom', platform_tier: null, eligible_for_new_links: null },
     { id: 'dom_4', hostname: 'dev.ciz.to', status: 'active', mode: 'test', kind: 'platform', platform_tier: 'test', eligible_for_new_links: true },
@@ -219,7 +219,7 @@ export function defaultSetupCheck(app: MockApp, polls: number, customDomains: st
       assetlinks: file(!ios),
     })),
     app_link_domains: app.link_subdomain ? { release: [`${app.link_subdomain}.${parent}`, ...customDomains], debug: [`${app.link_subdomain}.dev.ciz.to`] } : { release: [], debug: [] },
-    shared_domains: ['ciz.to', 'clk.ng', 'clkg.to', 'dev.ciz.to'],
+    shared_domains: ['ciz.to', 'ciz.ng', 'dev.ciz.to'],
     sdk: {
       first_test_request_at: polls >= 2 ? '2026-10-26T10:00:00Z' : null,
       last_test_request_at: polls >= 2 ? '2026-10-26T10:00:00Z' : null,

@@ -2,7 +2,7 @@
 
 Source: `cli/` in this repository (`clikgate_mobile_sdk`; it moved here from `clikgate_sdks` on 2026-10-26, see [`cli/DECISIONS.md`](../cli/DECISIONS.md)). Change 06 S.1–S.6 and S.8 (milestones C6-S1 and C6-S2). Licence: **MIT** (`cli/LICENSE`), unlike the mobile SDKs in this repository, which are Apache 2.0.
 
-The command sets up Clikgate in a Flutter, React Native, Expo, native Android or native iOS app project. It shows every change as a diff and asks once before writing anything. It only ever uses the **test** SDK key. App links use the app's own **link subdomain** (`yourapp.ciz.to`, or `yourapp.clk.ng` on the Free plan, and `yourapp.dev.ciz.to` in **debug builds only**) plus the organisation's verified custom domains, never a shared domain (change 09 N.1).
+The command sets up Clikgate in a Flutter, React Native, Expo, native Android or native iOS app project. It shows every change as a diff and asks once before writing anything. It only ever uses the **test** SDK key. App links use the app's own **link subdomain** (`yourapp.ciz.to`, or `yourapp.ciz.ng` on the Free plan, and `yourapp.dev.ciz.to` in **debug builds only**) plus the organisation's verified custom domains, never a shared domain (change 09 N.1).
 
 - npm package: **`@clikgate/setup`**, bin **`clikgate-setup`**. The documented command is `npx @clikgate/setup`; Flutter projects can use `dart run clikgate_flutter` instead (no Node.js, [below](#flutter-projects-dart-run-clikgate_flutter)).
 - Node 18 or newer. One bundled file (`dist/cli.cjs`, built with tsup) with no runtime dependencies to install.
@@ -99,7 +99,7 @@ wrote and reports it as already set up (an older constraint than `SDK.flutter.mi
 5. **Signing details.** It reads the debug keystore SHA-256 with `keytool`: the module's own keystore (React Native templates ship one), else `~/.android/debug.keystore`.
    - It asks for the Play App Signing SHA-256 (Play Console › Release › Setup › App signing), or adds a reminder.
    - Fingerprints are sent with `PATCH /v1/apps/{id}`, add-only (existing + new). The Team ID is sent when Clikgate doesn't have it.
-6. **Link domains** (change 09 N.1). Each app's hosts come from `GET /v1/apps/{id}` `app_link_domains`: `release` is the app's live subdomain (`yourapp.ciz.to`; on the Free plan `yourapp.clk.ng`, change 10) plus the organisation's active custom domains, `debug` the test subdomain (`yourapp.dev.ciz.to`, every plan). An app subdomain under `clk.ng` is not a shared domain: the shared-domain check is an exact match on the four hosts. They never contain a shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`), and the command filters them out anyway.
+6. **Link domains** (change 09 N.1). Each app's hosts come from `GET /v1/apps/{id}` `app_link_domains`: `release` is the app's live subdomain (`yourapp.ciz.to`; on the Free plan `yourapp.ciz.ng`, change 10) plus the organisation's active custom domains, `debug` the test subdomain (`yourapp.dev.ciz.to`, every plan). An app subdomain under `ciz.ng` is not a shared domain: the shared-domain check is an exact match on the four hosts. They never contain a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`), and the command filters them out anyway.
    - **Unconfirmed subdomain** (apps created before change 09 carry a suggestion, `link_subdomain_confirmed: false`): it asks `Use "<name>"?`. No → it asks for another name, checks it with `GET /v1/link-subdomains/availability` (showing the reason and a suggestion), and confirms with `PATCH /v1/apps/{id} {"link_subdomain": "<name>"}`. `--yes` confirms the suggestion. Skipping it leaves a manual step and no app links for that app. `--dry-run` uses the suggestion without confirming.
    - Each platform's files get only its own app's hosts (the Android and iOS apps may have different subdomains; one app's subdomain files don't list the other). The start-up code's `linkDomains` lists every platform's release hosts and the first test subdomain; the SDKs add the rest from `/v1/sdk/config`.
    - With two or more custom domains it lets the person deselect some (release builds). The app subdomain always stays.
@@ -181,8 +181,8 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
   - the SDK key in use, test or live, masked as `cg_sdk_test_abcd…`;
   - every release manifest and release entitlements file covers every live domain;
   - the app's test subdomain (`*.dev.ciz.to`) is in debug builds and never in release builds (it fails if it is);
-  - no shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) in any manifest, entitlements file or Expo plugin entry: `android.shared_domains`, `ios.shared_domains`, `expo.shared_domains` warn "remove this: shared domains can't open your app";
-  - a Free plan app subdomain (`yourapp.clk.ng`, change 10) passes like `yourapp.ciz.to`: only the bare shared hosts warn;
+  - no shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) in any manifest, entitlements file or Expo plugin entry: `android.shared_domains`, `ios.shared_domains`, `expo.shared_domains` warn "remove this: shared domains can't open your app";
+  - a Free plan app subdomain (`yourapp.ciz.ng`, change 10) passes like `yourapp.ciz.to`: only the bare shared hosts warn;
   - every configuration's `CODE_SIGN_ENTITLEMENTS` file exists and parses;
   - the Expo plugin entry;
   - uninstall tracking on iOS (warnings): `ios.push.aps_environment` (every configuration's entitlements have `aps-environment`) and `ios.push.token_forward` (an AppDelegate passes the APNs token to Clikgate; not checked for Flutter, whose plugin does it);
@@ -197,7 +197,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
 
 ## Offline mode (S.6)
 
-`npx @clikgate/setup --sdk-key cg_sdk_test_… --domain yourapp.ciz.to,go.acme.com` configures the project without signing in: no app creation, no fingerprints sent, no server checks. The debug host is derived from the app subdomain (`yourapp.ciz.to` or, on Free, `yourapp.clk.ng` → `yourapp.dev.ciz.to`) and added to debug builds; test hosts given in `--domain` are moved to debug builds.
+`npx @clikgate/setup --sdk-key cg_sdk_test_… --domain yourapp.ciz.to,go.acme.com` configures the project without signing in: no app creation, no fingerprints sent, no server checks. The debug host is derived from the app subdomain (`yourapp.ciz.to` or, on Free, `yourapp.ciz.ng` → `yourapp.dev.ciz.to`) and added to debug builds; test hosts given in `--domain` are moved to debug builds.
 
 - A live key is refused: "Use the test key; switch to live for release builds." (exit 1).
 - A shared domain in `--domain` is refused (exit 1): "ciz.to: remove this: shared domains can't open your app. Pass your app's link subdomain instead…".

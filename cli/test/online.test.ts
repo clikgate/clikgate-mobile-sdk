@@ -152,7 +152,7 @@ describe('signed-in setup (Flutter fixture)', () => {
     expect([...verifiedHosts(fs.readFileSync(path.join(dir, 'android/app/src/debug/AndroidManifest.xml'), 'utf8'))]).toEqual(['flutter-app.dev.ciz.to']);
     expect(applinksHosts(fs.readFileSync(path.join(dir, 'ios/Runner/Runner.entitlements'), 'utf8')).sort()).toEqual(['flutter-app.ciz.to', 'go.acme.com']);
     expect(applinksHosts(fs.readFileSync(path.join(dir, 'ios/Runner/RunnerDebug.entitlements'), 'utf8')).sort()).toEqual(['flutter-app.ciz.to', 'flutter-app.dev.ciz.to', 'go.acme.com']);
-    for (const shared of ['"ciz.to"', '"clk.ng"', '"dev.ciz.to"', 'applinks:ciz.to<', 'applinks:dev.ciz.to<']) expect(androidMain + fs.readFileSync(path.join(dir, 'ios/Runner/RunnerDebug.entitlements'), 'utf8')).not.toContain(shared);
+    for (const shared of ['"ciz.to"', '"ciz.ng"', '"dev.ciz.to"', 'applinks:ciz.to<', 'applinks:dev.ciz.to<']) expect(androidMain + fs.readFileSync(path.join(dir, 'ios/Runner/RunnerDebug.entitlements'), 'utf8')).not.toContain(shared);
     expect(androidMain).not.toContain('old.acme.com'); // a custom domain that isn't active
     // Doctor ran with Clikgate's setup check and saw the first event.
     expect(ui.text).toContain('flutter-app.ciz.to: assetlinks.json lists this app');
@@ -175,8 +175,8 @@ describe('signed-in setup (Flutter fixture)', () => {
     expect(JSON.stringify([...fs.readdirSync(dir)])).not.toContain(MOCK_TOKEN);
   });
 
-  it('Free plan (change 10): release builds get <sub>.clk.ng from app_link_domains, debug builds <sub>.dev.ciz.to; doctor passes', async () => {
-    server = await startMockServer({ liveParent: 'clk.ng' });
+  it('Free plan (change 10): release builds get <sub>.ciz.ng from app_link_domains, debug builds <sub>.dev.ciz.to; doctor passes', async () => {
+    server = await startMockServer({ liveParent: 'ciz.ng' });
     const dir = copyFixture('flutter');
     const clock = fakeClock();
     const ui = new ScriptedUI([
@@ -196,14 +196,14 @@ describe('signed-in setup (Flutter fixture)', () => {
     });
     expect(code, ui.text).toBe(0);
     const main_ = fs.readFileSync(path.join(dir, 'lib/main.dart'), 'utf8');
-    expect(main_).toContain("linkDomains: ['flutter-app.clk.ng', 'go.acme.com', if (kDebugMode) 'flutter-app.dev.ciz.to'],");
+    expect(main_).toContain("linkDomains: ['flutter-app.ciz.ng', 'go.acme.com', if (kDebugMode) 'flutter-app.dev.ciz.to'],");
     const androidMain = fs.readFileSync(path.join(dir, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
-    expect([...verifiedHosts(androidMain)].sort()).toEqual(['flutter-app.clk.ng', 'go.acme.com']);
+    expect([...verifiedHosts(androidMain)].sort()).toEqual(['flutter-app.ciz.ng', 'go.acme.com']);
     expect([...verifiedHosts(fs.readFileSync(path.join(dir, 'android/app/src/debug/AndroidManifest.xml'), 'utf8'))]).toEqual(['flutter-app.dev.ciz.to']);
-    expect(applinksHosts(fs.readFileSync(path.join(dir, 'ios/Runner/Runner.entitlements'), 'utf8')).sort()).toEqual(['flutter-app.clk.ng', 'go.acme.com']);
-    expect(androidMain).not.toContain('"clk.ng"');
-    expect(ui.text).toContain('Android app: link subdomain flutter-app.clk.ng (debug builds flutter-app.dev.ciz.to)');
-    expect(ui.text).toContain('flutter-app.clk.ng: assetlinks.json lists this app');
+    expect(applinksHosts(fs.readFileSync(path.join(dir, 'ios/Runner/Runner.entitlements'), 'utf8')).sort()).toEqual(['flutter-app.ciz.ng', 'go.acme.com']);
+    expect(androidMain).not.toContain('"ciz.ng"');
+    expect(ui.text).toContain('Android app: link subdomain flutter-app.ciz.ng (debug builds flutter-app.dev.ciz.to)');
+    expect(ui.text).toContain('flutter-app.ciz.ng: assetlinks.json lists this app');
     expect(ui.text).not.toContain('remove this');
     expect(ui.text.trim().endsWith('Clikgate sees every click. Setup complete.')).toBe(true);
   });

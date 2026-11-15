@@ -82,24 +82,24 @@ describe('offline mode', () => {
     expect(fs.readFileSync(path.join(dir, 'app/src/main/AndroidManifest.xml'), 'utf8')).not.toContain('dev.ciz.to');
     expect(fs.readFileSync(path.join(dir, 'app/src/debug/AndroidManifest.xml'), 'utf8')).toContain('acme.dev.ciz.to');
   });
-  it('Free plan (change 10): an app subdomain under clk.ng is not a shared domain; debug builds get <sub>.dev.ciz.to', async () => {
+  it('Free plan (change 10): an app subdomain under ciz.ng is not a shared domain; debug builds get <sub>.dev.ciz.to', async () => {
     const dir = copyFixture('android-views');
-    expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'acme.clk.ng', '--yes'], { ui: new ScriptedUI() })).toBe(0);
+    expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'acme.ciz.ng', '--yes'], { ui: new ScriptedUI() })).toBe(0);
     const release = fs.readFileSync(path.join(dir, 'app/src/main/AndroidManifest.xml'), 'utf8');
-    expect(release).toContain('android:host="acme.clk.ng"');
+    expect(release).toContain('android:host="acme.ciz.ng"');
     expect(release).not.toContain('dev.ciz.to');
     expect(fs.readFileSync(path.join(dir, 'app/src/debug/AndroidManifest.xml'), 'utf8')).toContain('acme.dev.ciz.to');
-    // clk.ng itself is still refused.
+    // ciz.ng itself is still refused.
     const ui = new ScriptedUI();
-    expect(await main(['--cwd', copyFixture('android-views'), '--sdk-key', 'cg_sdk_test_a', '--domain', 'clk.ng', '--yes'], { ui })).toBe(1);
-    expect(ui.text).toContain("clk.ng: remove this: shared domains can't open your app");
+    expect(await main(['--cwd', copyFixture('android-views'), '--sdk-key', 'cg_sdk_test_a', '--domain', 'ciz.ng', '--yes'], { ui })).toBe(1);
+    expect(ui.text).toContain("ciz.ng: remove this: shared domains can't open your app");
   });
 });
 
 describe('existing dependencies', () => {
   // `dart run clikgate_flutter` needs the package in pubspec.yaml first (`flutter pub add clikgate_flutter`,
   // which writes it in sorted order): setup reports the step as already done and leaves pubspec.yaml alone.
-  it.each(['^2.1.1', '^2.3.0'])('clikgate_flutter %s added by `flutter pub add` is already set up, pubspec.yaml unchanged', async (constraint) => {
+  it.each(['^2.1.2', '^2.3.0'])('clikgate_flutter %s added by `flutter pub add` is already set up, pubspec.yaml unchanged', async (constraint) => {
     const dir = copyFixture('flutter');
     const pub = path.join(dir, 'pubspec.yaml');
     const added = fs.readFileSync(pub, 'utf8').replace('dependencies:\n  flutter:\n    sdk: flutter\n', `dependencies:\n  clikgate_flutter: ${constraint}\n  flutter:\n    sdk: flutter\n`);
@@ -120,7 +120,7 @@ describe('existing dependencies', () => {
     const ui = new ScriptedUI();
     expect(await main(['--cwd', dir, ...OFFLINE], { ui })).toBe(0);
     expect(fs.readFileSync(pub, 'utf8')).toContain('clikgate_flutter: ^1.3.0');
-    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.1.1 or newer. Change it to ^2.1.1 and reinstall.');
+    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.1.2 or newer. Change it to ^2.1.2 and reinstall.');
   });
 });
 

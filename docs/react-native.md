@@ -73,16 +73,16 @@ App Links / Universal Links / custom-scheme opens are forwarded to the SDK by th
 
 **App link subdomain (change 09).** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
 shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
-builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `clk.ng`,
-`clkg.to`, `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
+builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
+`dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
 **Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
-`yourapp.clk.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.clk.ng` is your
-app's own subdomain, not the shared domain `clk.ng`, so declare it like `yourapp.ciz.to`; the setup command does.
+`yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
+app's own subdomain, not the shared domain `ciz.ng`, so declare it like `yourapp.ciz.to`; the setup command does.
 Basic install attribution (which link, campaign or creator brought each install) and goals work on every plan, up to
 the plan's allowance; re-engagement and the advanced app reports need Growth. Only when attribution is
 switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal(...)` then logs one warning and does
@@ -96,7 +96,7 @@ Clikgate's redirect, so the native SDK asks the server first. A password link op
 password page; `onDeepLink` isn't called). A link blocked for the visitor's country (or by a block rule) arrives
 with `link.blockMessage` set and no `path`, `clickId` or `link`: show the text and don't route.
 
-**Shared-domain links of other organisations (1.5.0).** `ciz.to`, `clk.ng`, `clkg.to` and
+**Shared-domain links of other organisations (1.5.0).** `ciz.to`, `ciz.ng` and
 `dev.ciz.to` are shared by many Clikgate customers. When one of their links opens your app but the
 server says it isn't yours, the native SDK opens it in an in-app browser (Android Custom Tabs, iOS
 `SFSafariViewController`) and `onDeepLink` isn't called. Observe it with:
@@ -533,7 +533,7 @@ the hex APNs token with `{ provider: 'apns' }`) when you choose; on iOS keep for
 
 **Test link domain.** Your app's test subdomain (`myapp.dev.ciz.to`, Clikgate's test links) must never reach a
 production build. Put it in `testLinkDomain`, not `linkDomains` (the plugin refuses both). Never list a shared
-domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`): shared domains can't open your app (change 09). Set the variant per EAS build profile, as
+domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`): shared domains can't open your app (change 09). Set the variant per EAS build profile, as
 Expo documents for app variants:
 
 ```json

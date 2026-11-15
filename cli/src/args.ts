@@ -158,9 +158,9 @@ Options
   --platform <flutter|react-native|expo|android|ios>   skip detection
   --app <app_id>     use this Clikgate app
   --sdk-key <cg_sdk_test_…> --domain <host>[,<host>]   offline mode: no sign-in. Hosts: your app's
-                     link subdomain (yourapp.ciz.to, or yourapp.clk.ng on the Free plan; debug
+                     link subdomain (yourapp.ciz.to, or yourapp.ciz.ng on the Free plan; debug
                      builds get yourapp.dev.ciz.to) and custom domains, never a shared domain
-                     (ciz.to, clk.ng, clkg.to, dev.ciz.to)
+                     (ciz.to, ciz.ng, dev.ciz.to)
   --json             machine-readable output (doctor only)
   --api-url <url>    for Clikgate's own development
   --no-install       don't run the package manager (you run it yourself)

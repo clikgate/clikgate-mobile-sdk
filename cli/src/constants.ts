@@ -5,7 +5,7 @@
 
 import type { Platform } from './args';
 
-export const CLI_VERSION = '2.1.1';
+export const CLI_VERSION = '2.1.2';
 
 export const DEFAULT_API_URL = 'https://api.clikgate.com';
 export const DASHBOARD_URL = 'https://app.clikgate.com';
@@ -15,27 +15,27 @@ export const DOCS_URL = 'https://clikgate.com/docs/setup-command';
 export const TEST_LINK_DOMAIN = 'dev.ciz.to';
 /** Parent of every app's live link subdomain on Starter and up (`<link_subdomain>.ciz.to`, change 09 N.1). */
 export const APP_LINK_PARENT = 'ciz.to';
-/** Parent of an app's live link subdomain on the Free plan (`<link_subdomain>.clk.ng`, change 10 D.1). */
-export const FREE_APP_LINK_PARENT = 'clk.ng';
-/** Parents an app's live link subdomain can have. `clk.ng` itself is a shared domain; `yourapp.clk.ng` is not. */
+/** Parent of an app's live link subdomain on the Free plan (`<link_subdomain>.ciz.ng`, change 10 D.1). */
+export const FREE_APP_LINK_PARENT = 'ciz.ng';
+/** Parents an app's live link subdomain can have. `ciz.ng` itself is a shared domain; `yourapp.ciz.ng` is not. */
 export const APP_LINK_PARENTS = [APP_LINK_PARENT, FREE_APP_LINK_PARENT] as const;
 /**
  * Clikgate's shared platform domains (change 09 N.1): many organisations' links live on them, so their
  * AASA / assetlinks list no customer app and they can't open one. Never written into a project; doctor
  * warns when a project still declares one.
  */
-export const SHARED_PLATFORM_DOMAINS = ['ciz.to', 'clk.ng', 'clkg.to', TEST_LINK_DOMAIN];
+export const SHARED_PLATFORM_DOMAINS = ['ciz.to', 'ciz.ng', TEST_LINK_DOMAIN];
 export const SHARED_DOMAIN_FIX = "remove this: shared domains can't open your app";
 
 /**
- * `yourapp.ciz.to` (live; `yourapp.clk.ng` on Free) → `yourapp.dev.ciz.to` (debug builds, every plan).
+ * `yourapp.ciz.to` (live; `yourapp.ciz.ng` on Free) → `yourapp.dev.ciz.to` (debug builds, every plan).
  * Only a fallback: the server's `link_hostnames` / `app_link_domains` say which parent the plan uses.
  */
 export function appLinkHosts(subdomain: string, parent: string = APP_LINK_PARENT): { live: string; test: string } {
   return { live: `${subdomain}.${parent}`, test: `${subdomain}.${TEST_LINK_DOMAIN}` };
 }
 
-/** The parent (`ciz.to` or `clk.ng`) of an app's live link host, else `ciz.to`. */
+/** The parent (`ciz.to` or `ciz.ng`) of an app's live link host, else `ciz.to`. */
 export function appLinkParentOf(liveHost: string | undefined): string {
   return APP_LINK_PARENTS.find((p) => liveHost?.toLowerCase().endsWith(`.${p}`)) ?? APP_LINK_PARENT;
 }
@@ -46,11 +46,11 @@ export function isTestHost(host: string): boolean {
 }
 
 /**
- * The app subdomain of a `<sub>.ciz.to` or (Free, change 10) `<sub>.clk.ng` host (not `<sub>.dev.ciz.to`),
+ * The app subdomain of a `<sub>.ciz.to` or (Free, change 10) `<sub>.ciz.ng` host (not `<sub>.dev.ciz.to`),
  * else undefined.
  */
 export function appSubdomainOf(host: string): string | undefined {
-  const m = /^([a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?)\.(?:ciz\.to|clk\.ng)$/.exec(host);
+  const m = /^([a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?)\.(?:ciz\.to|ciz\.ng)$/.exec(host);
   return m && m[1] !== 'dev' ? m[1] : undefined;
 }
 
@@ -58,10 +58,10 @@ export const MARKER_START = 'clikgate-setup:start';
 export const MARKER_END = 'clikgate-setup:end';
 
 export const SDK = {
-  flutter: { package: 'clikgate_flutter', constraint: '^2.1.1', minimum: '2.1.1' },
-  reactNative: { package: '@clikgate/react-native', constraint: '^2.1.1', minimum: '2.1.1' },
-  android: { group: 'com.clikgate', artifact: 'clikgate-android', version: '2.1.1' },
-  ios: { pod: 'Clikgate', podConstraint: '~> 2.1', spm: 'https://github.com/clikgate/clikgate-ios-sdk', version: '2.1.1' },
+  flutter: { package: 'clikgate_flutter', constraint: '^2.1.2', minimum: '2.1.2' },
+  reactNative: { package: '@clikgate/react-native', constraint: '^2.1.2', minimum: '2.1.2' },
+  android: { group: 'com.clikgate', artifact: 'clikgate-android', version: '2.1.2' },
+  ios: { pod: 'Clikgate', podConstraint: '~> 2.1', spm: 'https://github.com/clikgate/clikgate-ios-sdk', version: '2.1.2' },
 } as const;
 
 /**

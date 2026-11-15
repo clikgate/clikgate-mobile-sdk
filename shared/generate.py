@@ -30,7 +30,7 @@ MATCH_TYPE = {
     ]
 }
 # Platform short domains shared by many organisations (change 06 A.4): paid, free, test, spare.
-SHARED_LINK_DOMAINS = ["ciz.to", "clk.ng", "clkg.to", "dev.ciz.to"]
+SHARED_LINK_DOMAINS = ["ciz.to", "ciz.ng", "dev.ciz.to"]
 REFERRAL_STATUS = {
     "enum": ["installed", "signed_up", "in_progress", "holding", "qualified", "disqualified", "rejected"]
 }
@@ -851,7 +851,7 @@ FIXTURES: dict[str, dict] = {
     "install_request_android": {
         "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
         "app_version": "3.4.1",
-        "sdk_version": "2.1.1",
+        "sdk_version": "2.1.2",
         "platform": "android",
         "os_version": "14",
         "device_model": "Pixel 8",
@@ -887,7 +887,7 @@ FIXTURES: dict[str, dict] = {
         "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
         "keychain_previous_installation_id": None,
         "app_version": "3.4.1",
-        "sdk_version": "2.1.1",
+        "sdk_version": "2.1.2",
         "platform": "ios",
         "os_version": "18.1",
         "device_model": "iPhone15,2",
@@ -1152,7 +1152,7 @@ FIXTURES["install_request_ios_signals"] = {
 FIXTURES["install_request_opted_out"] = {
     "installation_id": FIXTURES["install_request_android"]["installation_id"],
     "app_version": "3.4.1",
-    "sdk_version": "2.1.1",
+    "sdk_version": "2.1.2",
     "platform": "android",
     "consent": {
         "analytics": "denied",
@@ -1238,7 +1238,7 @@ FIXTURES["consent_response"] = {"ok": True}
 FIXTURES["install_ping_request"] = {
     "platform": "android",
     "app_version": "3.4.1",
-    "sdk_version": "2.1.1",
+    "sdk_version": "2.1.2",
     "consent": {"analytics": "unknown", "attribution": "denied", "ad_user_data": "denied", "ad_personalization": "denied", "region": "DE", "updated_at": "2026-10-20T10:05:00Z"},
 }
 FIXTURES["install_ping_response"] = {"ok": True}
@@ -1286,10 +1286,10 @@ FIXTURES["goals_response_rejected"] = {
 
 # Change 10 (D.5, contract B3a.2): deep-link-only mode (Free, Starter, or an app with attribution
 # switched off). /config says app_attribution off and deep_linking on; the Free app subdomain is
-# under clk.ng (an app subdomain, not the shared domain clk.ng itself).
+# under ciz.ng (an app subdomain, not the shared domain ciz.ng itself).
 FIXTURES["config_response_deep_link_only"] = {
     **FIXTURES["config_response"],
-    "link_domains": ["yourapp.clk.ng", "inv.myapp.com"],
+    "link_domains": ["yourapp.ciz.ng", "inv.myapp.com"],
     "features": {**FIXTURES["config_response"]["features"], "app_attribution": False, "deep_linking": True},
 }
 # /goals answers 200 with this no-op body: drop the batch, warn once ("attribution is switched off"), never retry.
@@ -1312,7 +1312,7 @@ FIXTURES["install_response_deep_link_only"] = {
     "install_id": f"ins_{ULID}",
     "attribution": ORGANIC_DEEP_LINK_ONLY,
     "deep_link": {
-        "url": "https://yourapp.clk.ng/p/dress",
+        "url": "https://yourapp.ciz.ng/p/dress",
         "path": "/products/42",
         "data": {"product_id": "42"},
         "is_deferred": True,
@@ -1373,7 +1373,7 @@ FIXTURE_SCHEMA = {
 # ---- Change 26 fixtures (existing users) ----
 FIXTURES["install_request_android_existing"] = {
     **FIXTURES["install_request_android"],
-    "sdk_version": "2.1.1",
+    "sdk_version": "2.1.2",
     "install_channel": "store",
     "debuggable": False,
     "preinstalled": False,
@@ -1388,7 +1388,7 @@ FIXTURES["install_request_android_existing"] = {
 }
 FIXTURES["install_request_ios_existing"] = {
     **{k: v for k, v in FIXTURES["install_request_ios"].items() if k not in ("pasteboard_token", "pasteboard_outcome")},
-    "sdk_version": "2.1.1",
+    "sdk_version": "2.1.2",
     "keychain_previous_installation_id": "0f6b8a2c-3d4e-4f5a-8b6c-7d8e9f0a1b2c",
     "keychain_restored_from_other_device": True,
     "install_channel": "app_store",
@@ -1399,7 +1399,7 @@ FIXTURES["install_request_ios_existing"] = {
 # Tracking consent denied (R.3): no dates, only whether the app was installed before the start date.
 FIXTURES["install_request_android_consent_denied"] = {
     **FIXTURES["install_request_opted_out"],
-    "sdk_version": "2.1.1",
+    "sdk_version": "2.1.2",
     "install_channel": "store",
     "installer_package": "com.android.vending",
     "debuggable": False,

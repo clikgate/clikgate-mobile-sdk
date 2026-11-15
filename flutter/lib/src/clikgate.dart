@@ -22,7 +22,7 @@ class Clikgate {
   Clikgate._();
 
   /// Version of this Flutter plugin (reported as `Clikgate-SDK-Version: flutter/<version>`).
-  static const String pluginVersion = '2.1.1';
+  static const String pluginVersion = '2.1.2';
 
   static DeepLinkHub _hub = DeepLinkHub();
 
@@ -55,7 +55,7 @@ class Clikgate {
   /// any server domain missing here.
   ///
   /// [platformDomainBrowserFallback] (default true): a link on a shared Clikgate
-  /// domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) that belongs to
+  /// domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) that belongs to
   /// another organisation opens in an in-app browser (Custom Tabs /
   /// SFSafariViewController) and is reported on [onBrowserHandoff], never on
   /// [onDeepLink]. False drops it, as before 1.4.0.

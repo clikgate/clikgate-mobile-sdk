@@ -244,7 +244,7 @@ const LABEL: Record<PlatformKey, string> = { android: 'Android', ios: 'iOS' };
 
 /**
  * Change 09 (N.1): an app opens links from its own link subdomain (`<sub>.ciz.to`; on the Free plan
- * `<sub>.clk.ng`, change 10 D.1; debug builds `<sub>.dev.ciz.to` on every plan) and the organisation's
+ * `<sub>.ciz.ng`, change 10 D.1; debug builds `<sub>.dev.ciz.to` on every plan) and the organisation's
  * active custom domains, from `app_link_domains`. Never a shared domain. An unconfirmed suggestion is
  * confirmed (after asking) with PATCH /v1/apps/{id}.
  */
@@ -253,7 +253,7 @@ async function confirmSubdomain(opts: Options, deps: Deps, clikgate: Clikgate, p
   if (app.link_subdomain_confirmed !== false) return app;
   let name = app.link_subdomain ?? '';
   const label = LABEL[platform];
-  // ciz.to, or clk.ng on the Free plan: the server's live hostname says which.
+  // ciz.to, or ciz.ng on the Free plan: the server's live hostname says which.
   const parent = appLinkParentOf(app.link_hostnames?.live);
   if (opts.dryRun) {
     ui.out(`${paint(ui, 'dim', '·')} ${label} app link subdomain ${name}.${parent} isn't confirmed yet (a real run asks to confirm it)`);
@@ -353,12 +353,12 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   if (offline) {
     if (SDK_KEY_LIVE.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, 'Use the test key; switch to live for release builds.');
     if (!SDK_KEY_TEST.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, '--sdk-key must be a test SDK key (cg_sdk_test_…), from Dashboard › Apps › your app › SDK keys.');
-    if (!opts.domains?.length) throw new Exit(EXIT.PROBLEMS, "Offline mode needs --domain <host>[,<host>] (your app's link subdomain and custom domains, e.g. yourapp.ciz.to,go.acme.com; on the Free plan yourapp.clk.ng).");
+    if (!opts.domains?.length) throw new Exit(EXIT.PROBLEMS, "Offline mode needs --domain <host>[,<host>] (your app's link subdomain and custom domains, e.g. yourapp.ciz.to,go.acme.com; on the Free plan yourapp.ciz.ng).");
     const shared = opts.domains.filter(isSharedPlatformDomain);
     if (shared.length) {
       throw new Exit(
         EXIT.PROBLEMS,
-        `${shared.join(', ')}: ${SHARED_DOMAIN_FIX}. Pass your app's link subdomain instead (Dashboard › Apps › your app, e.g. --domain yourapp.ciz.to, or yourapp.clk.ng on the Free plan), plus any custom domains.`
+        `${shared.join(', ')}: ${SHARED_DOMAIN_FIX}. Pass your app's link subdomain instead (Dashboard › Apps › your app, e.g. --domain yourapp.ciz.to, or yourapp.ciz.ng on the Free plan), plus any custom domains.`
       );
     }
   }
@@ -381,11 +381,11 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     codeDomains = opts.domains!.filter((d) => !isTestHost(d));
     linkDomains = [...codeDomains];
     sdkKey = opts.sdkKey!;
-    // Debug builds get the app's test subdomain: <sub>.ciz.to (or <sub>.clk.ng on Free) → <sub>.dev.ciz.to.
+    // Debug builds get the app's test subdomain: <sub>.ciz.to (or <sub>.ciz.ng on Free) → <sub>.dev.ciz.to.
     const sub = codeDomains.map(appSubdomainOf).find((x): x is string => Boolean(x));
     testDomain = sub ? appLinkHosts(sub).test : opts.domains!.find((d) => d.endsWith(`.${TEST_LINK_DOMAIN}`));
     if (!testDomain) {
-      manual.push({ label: 'Test links', detail: `No app link subdomain (yourapp.ciz.to, or yourapp.clk.ng on the Free plan) in --domain, so debug builds don't get a test domain. Add your app's link subdomain to --domain and run setup again, or add yourapp.${TEST_LINK_DOMAIN} to debug builds yourself.` });
+      manual.push({ label: 'Test links', detail: `No app link subdomain (yourapp.ciz.to, or yourapp.ciz.ng on the Free plan) in --domain, so debug builds don't get a test domain. Add your app's link subdomain to --domain and run setup again, or add yourapp.${TEST_LINK_DOMAIN} to debug builds yourself.` });
     }
     manual.push({ label: 'Signing details', detail: 'Offline mode sends nothing to Clikgate: add the SHA-256 signing fingerprints (debug and Play App Signing) and the Apple Team ID to your apps in the dashboard.' });
   } else {

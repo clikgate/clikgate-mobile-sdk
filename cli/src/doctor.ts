@@ -104,7 +104,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
         id: `${id}.shared_domains`,
         status: 'warn',
         title: `${name}: ${shared.map((h) => prefix + h).join(', ')}: ${SHARED_DOMAIN_FIX}`,
-        fix: `Remove ${shared.map((h) => prefix + h).join(', ')}. Use your app's link subdomain (<link_subdomain>.ciz.to in release builds, or <link_subdomain>.clk.ng on the Free plan; <link_subdomain>.dev.ciz.to in debug builds) and your verified custom domains. Run \`${setupCommand()}\` to add them.`,
+        fix: `Remove ${shared.map((h) => prefix + h).join(', ')}. Use your app's link subdomain (<link_subdomain>.ciz.to in release builds, or <link_subdomain>.ciz.ng on the Free plan; <link_subdomain>.dev.ciz.to in debug builds) and your verified custom domains. Run \`${setupCommand()}\` to add them.`,
         doc_url: DOC('app-link-subdomains'),
       });
     } else add({ id: `${id}.shared_domains`, status: 'pass', title: `${name}: no shared Clikgate domain in app links` });
@@ -270,7 +270,7 @@ function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set
         const set = new Set(hosts);
         set.forEach((h) => liveHosts.add(h));
         iosRelease.push(set);
-        add({ id: `ios.entitlements.${c.name}`, status: hosts.length ? 'pass' : 'fail', title: `iOS ${c.name}: associated domains`, detail: hosts.join(', ') || 'none', ...(hosts.length ? {} : { fix: 'Add applinks:<your app link subdomain>.ciz.to (.clk.ng on the Free plan). Run `' + setupCommand() + '`.' }) });
+        add({ id: `ios.entitlements.${c.name}`, status: hosts.length ? 'pass' : 'fail', title: `iOS ${c.name}: associated domains`, detail: hosts.join(', ') || 'none', ...(hosts.length ? {} : { fix: 'Add applinks:<your app link subdomain>.ciz.to (.ciz.ng on the Free plan). Run `' + setupCommand() + '`.' }) });
       }
     }
     sharedCheck('ios', 'iOS', iosAll, 'applinks:');

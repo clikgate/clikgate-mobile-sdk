@@ -16,7 +16,7 @@ import java.lang.ref.WeakReference
  * in-app browser instead of being dropped.
  */
 internal object SharedDomains {
-    val HOSTS: Set<String> = setOf("ciz.to", "clk.ng", "clkg.to", "dev.ciz.to")
+    val HOSTS: Set<String> = setOf("ciz.to", "ciz.ng", "dev.ciz.to")
 
     fun host(url: String): String? =
         Uri.parse(url).takeIf { it.scheme.equals("https", true) || it.scheme.equals("http", true) }
