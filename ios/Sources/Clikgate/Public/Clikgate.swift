@@ -167,7 +167,7 @@ public final class Clikgate: NSObject, @unchecked Sendable {
         Task { await c.reportServerError(code: code, feature: feature) }
     }
 
-    /// **Internal**, for `ClikgateEngage` (change 26, R.28): the referral link saved for the signed-in customer
+    /// **Internal**, for `ClikgateEngage`: the referral link saved for the signed-in customer
     /// (JSON) and the token to pass back to ``saveLinkJSON(programId:json:token:)``.
     @_spi(ClikgateEngage)
     public func savedLinkJSON(programId: String) -> (Data?, String?) {

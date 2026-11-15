@@ -404,7 +404,7 @@ class EngageCodes {
   }
 }
 
-/// Change 26, R.28: the referral links the native SDK keeps for the signed-in
+/// The referral links the native SDK keeps for the signed-in
 /// customer (`com.clikgate/engage` channel). Missing channel (tests, web) =
 /// nothing saved.
 class _SavedLinks {

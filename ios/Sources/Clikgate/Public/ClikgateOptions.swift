@@ -56,7 +56,7 @@ public struct ClikgateOptions: Sendable {
     /// notifications (no prompt, nothing shown). Forward the token with `setPushToken(deviceToken:)`.
     /// Default true; false leaves push registration to the app.
     public var automaticPushToken: Bool
-    /// Change 26: set true when your app's own storage shows this person used the app before (for example a saved
+    /// Set true when your app's own storage shows this person used the app before (for example a saved
     /// signed-in session), read before `configure`. Clikgate uses the phone's install date first; this hint only
     /// counts when that date can't be read. Default false.
     public var existingUser: Bool

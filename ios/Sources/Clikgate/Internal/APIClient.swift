@@ -61,7 +61,7 @@ struct APIClient: Sendable {
         do {
             let (data, http) = try await transport.send(request)
             if (200..<300).contains(http.statusCode) { return .success(data) }
-            // Change 26, R.11: the body's `retry_after_ms` wins over the header
+            // The body's `retry_after_ms` wins over the header
             let ms = JSON.object(data).flatMap { $0.obj("error")?.int("retry_after_ms") ?? $0.int("retry_after_ms") }
             let retryAfter = ms.map { Double($0) / 1000 } ?? (http.value(forHTTPHeaderField: "Retry-After")).flatMap(Double.init)
             return .failure(CallFailure(error: Self.decodeError(data: data, status: http.statusCode), retryAfter: retryAfter))

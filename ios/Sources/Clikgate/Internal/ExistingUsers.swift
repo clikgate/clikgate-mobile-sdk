@@ -3,7 +3,7 @@ import Foundation
 import StoreKit
 #endif
 
-/// Change 26 (existing users): what the phone says about how and when the app arrived on it.
+/// What the phone says about how and when the app arrived on it.
 protocol AppInstallFactsProviding: Sendable {
     /// `app_store`, `testflight` or `xcode`, from the receipt URL and the embedded profile only (R.14).
     func channel() -> String

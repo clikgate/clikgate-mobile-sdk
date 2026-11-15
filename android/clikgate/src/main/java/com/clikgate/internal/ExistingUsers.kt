@@ -16,7 +16,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Change 26 (existing users): what the phone knows about when the app arrived on it, read once per
+ * What the phone knows about when the app arrived on it, read once per
  * `/install` body. Every value is optional: a failing read leaves it null and its field out.
  */
 internal data class AppInstallFacts(
@@ -66,7 +66,7 @@ internal object AppInstallFactsReader {
 }
 
 /**
- * Builds the Change 26 `/install` fields (EX.3 with R.3, R.4, R.5, R.6, R.8). Pure: everything it needs
+ * Builds the existing-user `/install` fields. Pure: everything it needs
  * is passed in, so unit tests cover every branch without a device.
  */
 internal object ExistingUserFields {

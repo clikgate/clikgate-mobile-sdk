@@ -785,12 +785,12 @@ internal class Core(
         put("sdk_version", nativeVersion)
         put("platform", "android")
         put("consent", consentBody(optedOut = true))
-        // Change 26, R.3: classified before the opt-out step, without the dates
+        // Classified before the opt-out step, without the dates
         putExistingUserFields(this, datesAllowed = false)
     }
 
     /**
-     * Change 26 (EX.3, R.3-R.8): how and when the app arrived on this phone. With [datesAllowed] false
+     * How and when the app arrived on this phone. With [datesAllowed] false
      * (opted out, attribution consent denied) only whether it was there before the app's Clikgate start date.
      * A failing read leaves its field out; the install is never held up.
      */
@@ -1530,7 +1530,7 @@ internal class Core(
         if (customer && featureConfig.privateMode) warnPrivateMode()
         if (l == null && (!customer || featureConfig.privateMode)) return@runSerial
         if (customer && !featureConfig.privateMode) {
-            // Change 26, R.28: another customer (or sign-out) never sees the previous customer's saved links
+            // Another customer (or sign-out) never sees the previous customer's saved links
             if (customerSet && customerId != storage.customerUserId) storage.savedLinksJson = null
             if (customerSet) storage.customerUserId = customerId
             storage.identityToken = if (storage.customerUserId == null) null else identityToken
@@ -1635,7 +1635,7 @@ internal class Core(
         }
     }
 
-    // ------------------------------------------------------------------ saved referral links (change 26, R.28)
+    // ------------------------------------------------------------------ saved referral links
     // Core never creates links: Engage registers [identifyListener] and does it. These only keep its answers.
 
     /** Engage's "prepare this program's link" listener (serial thread), called after a customer is identified. */
@@ -2042,7 +2042,7 @@ internal class Core(
     }
 }
 
-/** Change 26, R.28: Engage's "prepare this program's referral link" (the core never creates links itself). */
+/** Engage's "prepare this program's referral link" (the core never creates links itself). */
 internal interface LinkPreparer {
     fun prepareLink(programId: String)
 }

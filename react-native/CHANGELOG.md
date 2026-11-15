@@ -3,7 +3,7 @@
 
 ## 2.1.1 (unreleased): Existing users
 
-- **Existing users (Change 26).** The first `/install` now says how and when the app arrived on the phone, so
+- **Existing users.** The first `/install` now says how and when the app arrived on the phone, so
   Clikgate can tell people who had the app before your first release with Clikgate ("existing users, now tracked")
   from new installs. Existing users are never attributed and don't count as installs; their goals, uninstalls,
   identify, referrals as referrers and deep links work as before. (native SDKs 2.1.1).

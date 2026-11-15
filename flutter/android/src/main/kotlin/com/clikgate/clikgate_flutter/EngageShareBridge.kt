@@ -47,7 +47,7 @@ internal class EngageShareBridge : FlutterPlugin, ActivityAware, MethodChannel.M
 
     @OptIn(com.clikgate.ClikgateInternalApi::class)
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        // Change 26, R.28: the link saved for the signed-in customer (Dart's createLink)
+        // The link saved for the signed-in customer (Dart's createLink)
         when (call.method) {
             "savedLink" -> {
                 ClikgateEngage.referrals // prepares links after identifyUser() from now on

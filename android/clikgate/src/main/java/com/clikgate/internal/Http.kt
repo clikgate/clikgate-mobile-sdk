@@ -105,7 +105,7 @@ internal class HttpClient(
                     // /codes/redeem: the touch was recorded although the referral failed.
                     offlineTouchId = if (err.isNull("offline_touch_id")) null else err.optString("offline_touch_id").takeIf { it.isNotEmpty() }
                 }
-                // Change 26, R.11: a rate-limited answer may say how long to wait in its body
+                // A rate-limited answer may say how long to wait in its body
                 bodyRetryAfterMs = listOfNotNull(err, json).firstNotNullOfOrNull { o ->
                     if (o.has("retry_after_ms") && !o.isNull("retry_after_ms")) o.optLong("retry_after_ms", -1).takeIf { it >= 0 } else null
                 }
@@ -147,7 +147,7 @@ internal class Backoff(
     }
 
     /**
-     * Change 26, R.11: a server-requested wait plus up to 25 % random extra, so a whole user base that
+     * A server-requested wait plus up to 25 % random extra, so a whole user base that
      * was told to wait the same time doesn't come back in the same second.
      */
     fun withJitter(serverMs: Long): Long = serverMs + (serverMs * 0.25 * random.nextDouble()).toLong()

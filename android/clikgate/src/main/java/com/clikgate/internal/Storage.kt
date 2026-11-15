@@ -139,7 +139,7 @@ internal class Storage(context: Context) {
         set(v) = prefs.edit().putBoolean(K_FIREBASE_LOGGED, v).apply()
 
     /**
-     * Change 26, R.28: referral links saved for the signed-in customer (Engage `createLink` answers with them
+     * Referral links saved for the signed-in customer (Engage `createLink` answers with them
      * at once, offline too): `{"c": sha256(customer ID), "l": {programId: link JSON}}`. Cleared on sign-out
      * and when another customer signs in.
      */
