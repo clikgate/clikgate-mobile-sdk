@@ -158,6 +158,17 @@ export interface ClikgateConfig {
    * registration to the app.
    */
   automaticPushToken?: boolean;
+  /**
+   * Set `true` when your app's own storage shows this person used the app before (for example a
+   * saved signed-in session). Clikgate uses the phone's install date first; this hint only counts
+   * when that date can't be read. Default `false`.
+   */
+  existingUser?: boolean;
+  /**
+   * Debug / Xcode builds with a test (sandbox) SDK key only: pretend the app was installed at this
+   * time, to test both the "existing user" and "new install" paths. Ignored in store builds.
+   */
+  debugPlatformInstalledAt?: Date;
 }
 
 /**
@@ -224,6 +235,11 @@ export interface ClikgateAttribution {
   clickId: string | null;
   clickedAt: Date | null;
   isReinstall: boolean;
+  /**
+   * The app was already on this phone before your first release with Clikgate (an existing user,
+   * now tracked). `status` is then `organic`: existing users are never attributed.
+   */
+  isExistingUser: boolean;
   /** Clikgate install id (`ins_...`), null until the install was recorded. */
   installId: string | null;
   link: ClikgateLink | null;
@@ -364,6 +380,7 @@ export function attributionFromMap(input: unknown): ClikgateAttribution {
     clickId: optStr(m.clickId),
     clickedAt: date(m.clickedAt),
     isReinstall: bool(m.isReinstall),
+    isExistingUser: bool(m.isExistingUser),
     installId: optStr(m.installId),
     link: optional(m.link, linkFromMap),
     isAttributed: status === 'attributed',

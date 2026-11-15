@@ -445,6 +445,61 @@
         "boolean",
         "null"
       ]
+    },
+    "install_channel": {
+      "enum": [
+        "app_store",
+        "testflight",
+        "xcode",
+        "store",
+        "sideload",
+        "debug"
+      ]
+    },
+    "debuggable": {
+      "type": "boolean"
+    },
+    "preinstalled": {
+      "type": "boolean"
+    },
+    "platform_installed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "platform_installed_source": {
+      "enum": [
+        "android_first_install_time",
+        "play_install_begin_server",
+        "ios_container_created"
+      ]
+    },
+    "android_last_update_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "android_updated_since_install": {
+      "type": "boolean"
+    },
+    "android_version_code": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "device_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "existing_user_hint": {
+      "type": "boolean"
+    },
+    "installed_before_start": {
+      "type": "boolean"
+    },
+    "keychain_restored_from_other_device": {
+      "type": "boolean"
+    },
+    "android_device_key": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
     }
   },
   "additionalProperties": false,

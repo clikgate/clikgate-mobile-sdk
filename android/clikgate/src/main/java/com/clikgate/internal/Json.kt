@@ -98,8 +98,11 @@ internal object Json {
 
     fun attribution(o: JSONObject?, installId: String?): ClikgateAttribution {
         if (o == null) return pendingAttribution(installId)
+        // The wire status `existing` is reported as `organic` with isExistingUser
+        val wire = o.str("status") ?: ClikgateAttribution.STATUS_PENDING
+        val existing = wire == "existing"
         return ClikgateAttribution(
-            status = o.str("status") ?: ClikgateAttribution.STATUS_PENDING,
+            status = if (existing) ClikgateAttribution.STATUS_ORGANIC else wire,
             matchType = o.str("match_type"),
             confidence = o.double("confidence"),
             clickId = o.str("click_id"),
@@ -107,6 +110,7 @@ internal object Json {
             isReinstall = o.bool("is_reinstall"),
             installId = installId,
             link = link(o.obj("link")),
+            isExistingUser = existing,
         )
     }
 

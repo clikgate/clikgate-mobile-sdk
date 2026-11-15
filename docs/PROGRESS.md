@@ -1,3 +1,24 @@
+# Progress: Change 26 C26-S1 mobile part (existing users), 2026-11-14
+
+Spec: `clikgate_api/docs/spec/clikgate-change-26-existing-users.md` S, EX.1, EX.3, KC.6, RF.1, R.1, R.3–R.6, R.8,
+R.11, R.14, R.23, R.28. Decisions: [DECISIONS.md](DECISIONS.md) "Change 26". Versions 2.1.1 (CLI 2.1.0).
+
+| Item | Status | Where |
+|---|---|---|
+| Contract | 39 schemas, 83 fixtures valid (9 new) | `shared/generate.py`, `API_CONTRACT.md` |
+| Android install facts, R.3, R.4, R.5, R.6, R.8 | done | `internal/ExistingUsers.kt`, `Core.kt` |
+| iOS channel, container date, R.1 marker, R.3, R.23, KC.6, privacy manifest | done | `Internal/ExistingUsers.swift`, `Core.swift`, `Platform.swift` |
+| `existingUser` / `debugPlatformInstalledAt` options | all four platforms | options, bridges |
+| `isExistingUser`, typed existing-user error | all four platforms | models, errors |
+| R.11 body `retry_after_ms` + jitter | Android, iOS | `Http.kt`, `APIClient.swift` |
+| R.28 saved links + background preparation | native Engage; Flutter / RN through `savedLink` / `saveLink` | `EngageClient.kt`, `Storage.swift`, `EngageAPIs.swift`, bridges |
+| Tests | Android 313 (Change26Test 14), iOS 246 + Engage 24 (Change26Tests 18), Flutter 143 (change26_test 4), RN 193, CLI 171 | |
+| Checks | Android apiDump, checkNoEngageDependency, size; iOS check_api, check_size; check_cli_sdk_versions | |
+
+Not done: native compile of the Flutter and React Native plugins' Android / iOS code (no example-app build run; the
+bridge edits are small and use only the APIs above); device checks of section T (Transsion store package name,
+restores, Quick Start, `AppTransaction` on a weak connection).
+
 # Progress: Change 23 S (unknown goal names refused), 2026-11-08
 
 Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` S, R.1, R.9. Decisions: [DECISIONS.md](DECISIONS.md)

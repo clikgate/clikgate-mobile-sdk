@@ -138,6 +138,15 @@ internal class Storage(context: Context) {
         get() = prefs.getBoolean(K_FIREBASE_LOGGED, false)
         set(v) = prefs.edit().putBoolean(K_FIREBASE_LOGGED, v).apply()
 
+    /**
+     * Referral links saved for the signed-in customer (Engage `createLink` answers with them
+     * at once, offline too): `{"c": sha256(customer ID), "l": {programId: link JSON}}`. Cleared on sign-out
+     * and when another customer signs in.
+     */
+    var savedLinksJson: String?
+        get() = prefs.getString(K_SAVED_LINKS, null)
+        set(v) = put(K_SAVED_LINKS, v)
+
     private fun put(key: String, v: String?) {
         if (v == null) prefs.edit().remove(key).apply() else prefs.edit().putString(key, v).apply()
     }
@@ -171,5 +180,6 @@ internal class Storage(context: Context) {
         private const val K_LAST_CLICK = "last_click"
         private const val K_APP_INSTANCE_ID = "app_instance_id_sent"
         private const val K_FIREBASE_LOGGED = "firebase_attribution_logged"
+        private const val K_SAVED_LINKS = "saved_referral_links"
     }
 }

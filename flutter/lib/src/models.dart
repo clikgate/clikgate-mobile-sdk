@@ -276,6 +276,7 @@ class ClikgateAttribution {
     this.isReinstall = false,
     this.installId,
     this.link,
+    this.isExistingUser = false,
   });
 
   factory ClikgateAttribution.fromMap(Map<String, dynamic> m) =>
@@ -288,6 +289,7 @@ class ClikgateAttribution {
         isReinstall: m['isReinstall'] as bool? ?? false,
         installId: m['installId'] as String?,
         link: _optional(m['link'], ClikgateLink.fromMap),
+        isExistingUser: m['isExistingUser'] as bool? ?? false,
       );
 
   final ClikgateAttributionStatus status;
@@ -300,6 +302,11 @@ class ClikgateAttribution {
   /// Clikgate install id (`ins_...`), null until the install was recorded.
   final String? installId;
   final ClikgateLink? link;
+
+  /// The app was already on this phone before your first release with
+  /// Clikgate (an existing user, now tracked). [status] is then `organic`:
+  /// existing users are never attributed.
+  final bool isExistingUser;
 
   bool get isAttributed => status == ClikgateAttributionStatus.attributed;
 }

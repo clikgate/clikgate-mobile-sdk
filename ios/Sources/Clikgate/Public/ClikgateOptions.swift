@@ -56,6 +56,13 @@ public struct ClikgateOptions: Sendable {
     /// notifications (no prompt, nothing shown). Forward the token with `setPushToken(deviceToken:)`.
     /// Default true; false leaves push registration to the app.
     public var automaticPushToken: Bool
+    /// Set true when your app's own storage shows this person used the app before (for example a saved
+    /// signed-in session), read before `configure`. Clikgate uses the phone's install date first; this hint only
+    /// counts when that date can't be read. Default false.
+    public var existingUser: Bool
+    /// Development builds (Xcode) with a test (sandbox) SDK key only: pretend the app was installed at this time,
+    /// to test both the "existing user" and "new install" paths. Ignored in App Store and TestFlight builds.
+    public var debugPlatformInstalledAt: Date?
 
     public static let defaultApiBaseUrl = URL(string: "https://sdk.clikgate.com")!
 
@@ -69,9 +76,13 @@ public struct ClikgateOptions: Sendable {
         attestation: Attestation = .off,
         deferredDeepLinkTimeout: TimeInterval = 5,
         platformDomainBrowserFallback: Bool = true,
-        automaticPushToken: Bool = true
+        automaticPushToken: Bool = true,
+        existingUser: Bool = false,
+        debugPlatformInstalledAt: Date? = nil
     ) {
         self.automaticPushToken = automaticPushToken
+        self.existingUser = existingUser
+        self.debugPlatformInstalledAt = debugPlatformInstalledAt
         self.platformDomainBrowserFallback = platformDomainBrowserFallback
         self.apiBaseUrl = apiBaseUrl
         self.linkDomains = linkDomains

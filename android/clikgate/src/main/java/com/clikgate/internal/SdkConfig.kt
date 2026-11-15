@@ -33,6 +33,15 @@ internal data class SdkConfig(
     val privateMode: Boolean = false,
     /** `allow_labels` (absent = on): false in private mode without "Allow labels in private mode". */
     val allowLabels: Boolean = true,
+    // ---- existing users ----
+    /** `environment` (`production` / `sandbox`), null when the server sent none. */
+    val environment: String? = null,
+    /** `existing_users.start_at` in ms: the app's Clikgate start date for this platform (R.3). */
+    val sdkStartAtMs: Long? = null,
+    /** `existing_users.device_key_salt`: the per-app key for `android_device_key` (R.8). */
+    val deviceKeySalt: String? = null,
+    /** Active programs with `client_link_creation` (Engage prepares their links after identify, R.28). */
+    val linkProgramIds: List<String> = emptyList(),
 ) {
     /**
      * `Clikgate.isFeatureEnabled`: the server's value when present, else the catalogue default
@@ -97,6 +106,20 @@ internal data class SdkConfig(
                 firebase = FirebaseConfig.parse(o.optJSONObject("firebase_forwarding")),
                 privateMode = o.optBoolean("private_mode", false),
                 allowLabels = o.optBoolean("allow_labels", true),
+                environment = o.optString("environment", "").ifEmpty { null },
+                sdkStartAtMs = o.optJSONObject("existing_users")?.let { e ->
+                    if (e.isNull("start_at")) null else ExistingUserFields.parseTime(e.optString("start_at"))
+                },
+                deviceKeySalt = o.optJSONObject("existing_users")?.let { e ->
+                    if (e.isNull("device_key_salt")) null else e.optString("device_key_salt").ifEmpty { null }
+                },
+                linkProgramIds = o.optJSONArray("referral_programs")?.let { a ->
+                    (0 until a.length()).mapNotNull { i ->
+                        a.optJSONObject(i)?.takeIf {
+                            it.optString("status") == "active" && it.optBoolean("client_link_creation", false)
+                        }?.optString("id")?.ifEmpty { null }
+                    }
+                } ?: emptyList(),
             )
         }
     }

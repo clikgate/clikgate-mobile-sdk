@@ -648,3 +648,13 @@ pod lib lint Clikgate.podspec --allow-warnings
 
 The Keychain item `com.clikgate.installation-id` and `Application Support/Clikgate` stay on devices that had
 the SDK; they are deleted with the app.
+
+## Existing users (2.1.1)
+
+When you ship your first release with Clikgate, people who already had the app are counted as **existing users, now
+tracked**, not as installs, using the phone's own install date (no code needed). If your app can tell from its own
+storage that the person used it before (for example a saved signed-in session), pass `ClikgateOptions(existingUser: true)` to `configure`; it only
+counts when the phone's date can't be read. Call `identifyUser()` after sign-in **and at every app open when the user
+is already signed in**. `attribution.isExistingUser` is true for them (`status` is `organic`), and applying a referral
+code from such an installation fails with the existing-user error (code `existing_user`). Guide:
+https://clikgate.com/docs/existing-users

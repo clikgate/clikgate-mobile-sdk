@@ -25,6 +25,18 @@
   doesn't match. Its messages and `--help` name `dart run clikgate_flutter` (and `dart run clikgate_flutter:doctor`)
   instead of npx. New dependency: `crypto`. No change to the plugin's API.
 
+
+## 2.1.1 (unreleased): Existing users
+
+- **Existing users.** The first `/install` now says how and when the app arrived on the phone, so
+  Clikgate can tell people who had the app before your first release with Clikgate ("existing users, now tracked")
+  from new installs. Existing users are never attributed and don't count as installs; their goals, uninstalls,
+  identify, referrals as referrers and deep links work as before. (native SDKs 2.1.1).
+- **Added:** `Clikgate.configure(existingUser:, debugPlatformInstalledAt:)`, `ClikgateAttribution.isExistingUser`, and
+  `ExistingUserException` (a `ClikgateException` with code `existing_user`) from `referrals.applyCode`.
+- **Added (Engage):** `referrals.createLink` answers with the link the native SDK saved for the signed-in customer
+  (offline too) and refreshes it in the background; links are prepared after `identifyUser()` once Engage is used.
+
 ## 2.0.0 (unreleased): one method, `goal()`; installation ID
 
 **Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.

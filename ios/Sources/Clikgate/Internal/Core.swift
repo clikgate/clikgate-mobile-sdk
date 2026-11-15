@@ -45,6 +45,9 @@ actor ClikgateCore {
     let testMode: Bool
     /// `goal()` completions by queue id, settled when Clikgate answers (in memory only).
 
+    /// The signed-in customer's saved referral links (synchronous, for Engage).
+    nonisolated let links: SavedLinks
+
     init(sdkKey: String, options: ClikgateOptions, deps: ClikgateDependencies, logger: ClikgateLogger,
          dispatcher: DeepLinkDispatcher, linkDomains: LinkDomainsBox, wrapper: WrapperInfo?,
          snapshot: SyncSnapshot = SyncSnapshot()) {
@@ -57,6 +60,7 @@ actor ClikgateCore {
         api = APIClient(baseURL: options.apiBaseUrl, sdkKey: sdkKey, transport: deps.transport, clock: deps.clock,
                         jitter: deps.jitter, wrapper: wrapper, logger: logger)
         stateStore = JSONFile(directory: deps.storageDirectory, fileName: "state.json")
+        links = SavedLinks(file: JSONFile(directory: deps.storageDirectory, fileName: "links.json"))
         state = (stateStore.load() as? JSONObject).map(PersistedState.init(json:)) ?? PersistedState()
         queue = EventQueue(directory: deps.storageDirectory)
         features = FeatureSwitches(switches: state.config?.switches)
@@ -108,23 +112,72 @@ actor ClikgateCore {
         await reattestIfDue()
         await flush()
         if startTimers && !launchedInBackground { startForegroundTimer() }
+        await sendAppRecordIfNeeded()
     }
 
     private func ensureInstallationId() {
         if let id = state.installationId {
             if deps.keychain.readInstallationId() != id { deps.keychain.writeInstallationId(id) }
+            // R.1: phones that ran an earlier SDK get the this-device-only marker too
+            if deps.keychain.readDeviceMarker() != id { deps.keychain.writeDeviceMarker(id) }
             return
         }
         let previous = deps.keychain.readInstallationId()
+        let marker = deps.keychain.readDeviceMarker()
         let newId = deps.uuid()
         state.installationId = newId
         if state.firstLaunchAt == nil { state.firstLaunchAt = deps.clock.now() }
         if let previous = previous, previous != newId {
             state.keychainPreviousInstallationId = previous
+            // The marker never survives a restore or Quick Start: without it, the ID is another phone's
+            state.keychainRestored = marker == nil
             logger.info("Reinstall detected (Keychain installation id present)")
         }
         deps.keychain.writeInstallationId(newId)
+        deps.keychain.writeDeviceMarker(newId)
         save()
+    }
+
+    // MARK: - Existing users
+
+    /// The phone's install date: the Documents directory's creation, or the debug date in Xcode builds with a test key.
+    private func platformInstalledAt() -> Date? {
+        if let d = options.debugPlatformInstalledAt, deps.installFacts.channel() == "xcode", config.environment == "sandbox" { return d }
+        return deps.installFacts.containerCreatedAt()
+    }
+
+    /// R.23: the hint with no readable install date skips the pasteboard and the AdServices token.
+    private var hintOnly: Bool { options.existingUser && platformInstalledAt() == nil }
+
+    private func existingUserFields(tracking: Bool) -> JSONObject {
+        ExistingUserFields.build(channel: deps.installFacts.channel(), installedAt: platformInstalledAt(),
+                                 hint: options.existingUser, restored: state.keychainRestored && state.keychainPreviousInstallationId != nil,
+                                 datesAllowed: tracking && allowed(state.consent.attribution),
+                                 startAt: config.sdkStartAt, now: deps.clock.now())
+    }
+
+    /// KC.6 / R.14: Apple's signed app record, once per installation, tried at the install and the next launch.
+    /// Only while referrals are on (it's used only by the referral rule); never `AppTransaction.refresh()`.
+    func sendAppRecordIfNeeded() async {
+        guard !state.appRecordSent, state.appRecordTries < 2, state.installDone, state.trackingEnabled, gate == .allowed,
+              features.isEnabled("referrals"), let id = state.installationId else { return }
+        state.appRecordTries += 1
+        save()
+        guard let record = await deps.installFacts.appRecord() else { return }
+        let body = encode(["installation_id": id, "signed_record": record])
+        if case .success = await call("POST", "v1/sdk/app-record", body: body, retry: .attempts(3)) {
+            state.appRecordSent = true
+            save()
+        }
+    }
+
+    // MARK: - Saved referral links (Engage creates them, `links` keeps them)
+
+    /** The signed-in customer (hashed) and the programs to prepare links for, or nil: nothing is saved or used. */
+    private func refreshLinksOwner() {
+        guard state.trackingEnabled, !config.privateMode, features.isEnabled("referrals"), let c = state.customerUserId
+        else { return links.setOwner(nil, programs: []) }
+        links.setOwner(PushTokens.hash(provider: "customer", token: c), programs: config.linkProgramIds)
     }
 
     func appDidEnterBackground() async {
@@ -312,7 +365,7 @@ actor ClikgateCore {
     /// The token (if any) and the `pasteboard_outcome` (nil when the paste flow doesn't run).
     private func readPasteboardIfAllowed() async -> (String?, String?) {
         guard options.pasteboardMode != .off, config.features.pasteboardMatching == "on_interstitial_tap",
-              !isBlocked, gate != .denied else { return (nil, nil) }
+              !isBlocked, gate != .denied, !hintOnly else { return (nil, nil) }
         guard options.pasteboardMode == .automatic else { return (nil, "paste_control") }
         if let likely = await deps.pasteboard.probablyHasWebURL() {
             guard likely else { return (nil, "no_link") }
@@ -377,6 +430,7 @@ actor ClikgateCore {
             isEmulator: device.isSimulator
         )
         req.consent = state.consent
+        req.existingUser = existingUserFields(tracking: tracking)
         if tracking {
             // A Paste button token that arrives before the first install is sent as found too.
             req.pasteboardOutcome = state.pasteboardOutcome.map { state.pasteboardToken == nil ? $0 : "token_found" }
@@ -433,7 +487,7 @@ actor ClikgateCore {
     private var adServicesToken: (token: String, at: Date)?
 
     private func searchAdsTokenForInstall() -> String? {
-        guard config.features.appleSearchAds, !isBlocked, gate == .allowed, allowed(state.consent.attribution) else {
+        guard config.features.appleSearchAds, !isBlocked, gate == .allowed, allowed(state.consent.attribution), !hintOnly else {
             adServicesToken = nil
             return nil
         }
@@ -467,6 +521,7 @@ actor ClikgateCore {
         attribution.installId = r.installId
         state.attribution = attribution
         state.keychainPreviousInstallationId = nil
+        state.keychainRestored = false
         if sent.pasteboardToken != nil { state.pasteboardToken = nil }
         state.pasteboardOutcome = nil
         adServicesToken = nil
@@ -937,6 +992,7 @@ actor ClikgateCore {
         if l != nil { state.pendingLabel = l }
         state.identifyPending = true
         save()
+        refreshLinksOwner()   // another customer, or sign-out: the previous customer's links are dropped
         if state.installDone && isActive && gate == .allowed { await sendIdentify() }
     }
 
@@ -974,7 +1030,10 @@ actor ClikgateCore {
             if f.error.status != 422 { return }   // retried later
             logger.error("identifyUser refused: " + f.error.code)   // identity_invalid (older servers); the customer ID is kept
         }
-        if state.customerUserId == sentUser { state.identifyPending = false; state.pendingLabel = nil }
+        if state.customerUserId == sentUser {
+            state.identifyPending = false; state.pendingLabel = nil
+            if case .success = result { refreshLinksOwner(); links.prepare() }
+        }
         save()
     }
 
@@ -1359,6 +1418,7 @@ extension ClikgateCore {
             }
         }
         snapshot.metadata = meta
+        refreshLinksOwner()
     }
 
     // MARK: Consent changes

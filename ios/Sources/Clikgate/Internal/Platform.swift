@@ -67,8 +67,14 @@ struct SystemKeychain: KeychainStoring {
         ]
     }
 
-    func readInstallationId() -> String? {
+    func readInstallationId() -> String? { read(Self.account) }
+    func writeInstallationId(_ id: String) { write(id, Self.account, kSecAttrAccessibleAfterFirstUnlock) }
+    func readDeviceMarker() -> String? { read("device_marker") }
+    func writeDeviceMarker(_ id: String) { write(id, "device_marker", kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly) }
+
+    private func read(_ account: String) -> String? {
         var query = baseQuery()
+        query[kSecAttrAccount as String] = account
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var item: CFTypeRef?
@@ -77,15 +83,17 @@ struct SystemKeychain: KeychainStoring {
         return String(data: data, encoding: .utf8)
     }
 
-    func writeInstallationId(_ id: String) {
+    private func write(_ id: String, _ account: String, _ accessible: CFString) {
         let data = Data(id.utf8)
         let attrs: [String: Any] = [
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+            kSecAttrAccessible as String: accessible,
         ]
-        let status = SecItemUpdate(baseQuery() as CFDictionary, attrs as CFDictionary)
+        var query = baseQuery()
+        query[kSecAttrAccount as String] = account
+        let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
         if status == errSecItemNotFound {
-            var add = baseQuery()
+            var add = query
             add.merge(attrs) { $1 }
             SecItemAdd(add as CFDictionary, nil)
         }

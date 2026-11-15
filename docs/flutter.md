@@ -605,3 +605,13 @@ Integration tests against a sandbox backend (skipped unless `CLIKGATE_API_BASE_U
 flutter test integration_test --dart-define=CLIKGATE_API_BASE_URL=http://10.0.2.2:8000 \
   --dart-define=CLIKGATE_SDK_KEY=cg_sdk_... --dart-define=CLIKGATE_PROGRAM_ID=rpg_...
 ```
+
+## Existing users (2.1.1)
+
+When you ship your first release with Clikgate, people who already had the app are counted as **existing users, now
+tracked**, not as installs, using the phone's own install date (no code needed). If your app can tell from its own
+storage that the person used it before (for example a saved signed-in session), pass `Clikgate.configure(existingUser: true)` to `configure`; it only
+counts when the phone's date can't be read. Call `identifyUser()` after sign-in **and at every app open when the user
+is already signed in**. `attribution.isExistingUser` is true for them (`status` is `organic`), and applying a referral
+code from such an installation fails with the existing-user error (code `existing_user`). Guide:
+https://clikgate.com/docs/existing-users

@@ -48,6 +48,23 @@ class ClikgateEngageModule(reactContext: ReactApplicationContext) : NativeClikga
     }
   }
 
+  /** The referral link saved for the signed-in customer, and its token. */
+  @OptIn(com.clikgate.ClikgateInternalApi::class)
+  override fun savedLink(programId: String, promise: Promise) {
+    ClikgateEngage.referrals // prepares links after identifyUser() from now on
+    val (link, token) = com.clikgate.Clikgate.savedLinkJson(programId)
+    promise.resolve(com.facebook.react.bridge.Arguments.createMap().apply {
+      if (link != null) putString("link", link) else putNull("link")
+      if (token != null) putString("token", token) else putNull("token")
+    })
+  }
+
+  @OptIn(com.clikgate.ClikgateInternalApi::class)
+  override fun saveLink(programId: String, link: String, token: String, promise: Promise) {
+    com.clikgate.Clikgate.saveLinkJson(programId, link, token)
+    promise.resolve(null)
+  }
+
   companion object {
     const val NAME = "ClikgateEngage"
   }

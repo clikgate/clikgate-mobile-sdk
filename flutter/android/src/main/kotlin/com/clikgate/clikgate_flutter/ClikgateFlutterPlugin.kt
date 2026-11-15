@@ -219,6 +219,8 @@ class ClikgateFlutterPlugin :
             deferredDeepLinkTimeoutMs = (call.argument<Any>("deferredDeepLinkTimeoutMs") as? Number)?.toLong() ?: 5_000,
             platformDomainBrowserFallback = call.argument<Boolean>("platformDomainBrowserFallback") ?: true,
             automaticPushToken = call.argument<Boolean>("automaticPushToken") ?: true,
+            existingUser = call.argument<Boolean>("existingUser") ?: false,
+            debugPlatformInstalledAt = (call.argument<Any>("debugPlatformInstalledAtMs") as? Number)?.let { java.util.Date(it.toLong()) },
         )
         // pasteboardMode / waitForATT are iOS-only and ignored here.
         Clikgate.setWrapper("flutter", call.argument<String>("wrapperVersion") ?: "unknown")
@@ -385,6 +387,7 @@ class ClikgateFlutterPlugin :
             "clickId" to a.clickId,
             "clickedAt" to a.clickedAt,
             "isReinstall" to a.isReinstall,
+            "isExistingUser" to a.isExistingUser,
             "installId" to a.installId,
             "link" to linkMap(a.link),
         )

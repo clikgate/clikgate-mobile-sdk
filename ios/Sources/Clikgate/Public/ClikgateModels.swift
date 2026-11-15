@@ -90,6 +90,9 @@ public struct ClikgateAttribution: Sendable {
     public let clickId: String?
     let clickedAtString: String?
     public let isReinstall: Bool
+    /// The app was already on this phone before your first release with Clikgate (an existing user,
+    /// now tracked). ``status`` is then ``Status/organic``: existing users are never attributed.
+    public let isExistingUser: Bool
     public internal(set) var installId: String?
     public let link: ClikgateLink?
     /// Optional server fields: attribution source, medium, campaign name and channel
@@ -105,7 +108,9 @@ public struct ClikgateAttribution: Sendable {
 
     @_optimize(size)
     init(json j: JSONObject) {
-        status = j.str("status").flatMap(Status.init(rawValue:)) ?? .pending
+        // The wire status `existing` is `organic` + isExistingUser (also when read back from state.json)
+        isExistingUser = j.str("status") == "existing" || j.bool("is_existing_user") == true
+        status = isExistingUser ? .organic : j.str("status").flatMap(Status.init(rawValue:)) ?? .pending
         matchType = j.str("match_type")
         confidence = j.double("confidence")
         clickId = j.str("click_id")
@@ -123,6 +128,7 @@ public struct ClikgateAttribution: Sendable {
         b.setOrNull("match_type", matchType); b.setOrNull("confidence", confidence)
         b.setOrNull("click_id", clickId); b.setOrNull("clicked_at", clickedAtString)
         b.set("is_reinstall", isReinstall); b.setOrNull("install_id", installId)
+        if isExistingUser { b.set("is_existing_user", true) }
         b.setOrNull("link", link?.json)
         return b.object
     }
@@ -130,7 +136,7 @@ public struct ClikgateAttribution: Sendable {
     init(status: Status, installId: String? = nil) {
         self.status = status
         matchType = nil; confidence = nil; clickId = nil; clickedAtString = nil
-        isReinstall = false; link = nil
+        isReinstall = false; isExistingUser = false; link = nil
         source = nil; medium = nil; campaign = nil; channel = nil
         self.installId = installId
     }

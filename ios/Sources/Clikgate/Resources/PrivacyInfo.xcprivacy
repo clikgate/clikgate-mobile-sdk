@@ -64,10 +64,20 @@
 			</array>
 		</dict>
 	</array>
-	<!-- The SDK uses none of the required-reason API categories: state lives in a JSON file
-	     (not UserDefaults), it never reads file timestamps, disk space, boot time / mach_absolute_time
-	     or the active keyboards. -->
+	<!-- Required-reason APIs. State lives in a JSON file (not UserDefaults); the SDK never reads disk space,
+	     boot time / mach_absolute_time or the active keyboards. It also reads the creation date of the
+	     app's own Documents directory (when the app was installed on this phone, to tell existing users from
+	     new installs), rounded to the hour before it is sent. C617.1: timestamps of files inside the app container. -->
 	<key>NSPrivacyAccessedAPITypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

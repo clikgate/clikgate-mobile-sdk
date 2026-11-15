@@ -2,7 +2,7 @@ class Clikgate
   static const String pluginVersion
   static const ClikgateReferrals referrals
   static Future<bool> isFeatureEnabled(String key)
-  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true, bool automaticPushToken = true,})
+  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true, bool automaticPushToken = true, bool existingUser = false, DateTime? debugPlatformInstalledAt,})
   static Stream<ClikgateDeepLink> get onDeepLink
   static Stream<ClikgateBrowserHandoff> get onBrowserHandoff
   static Future<ClikgateAttribution> getAttribution()
@@ -40,7 +40,10 @@ class ClikgateException implements Exception
   static const installPending
   static const unsupportedPlatform
   static const featureDisabled
+  static const existingUser
   String toString()
+class ExistingUserException extends ClikgateException
+  const ExistingUserException(String message, {int? status, String? param})
 enum PushProvider
   fcm
   apns
@@ -125,7 +128,7 @@ class ClikgateBrowserHandoff
   final String host
   String toString()
 class ClikgateAttribution
-  const ClikgateAttribution({required this.status, this.matchType, this.confidence, this.clickId, this.clickedAt, this.isReinstall = false, this.installId, this.link,})
+  const ClikgateAttribution({required this.status, this.matchType, this.confidence, this.clickId, this.clickedAt, this.isReinstall = false, this.installId, this.link, this.isExistingUser = false,})
   factory ClikgateAttribution.fromMap(Map<String, dynamic> m)
   final ClikgateAttributionStatus status
   final String? matchType
@@ -135,6 +138,7 @@ class ClikgateAttribution
   final bool isReinstall
   final String? installId
   final ClikgateLink? link
+  final bool isExistingUser
   bool get isAttributed
 class ReferredBy
   const ReferredBy({required this.referred, this.referral})

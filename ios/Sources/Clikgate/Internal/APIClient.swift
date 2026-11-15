@@ -61,7 +61,9 @@ struct APIClient: Sendable {
         do {
             let (data, http) = try await transport.send(request)
             if (200..<300).contains(http.statusCode) { return .success(data) }
-            let retryAfter = (http.value(forHTTPHeaderField: "Retry-After")).flatMap(Double.init)
+            // The body's `retry_after_ms` wins over the header
+            let ms = JSON.object(data).flatMap { $0.obj("error")?.int("retry_after_ms") ?? $0.int("retry_after_ms") }
+            let retryAfter = ms.map { Double($0) / 1000 } ?? (http.value(forHTTPHeaderField: "Retry-After")).flatMap(Double.init)
             return .failure(CallFailure(error: Self.decodeError(data: data, status: http.statusCode), retryAfter: retryAfter))
         } catch {
             let timedOut = (error as? URLError)?.code == .timedOut
@@ -128,7 +130,8 @@ struct APIClient: Sendable {
             case .forever: canRetry = true
             }
             guard canRetry, Self.isRetryable(failure) else { return result }
-            let wait = failure.retryAfter.map { max($0, 0) } ?? backoff(attempt: attempt - 1)
+            // R.11: a server-requested wait gets up to 25 % random extra (a whole user base told the same wait)
+            let wait = failure.retryAfter.map { max($0, 0) * (1 + 0.25 * abs(jitter())) } ?? backoff(attempt: attempt - 1)
             let retrying = wait <= maxRetryDelay
             logger.debug("\(request.url?.path ?? "") failed (\(failure.error.code)); " + (retrying ? "retrying in \(Int(wait.rounded(.up))) s" : "not retrying"))
             guard retrying else { return result }
