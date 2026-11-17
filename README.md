@@ -8,13 +8,13 @@ Deep linking, deferred deep linking, install attribution, referrals and uninstal
 apps that use [Clikgate](https://clikgate.com) links. The SDKs talk to the
 Clikgate SDK API (`/v1/sdk/*` on `sdk.clikgate.com`).
 
-| Package | Path | Distribution | Guide |
-|---|---|---|---|
-| Android SDK (Kotlin, minSdk 21) | [`android/`](android) | Maven Central `com.clikgate:clikgate-android` | [docs/android.md](docs/android.md) |
-| iOS SDK (Swift, iOS 13+) | [`ios/`](ios) | Swift Package Manager, CocoaPods `Clikgate`, XCFramework | [docs/ios.md](docs/ios.md) |
-| Flutter plugin | [`flutter/`](flutter) | pub.dev `clikgate_flutter` | [docs/flutter.md](docs/flutter.md), [iOS setup](docs/flutter_ios_setup.md) |
-| React Native | [`react-native/`](react-native) | npm `@clikgate/react-native` (+ Expo config plugin) | [docs/react-native.md](docs/react-native.md) |
-| Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
+| Package | Path | Distribution | Current version | Guide |
+|---|---|---|---|---|
+| Android SDK (Kotlin, minSdk 21) | [`android/`](android) | Maven Central `com.clikgate:clikgate-android` | 2.1.2 | [docs/android.md](docs/android.md) |
+| iOS SDK (Swift, iOS 13+) | [`ios/`](ios) | Swift Package Manager, CocoaPods `Clikgate`, XCFramework | 2.1.2 | [docs/ios.md](docs/ios.md) |
+| Flutter plugin | [`flutter/`](flutter) | pub.dev `clikgate_flutter` | 2.1.2 | [docs/flutter.md](docs/flutter.md), [iOS setup](docs/flutter_ios_setup.md) |
+| React Native | [`react-native/`](react-native) | npm `@clikgate/react-native` (+ Expo config plugin) | 2.1.2 | [docs/react-native.md](docs/react-native.md) |
+| Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | 2.1.2 | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
 
 These are the **core SDKs**: only what must happen on the device (deep links, attribution,
 goals, identifyUser and the installation ID, apply code / referred-by, push token / uninstall checks, feature switches). The
@@ -24,7 +24,7 @@ queueing and referral logic is in the native code.
 ### Engage features (in every SDK, for apps without a backend)
 
 Referral links and stats, leaderboards, promo codes and share helpers ship in the same package as
-the core SDK (since 2.1.0; there is no separate Engage package). Apps with a backend should call
+the core SDK (there is no separate Engage package). Apps with a backend should call
 the Clikgate control-plane API from their server instead: see [docs/engage.md](docs/engage.md).
 The Engage code stays in its own module or folder, the core code never uses it, and apps that don't
 call Engage don't ship it (R8, the linker and Dart tree-shaking drop it).
@@ -32,7 +32,7 @@ call Engage don't ship it (R8, the linker and Dart tree-shaking drop it).
 | SDK | Engage code | How apps use it |
 |---|---|---|
 | Android | [`android/clikgate/src/main/java/com/clikgate/engage`](android/clikgate/src/main/java/com/clikgate/engage) | `com.clikgate:clikgate-android`, `import com.clikgate.engage.ClikgateEngage` |
-| iOS | [`ios/Sources/ClikgateEngage`](ios/Sources/ClikgateEngage) | SPM product `Clikgate` (`import ClikgateEngage`); pod `Clikgate` (`import Clikgate`) |
+| iOS | [`ios/Sources/ClikgateEngage`](ios/Sources/ClikgateEngage) | SPM product or pod `Clikgate`: `import Clikgate`, plus `import ClikgateEngage` with SPM ([one import for both](ios/README.md#engage-imports-spm-and-cocoapods)) |
 | Flutter (pure Dart) | [`flutter/lib/src/engage`](flutter/lib/src/engage) | `clikgate_flutter`, `import 'package:clikgate_flutter/engage.dart'` |
 | React Native (pure TypeScript) | [`react-native/src/engage`](react-native/src/engage) | `@clikgate/react-native`, `import { ClikgateEngage } from '@clikgate/react-native'` |
 
@@ -73,7 +73,7 @@ declared domains. The SDKs also add the domains the server returns in `/v1/sdk/c
 (`ciz.to`, `ciz.ng`, `dev.ciz.to`): their app-links files list no customer app, so
 they can't open yours. Platform details are in each guide.
 
-## Consent, privacy and growth features (SDK 1.2.0)
+## Consent, privacy and growth features
 
 Every SDK has a consent API (`setConsent`, `getConsent`, `setConsentRegion`; buffering in consent
 regions), Google click ids (`gclid` / `gbraid` / `wbraid`), the minimum-SDK-version policy, Firebase
@@ -94,7 +94,7 @@ Every SDK has one `goal()` method for the outcomes the business chose (`account_
 | Flutter | `final r = await Clikgate.goal('purchase', reference: 'T123456', provider: ClikgateProvider.paystack);` |
 | React Native | `const r = await Clikgate.goal('purchase', { reference: 'T123456', provider: ClikgateProvider.Paystack });` |
 
-- `goal()` is the only method for what happens in the app (2.0.0). Every
+- `goal()` is the only method for what happens in the app. Every
   name sent with `goal()` appears in the dashboard's "Seen from your app and website" and counts once the business
   ticks "Count this as a goal". Goals work on every plan, up to the plan's allowance.
 - The result has `status` (`GoalStatus`: counted, waiting, received or refused), `reason`, `goalKind` (`GoalKind`:
@@ -114,7 +114,7 @@ Every SDK has one `goal()` method for the outcomes the business chose (`account_
   stop sending the customer ID of `identifyUser()`; goals still work.
 - `payment()` is removed on every platform.
 
-## Identify your users: `identifyUser()` and the installation ID (2.0.0)
+## Identify your users: `identifyUser()` and the installation ID
 
 Optional: for labels and the person timeline, referrals and leaderboards that need a verified user, and "existing
 customer" checks. The customer ID is your own internal user ID (never an email, phone, BVN or NIN). Guide:
@@ -148,7 +148,7 @@ A password link opens its password page in the system browser (nothing is delive
 visitor's country (or by a block rule) arrives on the deep-link callback with `blockMessage` set and no path, click
 or link. A/B tests: the server picks the version and its path arrives as usual.
 
-## Shared-domain links of other organisations (native SDKs 1.4.0, Flutter 1.4.0, React Native 1.5.0)
+## Shared-domain links of other organisations
 
 `ciz.to`, `ciz.ng` and `dev.ciz.to` are Clikgate's shared platform domains, so the OS can
 open an app for another organisation's link on them. When `/resolve` answers `matched: false` for
@@ -157,7 +157,7 @@ package, iOS `SFSafariViewController`; never an implicit intent or `UIApplicatio
 loop back into the app), deliver no deep link, and report a browser handoff (`onBrowserHandoff` on Android, Flutter and React
 Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `platformDomainBrowserFallback` (default on) turns it off.
 
-## Consistency fixes (native SDKs 1.5.0, Flutter 1.5.0, React Native 1.6.0, setup command 1.1.0)
+## Link domains, consent and goal retries
 
 - `/install` sends the four-purpose consent object only; an opted-out first install sends every purpose
   `denied` (no more `tracking_allowed`).
@@ -226,8 +226,9 @@ Change a field in the contract, the schemas, the backend and every SDK together.
 
 CI workflows are in `.github/workflows/` (one per SDK, each with a release job on its own tag
 prefix: `android-v*`, `ios-v*`, `flutter-v*`, `react-native-v*`; plus `sdk-boundaries.yml` running `scripts/check_sdk_boundaries.sh`, and `cli.yml` /
-`cli-release.yml` for the setup command on `cli-v*`, npm trusted publishing). Releases need the publishing
-secrets described in each workflow and have not been run yet.
+`cli-release.yml` for the setup command on `cli-v*`, npm trusted publishing). Every package is
+published from these jobs: the current versions are in the table at the top, and each package's
+`CHANGELOG.md` has the history.
 
 ## Licence
 

@@ -6,9 +6,21 @@ iOS 13+, in Swift, with no third-party dependencies. Build with Xcode 26 or newe
 ## Install
 
 **Swift Package Manager:** add `https://github.com/clikgate/clikgate-ios-sdk` and link the `Clikgate` product. It
-includes the Engage features for apps without a backend (`import ClikgateEngage`).
+includes the Engage features for apps without a backend (imports below).
 
-**CocoaPods:** `pod 'Clikgate', '~> 2.1'` (core and Engage; Engage code uses `import Clikgate`).
+**CocoaPods:** `pod 'Clikgate', '~> 2.1'` (core and Engage).
+
+### Engage imports (SPM and CocoaPods)
+
+Swift Package Manager and the XCFramework ship the Engage features as their own module, `ClikgateEngage`; the
+CocoaPods pod builds them into the `Clikgate` module. This import works with both:
+
+```swift
+import Clikgate
+#if canImport(ClikgateEngage)
+import ClikgateEngage
+#endif
+```
 
 ## Use
 

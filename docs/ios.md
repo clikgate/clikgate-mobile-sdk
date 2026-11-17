@@ -27,7 +27,8 @@ pod 'Clikgate', '~> 2.1'   # core and the Engage features
 ```
 
 With CocoaPods the core and the Engage sources are compiled into the one `Clikgate` module, so Engage
-code uses `import Clikgate`; with SPM it is `import ClikgateEngage`.
+code uses `import Clikgate`; with SPM it is `import ClikgateEngage`. For code that builds with both, use the
+import in section 7b.
 
 **XCFramework**: download `Clikgate-<version>.xcframework.zip` from the GitHub release (or build it with
 `ios/scripts/build_xcframework.sh`) and embed it. It's a static framework that includes `PrivacyInfo.xcprivacy`.
@@ -482,11 +483,14 @@ if Clikgate.shared.isFeatureEnabled(ClikgateFeatures.referrals) { showEnterCodeF
 
 ## 7b. Engage features (apps without a backend)
 
-Nothing extra to install: the Engage features are in the `Clikgate` package (since 2.1.0; there is no
+Nothing extra to install: the Engage features are in the `Clikgate` package (there is no
 separate Engage product or subspec).
 
 ```swift
-import ClikgateEngage   // SPM; with CocoaPods it's part of `import Clikgate`
+import Clikgate
+#if canImport(ClikgateEngage)
+import ClikgateEngage   // SPM and the XCFramework; with CocoaPods, Engage is part of the Clikgate module
+#endif
 
 let link = try await ClikgateEngage.referrals.createLink(programId: "rpg_...", displayName: "Ada")  // code, url, shortUrl
 let stats = try await ClikgateEngage.referrals.myStats(programId: "rpg_...")     // clicks, installs, qualified, …

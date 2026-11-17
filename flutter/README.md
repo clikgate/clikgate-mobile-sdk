@@ -5,7 +5,7 @@ attribution, goals, `identifyUser`, `getInstallationId`, referee-side **referral
 **uninstall tracking** and feature switches, powered by [Clikgate](https://clikgate.com).
 
 Referral links and stats, leaderboards, promo codes and share helpers are the Engage features of
-this package (`import 'package:clikgate_flutter/engage.dart'`, since 2.1.0) for apps without a
+this package (`import 'package:clikgate_flutter/engage.dart'`) for apps without a
 backend; apps with a backend should call the Clikgate API from their server instead (recommended).
 
 A thin bridge over the native Clikgate Android (`com.clikgate:clikgate-android`) and iOS
@@ -50,7 +50,7 @@ final info = await Clikgate.referrals.referredBy();
 
 await Clikgate.isFeatureEnabled('referrals');
 
-// Consent (1.2.0). Where consent is required (EEA, UK, CH by default) and attribution is unknown,
+// Consent. Where consent is required (EEA, UK, CH by default) and attribution is unknown,
 // nothing identifying is sent; goals are buffered (7 days / 1,000 goals), sent on grant, dropped on deny.
 await Clikgate.setConsent(analytics: ConsentState.granted, attribution: ConsentState.granted,
     adUserData: ConsentState.denied, adPersonalization: ConsentState.denied);
@@ -67,7 +67,7 @@ final metadata = await Clikgate.attributionMetadata(); // {cg_click_id, cg_link_
 await Clikgate.enableGoogleOnDeviceMeasurement(); // before configure on the first launch
 ```
 
-`configure(pasteboardMode:)` (iOS clipboard deferred deep link) defaults to `off` from 1.2.0; pass
+`configure(pasteboardMode:)` (iOS clipboard deferred deep link) defaults to `off`; pass
 `ClikgatePasteboardMode.automatic` to opt in (iOS 16+ then shows the system paste prompt
 "“<App>” would like to paste from “<source app>”" on the first launch, only if your Clikgate app setting enables it).
 
@@ -103,8 +103,8 @@ By hand:
   forwards launch and `onNewIntent` intents automatically.
 - iOS: Associated Domains, Background Modes → Remote notifications.
 
-Full guides: [Flutter integration](../docs/flutter.md) (Android setup, native SDK
-dependency) and [iOS setup](../docs/flutter_ios_setup.md). The `example/` app demonstrates
+Full guides: [Flutter integration](https://github.com/clikgate/clikgate-mobile-sdk/blob/main/docs/flutter.md) (Android setup, native SDK
+dependency) and [iOS setup](https://github.com/clikgate/clikgate-mobile-sdk/blob/main/docs/flutter_ios_setup.md). The `example/` app demonstrates
 the core plugin and its Engage features.
 
 ## Deep links on every plan

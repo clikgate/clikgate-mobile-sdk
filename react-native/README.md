@@ -4,7 +4,7 @@ Deep links (direct and deferred), install attribution, goals, identifyUser, the 
 feature switches and uninstall tracking for React Native — a TurboModule over the native Clikgate
 Android and iOS SDKs, with an Expo config plugin. Referrer-side features (referral links and stats,
 share helpers, leaderboards, promo codes) are the Engage features of this package (`ClikgateEngage`,
-pure TypeScript, since 2.1.0) for apps without a backend; apps with a backend call the Clikgate API
+pure TypeScript) for apps without a backend; apps with a backend call the Clikgate API
 from their server instead.
 
 ```ts
