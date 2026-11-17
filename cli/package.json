@@ -24,7 +24,7 @@
     "directory": "cli"
   },
   "license": "MIT",
-  "author": "Clikgate <sdk@clikgate.com> (https://clikgate.com)",
+  "author": "Clikgate <dev@clikgate.com> (https://clikgate.com)",
   "bin": {
     "clikgate-setup": "dist/cli.cjs"
   },

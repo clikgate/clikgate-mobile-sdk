@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.summary      = "Clikgate deep linking, install attribution, referrals, uninstall tracking and Engage for React Native (iOS)."
   s.homepage     = "https://clikgate.com"
   s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
-  s.authors      = { "Clikgate" => "sdk@clikgate.com" }
+  s.authors      = { "Clikgate" => "dev@clikgate.com" }
 
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/clikgate/clikgate-mobile-sdk.git", :tag => "react-native-v#{s.version}" }

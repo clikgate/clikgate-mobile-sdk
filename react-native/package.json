@@ -67,7 +67,7 @@
     "url": "git+https://github.com/clikgate/clikgate-mobile-sdk.git",
     "directory": "react-native"
   },
-  "author": "Clikgate <sdk@clikgate.com> (https://clikgate.com)",
+  "author": "Clikgate <dev@clikgate.com> (https://clikgate.com)",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/clikgate/clikgate-mobile-sdk/issues"

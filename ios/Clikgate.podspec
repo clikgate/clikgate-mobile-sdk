@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   DESC
   s.homepage         = 'https://clikgate.com'
   s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
-  s.author           = { 'Clikgate' => 'sdk@clikgate.com' }
+  s.author           = { 'Clikgate' => 'dev@clikgate.com' }
   # The podspec lives in ios/ of the monorepo. With a :git source CocoaPods would resolve file
   # patterns from the repository root, so releases ship a zip of the ios/ directory instead
   # (built and attached to the `ios-v<version>` GitHub release by .github/workflows/ios.yml).
