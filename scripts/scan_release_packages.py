@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scans release packages for things that must not ship (spec Change 12, S.4): TODO / FIXME notes,
+Scans release packages for things that must not ship: TODO / FIXME notes,
 internal-document references, internal or staff URLs and hosts, local paths, staff-only references
 and debug code. Exits 1 when anything is found, so a release job fails before it publishes.
 
@@ -45,7 +45,11 @@ RULES: list[tuple[str, re.Pattern[str], bool]] = [
     ("note", re.compile(r"\b(TODO|FIXME|XXX|HACK)\b"), True),
     ("internal doc", re.compile(
         r"API_CONTRACT|SDK_BEHAVIOUR|PLATFORM_CHANNEL|DECISIONS\.md|RELEASING\.md|PROGRESS\.md|docs/spec"
-        r"|backend contract|\bspec (v3|0\.\d|1?\d+[A-Z]?\.\d|section)|\bchange[ -]?\d{2}\b|\bC1\d-[A-Z]\d", I), True),
+        r"|backend contract|\bspec (v3|0\.\d|1?\d+[A-Z]?\.\d|section)|\bchange[ _-]?\d{2}(?!\d)|\bC[12]\d-[A-Z]\d", I), True),
+    ("internal code", re.compile(
+        r"\b(KC|ST|TS|DB|X|EX|RF|R|S)\.[A-Z]?\d+\b|owner decision|judge?ment call|\bowner,? 20\d{2}\b"), False),
+    ("private repository", re.compile(
+        r"\.\./clikgate_api|clikgate_api/|clikgate_frontend|clikgate_website|clikgate[-_]sdk[-_]internal"), True),
     ("internal host", re.compile(
         r"localhost|127\.0\.0\.1|10\.0\.2\.2|0\.0\.0\.0|ngrok"
         r"|(staff|admin|console|staging|internal)\.clikgate\.|/v1/staff\b", I), True),

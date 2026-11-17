@@ -1,7 +1,7 @@
 # Clikgate Flutter plugin — integration guide
 
 `clikgate_flutter` is the **core** plugin: a thin bridge over the native Clikgate Android and
-iOS SDKs for what must happen on the device (spec 0.4): deep links (direct and deferred),
+iOS SDKs for what must happen on the device: deep links (direct and deferred),
 install attribution, goals, `identifyUser`, `getInstallationId`, referee-side referral calls (`applyCode`,
 `referredBy`), push token / uninstall tracking and feature switches. All attribution and
 referral logic runs natively; the Dart API is identical on both platforms.
@@ -345,7 +345,7 @@ try {
 }
 ```
 
-Rules (spec 17A.3):
+Rules:
 
 - Every network call checks `Clikgate.isFeatureEnabled` first: `feature_disabled` without a
   network call.
@@ -547,7 +547,7 @@ covered in [flutter_ios_setup.md](flutter_ios_setup.md).
 
 ## 9. Example app (two variants)
 
-`flutter/example` is the primary demo. It builds in two variants (spec 17A.4), chosen at build
+`flutter/example` is the primary demo. It builds in two variants, chosen at build
 time with `--dart-define=CLIKGATE_VARIANT=backend|engage` (default `backend`). The value is a
 compile-time constant, so the unused implementation is tree-shaken; one entrypoint
 (`lib/main.dart`) and one Android / iOS project serve both.

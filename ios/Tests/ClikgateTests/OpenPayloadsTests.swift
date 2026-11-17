@@ -9,7 +9,7 @@ import XCTest
 /// - One tap is one click: after `/install` matched the launch URL (`status: matched`), the SDK never `/resolve`s the
 ///   same URL again (that would record a second click); it attaches by `click_id` or delivers the link locally.
 /// - X's `twclid` travels unchanged in the launch and resolved URLs, like `li_fat_id`.
-final class Change21Tests: XCTestCase {
+final class OpenPayloadsTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
     let click = "clk_01JAB3C4D5E6F7G8H9JKMNPQRS"
@@ -37,7 +37,7 @@ final class Change21Tests: XCTestCase {
         server.on("POST /v1/sdk/install", StubResponse(status: 200, body: try! JSONSerialization.data(withJSONObject: j)))
     }
 
-    // MARK: - S.1 / S.2: direct and redirect opens
+    // MARK: - Direct and redirect opens
 
     func testDirectUniversalLinkOpenSendsTheUrlAndTheInstallation() async throws {
         let core = h.makeCore()
@@ -98,7 +98,7 @@ final class Change21Tests: XCTestCase {
         XCTAssertNil(open.json["click_id"])
     }
 
-    // MARK: - R.2: one tap is one click
+    // MARK: - One tap is one click
 
     func testMatchedLaunchUrlAttachesByClickIdNotUrl() async throws {
         stubInstall("install_response_attributed_source", status: "matched")
@@ -136,7 +136,7 @@ final class Change21Tests: XCTestCase {
         XCTAssertEqual(resolves().single?.json["url"] as? String, url)
     }
 
-    // MARK: - R.25: X's twclid travels like li_fat_id
+    // MARK: - X's twclid travels like li_fat_id
 
     func testTwclidReachesTheServerInTheLaunchAndResolvedUrls() async throws {
         let core = h.makeCore()

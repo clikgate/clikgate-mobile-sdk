@@ -142,7 +142,7 @@ class FraudSignalsTest {
         env.configure()
 
         val body = sentInstall()
-        assertEquals(sortKeys(Fixtures.json(fixture)).toString(), sortKeys(withoutChange26(body)).toString())
+        assertEquals(sortKeys(Fixtures.json(fixture)).toString(), sortKeys(withoutExistingUserFields(body)).toString())
         SchemaCheck.assertValid("install_request", body)
         // Play's install-begin time is passed through unchanged, earlier than the click here.
         val referrer = body.getJSONObject("install_referrer")

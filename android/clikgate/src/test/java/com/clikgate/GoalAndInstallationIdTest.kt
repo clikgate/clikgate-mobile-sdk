@@ -20,7 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * One method, `goal()` (`received`), and `getInstallationId()` for identity Path B.
  */
 @RunWith(RobolectricTestRunner::class)
-class Change22Test {
+class GoalAndInstallationIdTest {
     private lateinit var env: TestEnv
 
     @Before fun setUp() { env = TestEnv() }
@@ -45,7 +45,7 @@ class Change22Test {
 
     private val sentInstallationId get() = env.api.requests.first { it.path!!.startsWith("/v1/sdk/install") }.getHeader("Clikgate-Installation-Id")
 
-    // ------------------------------------------------------------------ R.9 received
+    // ------------------------------------------------------------------ received
 
     @Test
     fun receivedIsASuccessAndIsNotRetried() {
@@ -136,7 +136,7 @@ class Change22Test {
         assertEquals(sentInstallationId, installationId())
     }
 
-    // ------------------------------------------------------------------ R.6 deeplink_handled for banner taps
+    // ------------------------------------------------------------------ deeplink_handled for banner taps
 
     private fun openLive(resolveFixture: String) {
         env.api.on("POST /v1/sdk/deeplink-handled", ok(Fixtures.text("deeplink_handled_response")))

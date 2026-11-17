@@ -4,7 +4,7 @@ import XCTest
 /// Existing users: what the first `/install` says about when the app arrived,
 /// the hint, Apple's app record, the existing-user error, the server's wait with jitter
 /// and the saved referral links the core keeps for Engage.
-final class Change26Tests: XCTestCase {
+final class ExistingUsersTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
     // 2025-03-02T09:17:45Z
@@ -30,7 +30,7 @@ final class Change26Tests: XCTestCase {
                         existingUser: existingUser, debugPlatformInstalledAt: debugDate)
     }
 
-    // MARK: - EX.3
+    // MARK: - Install date and channel
 
     func testTheFirstInstallSendsTheChannelAndTheContainerDateRoundedToTheHour() async {
         h.installFacts.createdAt = installedAt
@@ -74,7 +74,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertEqual(ISO8601.parse(installBody["platform_installed_at"] as? String)?.timeIntervalSince1970, 1_740_906_000)
     }
 
-    // MARK: - R.3
+    // MARK: - Opted out
 
     func testOptedOutSendsOnlyWhetherTheAppWasHereBeforeTheStartDate() {
         let start = ISO8601.parse("2026-11-01T08:00:00Z")
@@ -99,7 +99,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertNil(b["device_time"])
     }
 
-    // MARK: - R.1
+    // MARK: - Restored Keychain item
 
     func testOnlyTheRestoredKeychainItemMeansAnotherPhone() async {
         h = Harness(keychain: "0f6b8a2c-3d4e-4f5a-8b6c-7d8e9f0a1b2c")
@@ -121,7 +121,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertNil(installBody["keychain_restored_from_other_device"])
     }
 
-    // MARK: - R.23
+    // MARK: - Existing-user hint
 
     func testTheHintWithoutADateSkipsThePasteboardAndAdServices() async {
         server.on("GET /v1/sdk/config", .fixture("config_response"))
@@ -145,7 +145,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertEqual(h.pasteboard.reads, 1)
     }
 
-    // MARK: - KC.6
+    // MARK: - Apple's app record
 
     func testAppleRecordIsSentOnceAfterTheInstall() async {
         server.on("POST /v1/sdk/app-record", .fixture("app_record_response"))
@@ -181,7 +181,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertEqual(h.installFacts.recordCalls, 0)
     }
 
-    // MARK: - RF.1 and the install answer
+    // MARK: - Existing-user error and the install answer
 
     func testApplyCodeFromAnExistingUserIsTheExistingUserError() async {
         server.on("POST /v1/sdk/referrals/apply-code", .fixture("error_existing_user", status: 409))
@@ -213,7 +213,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertEqual(st.attribution?.isExistingUser, true)
     }
 
-    // MARK: - R.11
+    // MARK: - Server-requested wait
 
     func testTheWaitInTheErrorBodyIsHonouredWithJitter() async {
         server.on("POST /v1/sdk/install", .fixture("error_rate_limited_retry_after", status: 429), .fixture("install_response_organic"))
@@ -222,7 +222,7 @@ final class Change26Tests: XCTestCase {
         XCTAssertTrue(h.clock.sleeps.contains { $0 >= 30 && $0 <= 37.5 }, "\(h.clock.sleeps)")
     }
 
-    // MARK: - R.28
+    // MARK: - Referral links for Engage
 
     func testSavedLinksBelongToTheSignedInCustomer() async {
         let core = h.makeCore()

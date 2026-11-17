@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Public-API snapshot and core/Engage boundary checks for the iOS SDK (spec 0.4, section 20).
+# Public-API snapshot and core/Engage boundary checks for the iOS SDK.
 #
 #   ios/scripts/check_api.sh            # compare with ios/api/*.api.txt, fail on any difference
 #   ios/scripts/check_api.sh --update   # rewrite the snapshots
@@ -90,7 +90,7 @@ for line in open(sys.argv[1]):
 PY
 )"
 if [ -n "$hits" ]; then
-  echo "error: the core SDK's public API contains Engage features (spec 0.4):" >&2
+  echo "error: the core SDK's public API contains Engage features:" >&2
   echo "$hits" >&2
   fail=1
 else

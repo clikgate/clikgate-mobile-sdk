@@ -28,9 +28,9 @@ Flags:
   --no-color, --verbose, --version, --help
 ```
 
-`--no-install` and `--no-wait` are additions to S.2. They are needed for CI, for AI assistants, and while the SDK packages aren't on the registries yet. `--domain` is also accepted by `doctor`, where it gives the live domains every release build must cover.
+`--no-install` and `--no-wait` are extra flags. They are needed for CI, for AI assistants, and while the SDK packages aren't on the registries yet. `--domain` is also accepted by `doctor`, where it gives the live domains every release build must cover.
 
-The device sign-in prints "If your account uses two-factor sign-in, the page also asks for your authenticator code (or a recovery code)." The code is entered on the browser approval page (contract B4: `POST /v1/cli/device-codes/{user_code}/approve` takes `two_factor_code` or `recovery_code`); polling `/v1/cli/token` is unchanged, and after a minute of `authorization_pending` the command reminds the person to approve in the browser.
+The device sign-in prints "If your account uses two-factor sign-in, the page also asks for your authenticator code (or a recovery code)." The code is entered on the browser approval page (`POST /v1/cli/device-codes/{user_code}/approve` takes `two_factor_code` or `recovery_code`); polling `/v1/cli/token` is unchanged, and after a minute of `authorization_pending` the command reminds the person to approve in the browser.
 
 | Exit code | Meaning |
 |---|---|
@@ -84,7 +84,7 @@ wrote and reports it as already set up (an older constraint than `SDK.flutter.mi
 - **Overrides** (testing, offline): `CLIKGATE_SETUP_BINARY=<path>` runs that binary (no download, no hash
   check); `CLIKGATE_SETUP_BASE_URL=<url>` downloads `<url>/<asset>.gz` instead (still verified).
 
-## What it does (S.3)
+## What it does
 
 1. **Detect** the project. `pubspec.yaml` with Flutter → Flutter. `package.json` with `expo` and an app config → Expo; when `android/` and `ios/` exist, their native files are edited too. `package.json` with `react-native` and no `expo` → React Native. A Gradle app module with no `package.json`/`pubspec.yaml` → Android. An Xcode project with neither → iOS.
    - When the folder has none of these, it looks up to three folders down (monorepos such as `apps/mobile`).
@@ -147,7 +147,7 @@ browser's limit.
   and the question (`none`: script only, no route).
 - As everywhere else, every edit is shown as a diff first; `--dry-run` and `--yes` work the same way.
 
-## What gets changed (S.4)
+## What gets changed
 
 All edits use real parsers. Inserted code sits between `// clikgate-setup:start` and `// clikgate-setup:end`; manifests use `<!-- … -->` and Podfile/Gradle use their own comment syntax. Existing code, intent filters and entitlements are never removed or reordered. Source files are edited only in recognised template shapes; anything else becomes a manual step with the exact snippet.
 
@@ -170,7 +170,7 @@ Excludes already present are left alone, so a second run changes nothing. An att
 
 The SDK's own `linkDomains` include the test subdomain only in debug builds too: Dart `kDebugMode`, JS `__DEV__`, Android `FLAG_DEBUGGABLE`, Swift `#if DEBUG`. When a project has separate Android and iOS apps with different test keys, the code picks the key per platform (`defaultTargetPlatform` / `Platform.OS`).
 
-## doctor (S.5)
+## doctor
 
 `npx @clikgate/setup doctor [--json] [--domain …] [--app …] [--no-wait]` changes nothing.
 
@@ -194,7 +194,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
 - **Live test:** it waits up to 5 minutes for the first test-mode SDK request: "Clikgate is receiving events from <platform> ✓".
 - `--json` prints one document to stdout, with human text on stderr. It never signs in, so it runs local checks only. Schema: `cli/schema/doctor-report.schema.json` (`schema_version: 1`, shipped in the npm package). The exit code is 0 when `ok`, else 1.
 
-## Offline mode (S.6)
+## Offline mode
 
 `npx @clikgate/setup --sdk-key cg_sdk_test_… --domain yourapp.ciz.to,go.acme.com` configures the project without signing in: no app creation, no fingerprints sent, no server checks. The debug host is derived from the app subdomain (`yourapp.ciz.to` or, on Free, `yourapp.ciz.ng` → `yourapp.dev.ciz.to`) and added to debug builds; test hosts given in `--domain` are moved to debug builds.
 
@@ -269,7 +269,7 @@ Fixtures are trimmed to the files the command reads or edits: no build outputs, 
 4. Then set "Publishing access" to "Require two-factor authentication and disallow tokens", so only the workflow can publish.
 5. Later releases: bump `cli/package.json` `version` and `CLI_VERSION` in `cli/src/constants.ts`, update the changelog, run `node scripts/check_cli_sdk_versions.mjs`, then tag `cli-v<version>` and push it. Release the SDK versions the command writes first, so `npx @clikgate/setup` never installs an unpublished version.
 
-**Look-alike names to reserve** (S.1). Publish a placeholder `0.0.1` under each, with a README that says "Use `npx @clikgate/setup`" and points to the docs, then deprecate it with `npm deprecate <name> "Use npx @clikgate/setup"`:
+**Look-alike names to reserve**. Publish a placeholder `0.0.1` under each, with a README that says "Use `npx @clikgate/setup`" and points to the docs, then deprecate it with `npm deprecate <name> "Use npx @clikgate/setup"`:
 
 - `clikgate-setup` (unscoped; same as the bin name);
 - `@clikgate/cli`;
@@ -281,4 +281,4 @@ All five were free on 2026-10-26. Don't publish the `@clikgate/react-native` pla
 **Also before launch:**
 
 - The packages the command installs must be live: `clikgate_flutter` on pub.dev, `clikgate_flutter` 2.1.0, `@clikgate/react-native` 2.1.0 on npm, `com.clikgate:clikgate-android` 2.1.0 on Maven Central, `Clikgate` 2.1.0, and the `Clikgate` pod / SPM mirror. Until then, use `--no-install` in demos.
-- Run the command once on a real iOS project on a Mac (S.8: iOS isn't build-tested in CI), and once on a device for the "first event" check.
+- Run the command once on a real iOS project on a Mac (iOS isn't build-tested in CI), and once on a device for the "first event" check.

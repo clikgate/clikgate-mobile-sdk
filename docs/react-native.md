@@ -6,7 +6,7 @@ links (direct and deferred), install attribution, goals, identifyUser, `getInsta
 runs natively; the TypeScript API is identical on both platforms and mirrors the Flutter plugin.
 
 Referrer-side features (the user's referral link and stats, share helpers, leaderboards, promo codes)
-are **not** in the core package (spec v3 §0.4):
+are **not** in the core package:
 
 - **Recommended:** your backend calls the Clikgate control-plane API (referrers, referral stats,
   leaderboards, identity signals, goals from your server) and your app renders its own screens from it.
@@ -304,7 +304,7 @@ The user's own referral link, stats and sharing: from your backend (recommended)
 
 ## 5a. Feature switches
 
-Organisations can switch features off (spec v3 §9E). The SDK keeps the `features` map of
+Organisations can switch features off. The SDK keeps the `features` map of
 `/v1/sdk/config` (refreshed on launch, at most hourly):
 
 ```ts
@@ -358,7 +358,7 @@ const url = await engage.leaderboards.hostedPageUrl('lb_...');    // signed host
 const redemption = await engage.codes.redeem('LAGOS50');           // offlineTouchId, code, referral
 ```
 
-Rules (spec 17A.3):
+Rules:
 
 - Every call checks `Clikgate.isFeatureEnabled` first and rejects with `feature_disabled` without a
   network call. A server `feature_disabled` answer is reported to the core SDK (the feature then reads

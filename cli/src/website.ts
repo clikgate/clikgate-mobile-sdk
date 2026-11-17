@@ -70,7 +70,7 @@ function csprojFiles(dir: string): string[] {
   return list(dir).filter((n) => n.endsWith('.csproj')).sort();
 }
 
-/** The website servers recognised in one folder, by their package files (R.2). */
+/** The website servers recognised in one folder, by their package files. */
 export function detectWebsiteIn(dir: string): WebsiteCandidate[] {
   const out: WebsiteCandidate[] = [];
   const add = (server: WebsiteServer, evidence: string) => out.push({ server, root: dir, evidence });

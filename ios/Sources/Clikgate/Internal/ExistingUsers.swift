@@ -5,11 +5,11 @@ import StoreKit
 
 /// What the phone says about how and when the app arrived on it.
 protocol AppInstallFactsProviding: Sendable {
-    /// `app_store`, `testflight` or `xcode`, from the receipt URL and the embedded profile only (R.14).
+    /// `app_store`, `testflight` or `xcode`, from the receipt URL and the embedded profile only.
     func channel() -> String
     /// Creation date of the app's Documents directory (made when the app is installed), nil if unreadable.
     func containerCreatedAt() -> Date?
-    /// Apple's signed app record (`AppTransaction.shared`, iOS 16+); never `refresh()` (KC.6).
+    /// Apple's signed app record (`AppTransaction.shared`, iOS 16+); never `refresh()`.
     func appRecord() async -> String?
 }
 
@@ -39,7 +39,7 @@ struct SystemAppInstallFacts: AppInstallFactsProviding {
 }
 
 enum ExistingUserFields {
-    /// The `/install` fields (EX.3, R.1, R.3). `datesAllowed` false (opted out, attribution consent denied): only
+    /// The `/install` fields. `datesAllowed` false (opted out, attribution consent denied): only
     /// whether the app was here before `startAt`, never the dates.
     static func build(channel: String, installedAt: Date?, hint: Bool, restored: Bool, datesAllowed: Bool,
                       startAt: Date?, now: Date) -> JSONObject {
@@ -48,7 +48,7 @@ enum ExistingUserFields {
         if restored { o["keychain_restored_from_other_device"] = true }
         guard let at = installedAt else { return o }
         if datesAllowed {
-            // R.4: rounded down to the hour (the server keeps the day only)
+            // Rounded down to the hour (the server keeps the day only)
             o["platform_installed_at"] = ISO8601.format(Date(timeIntervalSince1970: (at.timeIntervalSince1970 / 3600).rounded(.down) * 3600))
             o["platform_installed_source"] = "ios_container_created"
             o["device_time"] = ISO8601.format(now)

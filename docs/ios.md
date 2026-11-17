@@ -2,7 +2,7 @@
 
 Deep links (Universal Links and custom schemes), deferred deep links, install attribution, goals,
 identifyUser, referee-side referral calls and push-token registration for uninstall tracking — the things
-that must happen on the device (spec 0.4). Referrer-side features (the user's invite link and stats,
+that must happen on the device. Referrer-side features (the user's invite link and stats,
 leaderboards, promo codes, share helpers) are **not** in the core SDK: the recommended path is your
 backend calling the Clikgate control-plane API; apps without a backend can use the **Engage
 features** (`ClikgateEngage`, section 7b), which ship in the same package. See [engage.md](engage.md).

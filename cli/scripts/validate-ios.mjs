@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// iOS project-file validation without a Mac (S.8): after `setup`, every edited Info.plist,
+// iOS project-file validation without a Mac: after `setup`, every edited Info.plist,
 // entitlements file and project.pbxproj must parse, each app-target configuration must point
 // CODE_SIGN_ENTITLEMENTS at an existing file, Release/Profile must list the live domains and
 // never the test domain, and Debug must also list the test domain.

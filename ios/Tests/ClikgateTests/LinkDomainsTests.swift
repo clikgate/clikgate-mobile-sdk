@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// Connected domains (backend Part 3 §31.3): `config.link_domains` ∪ `options.linkDomains`.
+/// Connected domains: `config.link_domains` ∪ `options.linkDomains`.
 final class LinkDomainsTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared

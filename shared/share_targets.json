@@ -1,5 +1,5 @@
 {
-  "source": "share_apps: clikgate_api docs/openapi.json components.schemas.ShareApp.enum. endings: clikgate_api src/attribution/utils/share_endings.py (internal: never list them in docs). android_packages: Play listings checked 2026-10-29. ios_bundle_ids: App Store lookups (itunes.apple.com/lookup?bundleId=..., 2026-10-29); a share extension's bundle ID starts with its app's bundle ID. Generated code: scripts/generate_share_targets.py.",
+  "source": "share_apps: backend docs/openapi.json components.schemas.ShareApp.enum. endings: backend src/attribution/utils/share_endings.py (internal: never list them in docs). android_packages: Play listings checked 2026-10-29. ios_bundle_ids: App Store lookups (itunes.apple.com/lookup?bundleId=..., 2026-10-29); a share extension's bundle ID starts with its app's bundle ID. Generated code: scripts/generate_share_targets.py.",
   "share_apps": [
     "whatsapp",
     "instagram",

@@ -129,7 +129,7 @@ async function askFingerprint(ui: UI, question: string): Promise<string | undefi
   return undefined;
 }
 
-/** Finds (or creates) the Clikgate apps and sends signing details (S.3 steps 4–5). */
+/** Finds (or creates) the Clikgate apps and sends signing details. */
 async function pickApps(opts: Options, deps: Deps, project: Project, clikgate: Clikgate, manual: ManualNote[]): Promise<Partial<Record<'android' | 'ios', App>>> {
   const { ui } = deps;
   const out: Partial<Record<'android' | 'ios', App>> = {};
@@ -348,7 +348,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   ui.out(`Found ${/^[AEIOU]/.test(PLATFORM_LABEL[candidate.platform]) || candidate.platform === 'ios' ? 'an' : 'a'} ${PLATFORM_LABEL[candidate.platform]} project${root !== path.resolve(opts.cwd) ? ` in ${rel(path.resolve(opts.cwd), root)}` : ''}.`);
   const manual: ManualNote[] = [];
 
-  // Offline mode (S.6): the test key and domains come from flags.
+  // Offline mode: the test key and domains come from flags.
   const offline = opts.sdkKey !== undefined;
   if (offline) {
     if (SDK_KEY_LIVE.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, 'Use the test key; switch to live for release builds.');
@@ -363,7 +363,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     }
   }
 
-  // Working tree (S.3 step 2).
+  // Working tree.
   const tree = treeState(root);
   if (tree.isRepo && tree.dirty.length && !opts.dryRun) {
     ui.out(paint(ui, 'yellow', `! This project has ${tree.dirty.length} uncommitted change${tree.dirty.length > 1 ? 's' : ''}. Committing first makes the setup easy to review and undo.`));
@@ -406,7 +406,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     if (codeDomains.length === 0 && Object.keys(apps).length) manual.push({ label: 'Link domains', detail: "No app link domain yet: confirm your app's link subdomain in the dashboard (Apps › your app › Link subdomain), then run setup again." });
   }
 
-  // Plan (S.3 steps 7–8, S.4).
+  // Plan.
   const plan = buildPlan({
     root,
     platform: candidate.platform,
@@ -431,7 +431,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   if ('exit' in reviewed) return reviewed.exit;
   const applied = reviewed.applied;
 
-  // Verify (S.3 step 10).
+  // Verify.
   ui.out('');
   ui.out('Checking the setup…');
   const reloaded = await loadProject(quietUI(ui), { ...candidate, nativeFolders: candidate.nativeFolders });
@@ -472,7 +472,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     printChecks(ui, [live]);
   }
 
-  // Summary (S.3 step 11).
+  // Summary.
   printSummary(ui, plan, applied, checks, next, { sdkKey, root, online, testDomain, platform: project.candidate.platform });
   ui.out('');
   ui.out(paint(ui, 'bold', SUCCESS_LINE));
@@ -519,7 +519,7 @@ export async function reviewAndApply(
         return { exit: EXIT.CANCELLED };
       }
     }
-    // Backups (S.3 step 2) when there's no git history to undo with.
+    // Backups when there's no git history to undo with.
     let backupDir: string | undefined;
     const files = changes(plan).map((c) => c.file);
     if (!tree.isRepo && files.length) {

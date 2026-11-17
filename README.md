@@ -5,8 +5,8 @@ SDKs (Apache 2.0), and `npx @clikgate/setup` in [`cli/`](cli) (MIT), which insta
 in an app project. The server SDKs and AI guides are in `clikgate_sdks`.
 
 Deep linking, deferred deep linking, install attribution, referrals and uninstall tracking for
-apps that use [Clikgate](https://clikgate.com) links. The backend side lives in the
-`clikgate_api` repository (`src/sdk`, `/v1/sdk/*` on `sdk.clikgate.com`).
+apps that use [Clikgate](https://clikgate.com) links. The SDKs talk to the
+Clikgate SDK API (`/v1/sdk/*` on `sdk.clikgate.com`).
 
 | Package | Path | Distribution | Guide |
 |---|---|---|---|
@@ -50,7 +50,7 @@ land in one PR. `scripts/check_cli_sdk_versions.mjs` fails when the versions in
 ## Samples
 
 Each sample demonstrates direct and deferred deep links, apply code / referred-by and push-token
-registration (spec deliverable 6):
+registration:
 
 | Sample | Path | Notes |
 |---|---|---|

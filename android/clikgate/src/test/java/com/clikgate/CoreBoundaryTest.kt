@@ -6,7 +6,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Spec 0.4 / 20, kept after the merge (2.1.0): the Engage features ship in this artifact, but only under
+ * Kept after the merge (2.1.0): the Engage features ship in this artifact, but only under
  * `com.clikgate.engage`. The rest of the public API (the core) has no leaderboard, referral-stats,
  * link-creation, code, share or identity-signal API, and core code never uses Engage
  * (`checkNoEngageDependency`). Checked against the public-API snapshot `api/clikgate.api` (`apiCheck`).

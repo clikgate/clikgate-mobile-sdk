@@ -18,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * referrer the server reads itself (the redirect adds them only when the app's `pass_ad_click_ids` allows it).
  */
 @RunWith(RobolectricTestRunner::class)
-class Change19Test {
+class AdClickIdsTest {
     private lateinit var env: TestEnv
     private val links = CopyOnWriteArrayList<ClikgateDeepLink>()
 

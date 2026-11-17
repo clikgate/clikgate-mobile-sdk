@@ -1,5 +1,5 @@
 {
-  "source": "clikgate_api docs/openapi.json, components.schemas.Provider.enum",
+  "source": "backend docs/openapi.json, components.schemas.Provider.enum",
   "providers": [
     "paystack",
     "flutterwave",

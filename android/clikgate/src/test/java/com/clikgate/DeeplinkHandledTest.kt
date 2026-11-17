@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 @OptIn(ClikgateInternalApi::class)
 @RunWith(RobolectricTestRunner::class)
-class Change20Test {
+class DeeplinkHandledTest {
     private lateinit var env: TestEnv
     private val links = CopyOnWriteArrayList<ClikgateDeepLink>()
     private val route = "POST /v1/sdk/deeplink-handled"

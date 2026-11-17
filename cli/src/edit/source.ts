@@ -4,7 +4,7 @@ import { blocks } from './gradle';
 /**
  * Start-up code. Source files are edited only in recognised template shapes; every inserted
  * line sits between `// clikgate-setup:start` and `// clikgate-setup:end`. Existing lines are
- * never removed or reordered (the one rewrite is making Dart's `main` async, as S.4 asks).
+ * never removed or reordered (the one rewrite is making Dart's `main` async).
  * Anything else returns a manual step with the exact snippet.
  */
 

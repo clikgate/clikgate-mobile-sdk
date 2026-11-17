@@ -23,12 +23,23 @@ FORBIDDEN_PATHS = [
         r"(^|/)(API_CONTRACT|SDK_BEHAVIOUR|PLATFORM_CHANNEL)\.md$",
         r"(^|/)__pycache__/",
         r"\.pyc$",
+        # Files named after internal change numbers (Change26Test.kt, change03_test.dart, change21.test.ts)
+        r"(?i)(^|/)change[ _-]?\d{2}(?!\d)[^/]*$",
     )
 ]
 
 FORBIDDEN_TEXT = [
-    ("internal change number", re.compile(r"\bchange[ -]?\d{2}\b", re.I)),
+    # "Change 26", "change-03", and names built on them: Change26Test, change03_test, withoutChange26
+    ("internal change number", re.compile(r"\bchange[ _-]?\d{2}(?!\d)|[a-z_]change[ _-]?\d{2}(?!\d)", re.I)),
     ("internal spec id", re.compile(r"\bC\d{1,2}-[A-Z]{1,2}\d")),
+    # Requirement and section codes of the internal build kit: KC.6, R.24, X.E15, TS.1, EX.3, RF.1, S.4
+    ("internal requirement code", re.compile(r"\b(KC|ST|TS|DB|X|EX|RF|R|S)\.[A-Z]?\d+\b")),
+    (
+        "internal spec reference",
+        re.compile(
+            r"\b[Ss]pec (v\d|\d|section|deliverable|[A-Z]\.\d)|\bbackend spec\b|\bPart \d+ §|\bcontract [A-Z]\d+\b"
+        ),
+    ),
     (
         "internal document",
         re.compile(
@@ -36,7 +47,21 @@ FORBIDDEN_TEXT = [
             r"|API_CONTRACT|SDK_BEHAVIOUR|PLATFORM_CHANNEL"
         ),
     ),
-    ("internal process note", re.compile(r"owner decision|judgement call|build specification|\bcoordinator\b", re.I)),
+    (
+        "internal process note",
+        re.compile(
+            r"owner decision|judge?ment call|build specification|\bcoordinator\b|\bowner,? 20\d{2}\b", re.I
+        ),
+    ),
+    # Private repositories, by path or by name (a quoted "clikgate_api" in code is a sibling-checkout path, and
+    # clikgate_api_key / clikgate_api_url are settings names)
+    (
+        "private repository",
+        re.compile(
+            r"\.\./clikgate_api|clikgate_api/|\bclikgate_api\b(?![_\"'])|clikgate_frontend|clikgate_website"
+            r"|clikgate[-_]sdk[-_]internal"
+        ),
+    ),
 ]
 
 # Files whose job is to list the patterns above (release scanners and this check)

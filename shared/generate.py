@@ -391,9 +391,9 @@ SCHEMAS: dict[str, dict] = {
             # ---- existing users (optional; absent = no start date, no Android device key) ----
             "existing_users": obj(
                 {
-                    # The app's Clikgate start date for this platform and environment (R.3), null until set.
+                    # The app's Clikgate start date for this platform and environment, null until set.
                     "start_at": nullable(TIMESTAMP),
-                    # Base64 per-app key for `android_device_key` (R.8), null when not used.
+                    # Base64 per-app key for `android_device_key`, null when not used.
                     "device_key_salt": NULLABLE_STRING,
                 }
             ),
@@ -471,27 +471,27 @@ SCHEMAS: dict[str, dict] = {
             # Android `debug` (FLAG_DEBUGGABLE), `store` (an installer package) or `sideload` (none / the package installer).
             "install_channel": {"enum": ["app_store", "testflight", "xcode", "store", "sideload", "debug"]},
             "debuggable": {"type": "boolean"},
-            # Android FLAG_SYSTEM / FLAG_UPDATED_SYSTEM_APP: a preloaded app (its install date isn't used, R.5).
+            # Android FLAG_SYSTEM / FLAG_UPDATED_SYSTEM_APP: a preloaded app (its install date isn't used).
             "preinstalled": {"type": "boolean"},
-            # When the app was put on this phone, rounded down to the hour (R.4).
+            # When the app was put on this phone, rounded down to the hour.
             "platform_installed_at": TIMESTAMP,
             "platform_installed_source": {"enum": ["android_first_install_time", "play_install_begin_server", "ios_container_created"]},
             "android_last_update_at": TIMESTAMP,
-            # Worked out on the phone from the exact times (more than 1 minute apart) before rounding (R.4).
+            # Worked out on the phone from the exact times (more than 1 minute apart) before rounding.
             "android_updated_since_install": {"type": "boolean"},
-            # PackageInfo.longVersionCode (R.6).
+            # PackageInfo.longVersionCode.
             "android_version_code": {"type": "integer", "minimum": 0},
             # The phone's clock when the request was built (the server corrects device-clock dates with it).
             "device_time": TIMESTAMP,
             # ClikgateOptions(existingUser = true): the app's own storage shows earlier use.
             "existing_user_hint": {"type": "boolean"},
-            # Tracking consent denied or opted out (R.3): sent instead of the dates, worked out on the phone
+            # Tracking consent denied or opted out: sent instead of the dates, worked out on the phone
             # from /config `existing_users.start_at`; omitted when there's no start date yet.
             "installed_before_start": {"type": "boolean"},
-            # iOS (R.1): the installation-ID Keychain item was found but the this-device-only marker wasn't
+            # iOS: the installation-ID Keychain item was found but the this-device-only marker wasn't
             # (iCloud / encrypted restore, Quick Start): the previous ID is from another phone.
             "keychain_restored_from_other_device": {"type": "boolean"},
-            # Android (R.8): hex HMAC-SHA256 of Settings.Secure.ANDROID_ID keyed with /config `device_key_salt`.
+            # Android: hex HMAC-SHA256 of Settings.Secure.ANDROID_ID keyed with /config `device_key_salt`.
             "android_device_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         },
         ["installation_id", "app_version", "sdk_version", "platform"],
@@ -1396,7 +1396,7 @@ FIXTURES["install_request_ios_existing"] = {
     "platform_installed_source": "ios_container_created",
     "device_time": "2026-11-14T19:02:11Z",
 }
-# Tracking consent denied (R.3): no dates, only whether the app was installed before the start date.
+# Tracking consent denied: no dates, only whether the app was installed before the start date.
 FIXTURES["install_request_android_consent_denied"] = {
     **FIXTURES["install_request_opted_out"],
     "sdk_version": "2.1.2",
@@ -1431,7 +1431,7 @@ FIXTURES["app_record_request"] = {
     "signed_record": "eyJhbGciOiJFUzI1NiIsIng1YyI6WyJ0ZXN0Il19.eyJidW5kbGVJZCI6ImNvbS5leGFtcGxlIn0.c2ln",
 }
 FIXTURES["app_record_response"] = {"accepted": True}
-# apply-code from an existing-user installation (RF.1): every SDK maps it to its typed existing-user error.
+# apply-code from an existing-user installation: every SDK maps it to its typed existing-user error.
 FIXTURES["error_existing_user"] = {
     "error": {
         "type": "conflict",
@@ -1441,7 +1441,7 @@ FIXTURES["error_existing_user"] = {
         "request_id": f"req_{ULID}",
     }
 }
-# Release-day load (R.11): a 429 whose body says how long to wait; the SDKs add jitter.
+# Release-day load: a 429 whose body says how long to wait; the SDKs add jitter.
 FIXTURES["error_rate_limited_retry_after"] = {
     "error": {
         "type": "rate_limited",
@@ -1696,7 +1696,7 @@ FIXTURES["resolve_response_password_required"] = {
 FIXTURES["resolve_response_blocked"] = {
     **_GATED, "status": "blocked", "web_url": None, "block_message": "This offer is only for customers in Nigeria.",
 }
-# An A/B test on the link: the server picked version B for this app open (R.3, the unit is the click) and the
+# An A/B test on the link: the server picked version B for this app open (the unit is the click) and the
 # deep link path is that version's. The SDK delivers it unchanged.
 FIXTURES["resolve_response_ab_variant"] = {
     **FIXTURES["resolve_response_matched"],

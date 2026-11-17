@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLog
 
-/** Connected domains (backend Part 3 §31.3): `config.link_domains` ∪ `options.linkDomains`. */
+/** Connected domains: `config.link_domains` ∪ `options.linkDomains`. */
 @RunWith(RobolectricTestRunner::class)
 class LinkDomainsTest {
     private lateinit var env: TestEnv

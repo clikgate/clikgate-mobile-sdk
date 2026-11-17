@@ -36,11 +36,11 @@ internal data class SdkConfig(
     // ---- existing users ----
     /** `environment` (`production` / `sandbox`), null when the server sent none. */
     val environment: String? = null,
-    /** `existing_users.start_at` in ms: the app's Clikgate start date for this platform (R.3). */
+    /** `existing_users.start_at` in ms: the app's Clikgate start date for this platform. */
     val sdkStartAtMs: Long? = null,
-    /** `existing_users.device_key_salt`: the per-app key for `android_device_key` (R.8). */
+    /** `existing_users.device_key_salt`: the per-app key for `android_device_key`. */
     val deviceKeySalt: String? = null,
-    /** Active programs with `client_link_creation` (Engage prepares their links after identify, R.28). */
+    /** Active programs with `client_link_creation` (Engage prepares their links after identify). */
     val linkProgramIds: List<String> = emptyList(),
 ) {
     /**

@@ -4,7 +4,7 @@ import XCTest
 /// `deeplink_handled` reports the handled deep link's path for the live check, with IDs,
 /// emails and phone numbers replaced on the device; only in test mode or while the debug view is open; never
 /// queued, metered or counted as an event.
-final class Change20Tests: XCTestCase {
+final class DeeplinkHandledTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
     let testKey = "cg_sdk_test_4f1c9a"

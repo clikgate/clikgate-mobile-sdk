@@ -47,7 +47,7 @@ async function applyTwice(dir: string, extra: string[] = []): Promise<ScriptedUI
 const NEXT_PKG = JSON.stringify({ name: 'acme-web', dependencies: { next: '16.0.0', react: '19.2.0' } }, null, 2) + '\n';
 const EXPRESS_PKG = JSON.stringify({ name: 'acme-api', main: 'server.js', dependencies: { express: '5.1.0' } }, null, 2) + '\n';
 
-describe('website detection (R.2)', () => {
+describe('website detection', () => {
   it.each([
     ['nextjs', { 'package.json': NEXT_PKG }],
     ['express', { 'package.json': EXPRESS_PKG }],

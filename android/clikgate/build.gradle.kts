@@ -97,7 +97,7 @@ mavenPublishing {
     coordinates("com.clikgate", "clikgate-android", sdkVersion)
 }
 
-// Spec 0.4, kept after the merge (2.1.0): the Engage features ship in this artifact under com.clikgate.engage,
+// Kept after the merge (2.1.0): the Engage features ship in this artifact under com.clikgate.engage,
 // but core code never uses them (Engage uses core, never the other way round). Fails if any source outside
 // com/clikgate/engage refers to com.clikgate.engage. Part of `check`.
 val checkNoEngageDependency by tasks.registering {

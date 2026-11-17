@@ -7,8 +7,8 @@ shared) and records the share with POST /v1/share-events. The tables say which a
 each platform names the apps (Android package names, iOS bundle IDs). They are internal: the docs never list
 the endings ("adds a short ending so Clikgate knows where you shared it").
 
-Sources of truth: the backend's `ShareApp` enum (clikgate_api docs/openapi.json) and its endings table
-(clikgate_api src/attribution/utils/share_endings.py), copied into shared/share_targets.json, which is checked in.
+Sources of truth: the backend's `ShareApp` enum (docs/openapi.json) and its endings table
+(src/attribution/utils/share_endings.py), copied into shared/share_targets.json, which is checked in.
 
     python3 scripts/generate_share_targets.py           # rewrite the generated files
     python3 scripts/generate_share_targets.py --check   # fail if a generated file is out of date
