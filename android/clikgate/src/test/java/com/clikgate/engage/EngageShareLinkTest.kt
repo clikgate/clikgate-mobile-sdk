@@ -20,7 +20,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/** Change 13 S.1: share.link / share.referralLink, the chooser callback and share events. */
+/** share.link / share.referralLink, the chooser callback and share events. */
 @RunWith(RobolectricTestRunner::class)
 class EngageShareLinkTest {
     private val app: Context = ApplicationProvider.getApplicationContext()

@@ -40,8 +40,8 @@ local link tests use the custom scheme or `adb shell am start` / `xcrun simctl o
 | iOS simulator | `xcrun simctl openurl booted "https://inv.myapp.com/<slug>"` (needs the Associated Domains entitlement and a reachable AASA; with `?mode=developer` on the entitlement the simulator fetches AASA directly) | Same |
 | iOS device | Paste the link in Notes and tap it (typing it into Safari's address bar does **not** trigger Universal Links) | Same |
 | Custom scheme | `adb shell am start -d "myapp://products/42?cg_click_id=clk_..."` / `xcrun simctl openurl booted "myapp://..."` | `/v1/sdk/resolve` reuses the click id |
-| Password link (Change 17) | Set a password on a link, open it as above | The password page opens in the browser app (Android: not a Custom Tab; iOS: Safari, not over the app), `onDeepLink` doesn't fire. **iOS device: confirm Safari opens and the app isn't reopened** (if iOS hands the link back, the SDK opens it once per 30 s and stops: see DECISIONS.md "Change 17") |
-| Country-blocked link (Change 17) | Restrict a link's countries to one you're not in, open it as above | `onDeepLink` fires with `blockMessage` set and no `path` / `clickId` |
+| Password link | Set a password on a link, open it as above | The password page opens in the browser app (Android: not a Custom Tab; iOS: Safari, not over the app), `onDeepLink` doesn't fire. **iOS device: confirm Safari opens and the app isn't reopened** (if iOS hands the link back, the SDK opens it once per 30 s and stops) |
+| Country-blocked link | Restrict a link's countries to one you're not in, open it as above | `onDeepLink` fires with `blockMessage` set and no `path` / `clickId` |
 
 Check the AASA and assetlinks Clikgate serves: `curl https://inv.myapp.com/.well-known/apple-app-site-association`
 and `.../.well-known/assetlinks.json`.

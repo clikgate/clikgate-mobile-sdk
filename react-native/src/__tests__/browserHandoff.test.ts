@@ -17,7 +17,7 @@ const mockModule: MockModule = jest.requireMock('../NativeClikgate').default;
 
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
 
-/** The native SDKs tag a handoff on the deep-link event (shared/PLATFORM_CHANNEL.md). */
+/** The native SDKs tag a handoff on the deep-link event. */
 function emit(payload: Record<string, unknown>) {
   DeviceEventEmitter.emit('ClikgateDeepLink', payload);
 }
@@ -44,7 +44,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-/** Change 06 (1.5.0): shared-domain links of other organisations go to an in-app browser. */
+/** 1.5.0: shared-domain links of other organisations go to an in-app browser. */
 describe('onBrowserHandoff', () => {
   it('configure sends platformDomainBrowserFallback, default true', async () => {
     await Clikgate.configure({ sdkKey: 'cg_sdk_test' });

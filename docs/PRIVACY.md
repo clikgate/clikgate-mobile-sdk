@@ -2,7 +2,7 @@
 
 This page is for app owners preparing App Store privacy labels, Google Play's Data safety
 form, and their own privacy policy. It describes the SDKs and the Clikgate backend as built
-(SDK 1.x, API contract v1 with the v3 and change 03 additions; SDK 1.2.0). App Store and Play review decisions are the app owner's
+(SDK 1.x, API contract v1; SDK 1.2.0). App Store and Play review decisions are the app owner's
 responsibility.
 
 ## Summary
@@ -36,7 +36,7 @@ responsibility.
 | Launch URLs | when a link opens the app | deep linking, re-engagement | Only URLs on the app's Clikgate link domains or with a Clikgate click id |
 | Handled deep link path (`deeplink_handled`) | when a Clikgate deep link is handed to the app, only with a test SDK key or while the dashboard's debug view is open for the app | checking the integration ("See it live", debug view) | Path only: the query and fragment are removed and every segment that looks like an ID, email address or phone number is replaced with `:id` on the device. Never sent in normal live use, never a goal, never counted |
 | Customer user ID | when the app calls `identifyUser()` | referrals, linking goals to the app's own user | The app's own identifier; optionally verified with an HMAC identity token from the app's backend. Never sent in the organisation's private mode (SDK 1.3.0) |
-| Goal events (key, value, currency, reference, `is_first`, click id) | when the app calls `goal()` (SDK 1.3.0; the only method for what happens in the app since Change 22) | goal measurement, conversions, value-based bidding, referral qualification. Names not yet ticked as goals in the dashboard are stored for 30 days only, not counted and not sent to ad networks | The business's own reference (or an SDK-generated UUID), never customer data; the value is a decimal amount. Allowed in private mode, where Clikgate stores the reference only as a keyed hash |
+| Goal events (key, value, currency, reference, `is_first`, click id) | when the app calls `goal()` (SDK 1.3.0; the only method for what happens in the app since 2.0.0) | goal measurement, conversions, value-based bidding, referral qualification. Names not yet ticked as goals in the dashboard are stored for 30 days only, not counted and not sent to ad networks | The business's own reference (or an SDK-generated UUID), never customer data; the value is a decimal amount. Allowed in private mode, where Clikgate stores the reference only as a keyed hash |
 | Push token (APNs / FCM) | when the app provides it | uninstall detection | Encrypted at rest; only used to send silent check pushes (below) |
 | Attestation results (App Attest / Play Integrity) | install, every 7 days, only if enabled | fraud prevention | The server keeps the attested public key and a valid/invalid verdict |
 | Apple Ads (AdServices) attribution token | with the first install request (iOS 14.3+), only if Apple Ads is on in the dashboard and attribution consent allows it | Apple Ads attribution | Requested when the install is sent (after consent when consent is required), renewed after 24 hours, kept in memory only and never stored on the device. Resolved with Apple's AdServices API |
@@ -72,11 +72,11 @@ nothing identifying while `attribution` is unknown: events stay on the device (a
 events) and are sent on grant or deleted on deny. With `attribution` denied, at most one anonymous,
 identifier-free install count is sent (if the organisation enabled it). Firebase forwarding needs
 `analytics`; identity checks need `analytics` unless the organisation's stated legal basis is fraud
-prevention. Details: `shared/SDK_BEHAVIOUR.md` "Change 03".
+prevention.
 
 ## Probabilistic matching (off by default; never on iOS)
 
-From change 03 Clikgate never runs probabilistic matching for iOS installs, and the iOS SDK 1.2.0 no
+Since SDK 1.2.0 Clikgate never runs probabilistic matching for iOS installs, and the iOS SDK 1.2.0 no
 longer collects any signal used only for it (screen size) or any device-configuration probe (jailbreak
 checks). iOS attribution is deterministic only: link click ids, Apple Search Ads, SKAdNetwork /
 AdAttributionKit, the opt-in clipboard token and the app's own user identity (no IDFA). On Android it additionally needs attribution consent and a window of at most
@@ -180,7 +180,7 @@ from SDK endpoints and the hosted page; the app owner still sees them, flagged, 
   uninstall tracking, the push token. Data is encrypted in transit; users can request deletion
   (via your app's process, which calls the privacy API).
 
-## Existing users (Change 26)
+## Existing users
 
 To tell people who had the app before the business added Clikgate from new installs, the first `/install` also
 sends: how the app was installed (store, TestFlight, Xcode, side-loaded, debug build, preloaded), when it was put on

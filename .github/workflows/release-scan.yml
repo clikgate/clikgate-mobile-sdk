@@ -1,6 +1,6 @@
 name: Release packages scan
 
-# Change 12, S.4: what customers get contains no internal comments, TODO/FIXME notes, internal-document
+# What customers get contains no internal comments, TODO/FIXME notes, internal-document
 # references, internal or staff URLs and hosts, local paths, staff-only references or debug code.
 # Each job builds the package the way its release job does and runs scripts/scan_release_packages.py
 # on it; the release jobs (android.yml, ios.yml, flutter.yml, react-native.yml) run the same scan

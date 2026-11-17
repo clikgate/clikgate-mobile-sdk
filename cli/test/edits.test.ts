@@ -171,7 +171,7 @@ describe('arguments', () => {
   });
 });
 
-describe('identity snippets (Change 22)', () => {
+describe('identity snippets', () => {
   it('cover every platform, use identifyUser with a server token and the installation ID getter', async () => {
     const { IDENTIFY_SNIPPET, INSTALLATION_ID_SNIPPET, GOAL_SNIPPET } = await import('../src/constants');
     expect(Object.keys(IDENTIFY_SNIPPET).sort()).toEqual(Object.keys(GOAL_SNIPPET).sort());

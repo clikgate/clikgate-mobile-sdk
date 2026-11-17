@@ -76,7 +76,7 @@ jobs:
         run: |
           version="$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2)"
           test "android-v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} != android-v$version"; exit 1; }
-      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      # Nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
       - name: Scan the release packages
         run: |
           ./gradlew :clikgate:assembleRelease :clikgate:releaseSourcesJar

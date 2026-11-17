@@ -16,7 +16,7 @@
 #
 # The Dart file is what the pub package verifies downloads against (the .gz, then the unpacked binary), so the
 # release order is: build → GitHub release `setup-v<version>` with the .gz files and SHA256SUMS →
-# `flutter pub publish` (docs/RELEASING.md).
+# `flutter pub publish`.
 # Builds are reproducible (same inputs and Bun version → same bytes), but upload exactly the files whose
 # hashes are in the Dart file. `npm run build` in cli/ cleans cli/dist (tsup clean), which removes
 # cli/dist/bin too; this script keeps it. scripts/check_cli_sdk_versions.mjs checks the Dart file

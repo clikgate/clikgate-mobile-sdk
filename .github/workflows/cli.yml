@@ -93,7 +93,7 @@ jobs:
         env:
           CLIKGATE_SETUP_NO_TOOLS: "1"
       - run: npm run build
-      # Change 12, S.4: nothing internal ships (bundled dependencies excluded by their esbuild module markers;
+      # Nothing internal ships (bundled dependencies excluded by their esbuild module markers;
       # see scripts/scan_release_packages.py).
       - name: Scan the package
         run: python3 ../scripts/scan_release_packages.py --cli .

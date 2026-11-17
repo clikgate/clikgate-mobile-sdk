@@ -16,7 +16,7 @@ class SampleApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Change 03: in consent regions (EEA, UK, CH by default) nothing identifying is sent until the
+        // In consent regions (EEA, UK, CH by default) nothing identifying is sent until the
         // user answers your consent prompt; MainActivity has buttons that call setConsent.
         Clikgate.configure(
             this,
@@ -44,7 +44,7 @@ class SampleApp : Application() {
 
         initFirebase()
         registerFcmToken()
-        // Change 03: forward Clikgate attribution into Firebase Analytics when the app's Clikgate settings
+        // Forward Clikgate attribution into Firebase Analytics when the app's Clikgate settings
         // enable GA4 forwarding. Needs analytics consent where required.
         Clikgate.enableFirebaseForwarding(FirebaseForwardingOptions())
     }

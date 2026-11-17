@@ -28,7 +28,7 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 
 /**
- * Change 26 (existing users): what the first `/install` says about when the app arrived on the phone
+ * Existing users: what the first `/install` says about when the app arrived on the phone
  * (EX.3, R.3-R.8), the typed existing-user error (RF.1), the server's wait with jitter (R.11) and the
  * referral links Engage prepares after identifyUser() (R.28).
  */

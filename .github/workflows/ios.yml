@@ -117,7 +117,7 @@ jobs:
           cd ios
           zip -qry "../Clikgate-ios-${VERSION}.zip" Package.swift Clikgate.podspec Sources LICENSE
 
-      # Change 12, S.4: nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
+      # Nothing internal ships (TODO/FIXME, internal docs or hosts, staff references, debug code).
       - name: Scan the release packages
         run: python3 scripts/scan_release_packages.py "Clikgate-ios-${VERSION}.zip" ios/build/xcframework/*.xcframework.zip
 
@@ -135,7 +135,7 @@ jobs:
       # Swift Package Manager needs Package.swift at a repository root and a plain semver tag, so the
       # package is published to a mirror repository (clikgate/clikgate-ios-sdk) tagged "$VERSION". The mirror
       # gets only what SPM needs (scripts/spm_mirror.py: Package.swift without test targets, Sources, LICENSE,
-      # README.md), never Tests, the sample app or DECISIONS.md; the same set is scanned first.
+      # README.md), never Tests or the sample app; the same set is scanned first.
       - name: Assemble and scan the SPM mirror
         run: |
           python3 scripts/spm_mirror.py "$RUNNER_TEMP/spm-mirror"

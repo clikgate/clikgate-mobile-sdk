@@ -2,10 +2,10 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 21 (S.1, S.2, R.2, R.25): the Flutter plugin hands every opened URL to the native SDK exactly as it
+/// The Flutter plugin hands every opened URL to the native SDK exactly as it
 /// arrived, so the native `/resolve` (direct App Link / Universal Link opens) and `/install` `launch_url` carry the
 /// redirect's `cg_click_id` (the server attaches to that click and never records a second one) and X's `twclid`
-/// (like `li_fat_id`, change 19 S.2). The installation id is added natively on every call.
+/// (like `li_fat_id`). The installation id is added natively on every call.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =

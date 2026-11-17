@@ -162,7 +162,7 @@ export function HomeScreen({ navigate }: { navigate: (r: Route) => void }) {
     setMessage(`purchase: ${r.status}${r.reason ? ` (${r.reason})` : ''}`);
   };
 
-  // Change 03: consent (your consent banner would call these) and sales metadata.
+  // Consent (your consent banner would call these) and sales metadata.
   const [consent, setConsentInfo] = useState<string>('…');
   const showConsent = useCallback(async () => {
     const c = await Clikgate.getConsent();

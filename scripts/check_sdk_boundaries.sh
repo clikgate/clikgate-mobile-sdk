@@ -7,8 +7,8 @@
 #      identity-signal API (forbidden-name check on the core snapshot);
 #   3. core code never uses Engage (imports; iOS also: one SPM product / one pod ship both);
 #   4. size budgets: core Android < 150 KB, Engage Android < 44 KB, core iOS < 410 KB,
-#      Engage iOS < 95 KB (methods: android/DECISIONS.md and ios/DECISIONS.md, "Engage split");
-#   5. Change 12: the generated Provider types match shared/providers.json
+#      Engage iOS < 95 KB (methods: android/scripts/check_size.sh and ios/scripts/check_size.sh);
+#   5. the generated Provider types match shared/providers.json
 #      (scripts/generate_providers.py --check), and the published sources of each package pass the
 #      release scan (scripts/scan_release_packages.py: no TODO/FIXME, internal references, internal
 #      hosts, staff references or debug code). Built artefacts (AAR, XCFramework) are scanned in
@@ -51,7 +51,7 @@ step() {
   if "$@"; then echo "--- ok: $name"; else echo "--- FAILED: $name"; failures+=("$name"); fi
 }
 
-# ------------------------------------------------------------------ Change 12
+# ------------------------------------------------------------------ providers, share targets, release scan
 providers_check() { python3 "$ROOT/scripts/generate_providers.py" --check; }
 share_targets_check() { python3 "$ROOT/scripts/generate_share_targets.py" --check; }
 no_identify_check() { python3 "$ROOT/scripts/check_no_identify.py"; }

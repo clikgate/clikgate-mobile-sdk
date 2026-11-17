@@ -1,7 +1,7 @@
 import XCTest
 @_spi(ClikgateWrapper) @testable import Clikgate
 
-/// Change 03 (SDK 1.2.0): consent, buffering, click ids, version policy, Firebase forwarding,
+/// SDK 1.2.0: consent, buffering, click ids, version policy, Firebase forwarding,
 /// attribution metadata, clipboard opt-in, identity checks and Google on-device measurement.
 final class Change03Tests: XCTestCase {
     var h: Harness!
@@ -356,7 +356,7 @@ final class Change03Tests: XCTestCase {
         XCTAssertEqual(h.firebase.userProperties["cg_first_source"] ?? nil, "google")
         XCTAssertEqual(h.firebase.userProperties["cg_first_campaign"] ?? nil, "lagos_launch")
 
-        // Change 22: no event mirroring (there are no app events); goals aren't logged to Firebase.
+        // No event mirroring (there are no app events); goals aren't logged to Firebase.
         await core.goal("purchase", value: "1500", currency: "NGN", reference: "A-1", isFirst: nil)
         XCTAssertEqual(h.firebase.events.map { $0.0 }, ["clikgate_attribution"])
 

@@ -1,0 +1,21 @@
+# This repository is public. Fails if internal build material is committed: design specs, decision logs, progress
+# notes, release runbooks, or references to internal change numbers and those documents (scripts/check_public_repo.py).
+# Runs on every push and pull request, with no path filter.
+name: public-repo-guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Nothing internal in the repository
+        run: python3 scripts/check_public_repo.py

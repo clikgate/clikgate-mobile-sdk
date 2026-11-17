@@ -71,7 +71,7 @@ root component's `useEffect` is fine. For URLs from elsewhere (QR codes): `await
 
 App Links / Universal Links / custom-scheme opens are forwarded to the SDK by the platform setup below.
 
-**App link subdomain (change 09).** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
+**App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
 shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
@@ -89,9 +89,9 @@ switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal
 nothing (no error, nothing is sent), and attribution reads `organic`. `await Clikgate.isFeatureEnabled('app_attribution')` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
-the click they came from, so one tap is one click (change 21).
+the click they came from, so one tap is one click.
 
-**Password and country-restricted links (Change 17).** App Links and Universal Links open your app without
+**Password and country-restricted links.** App Links and Universal Links open your app without
 Clikgate's redirect, so the native SDK asks the server first. A password link opens in the system browser (the
 password page; `onDeepLink` isn't called). A link blocked for the visitor's country (or by a block rule) arrives
 with `link.blockMessage` set and no `path`, `clickId` or `link`: show the text and don't route.
@@ -378,7 +378,7 @@ Rules (spec 17A.3):
   `code_disabled`, `redemption_limit_reached`, `rate_limited` (5/hour/installation), and for referral codes
   the `applyCode` errors with `offlineTouchId` set (the touch is still recorded).
 
-**Share a link (Change 13).** `share.link(url, {message?, app?, shareUrls?})` and
+**Share a link.** `share.link(url, {message?, app?, shareUrls?})` and
 `share.referralLink(link, {message?, app?})`: each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They go through the package's
 `ClikgateEngage` TurboModule (one method, over the native SDK's Engage features: `com.clikgate.engage` on
 Android, `ClikgateEngage` in the `Clikgate` pod on iOS); without the native module they fail with
@@ -393,9 +393,9 @@ entry is harmless and kept for apps that call `Linking.canOpenURL` themselves. O
 WhatsApp's `whatsapp://send` handler (not WhatsApp Business specifically); the native Android Engage
 module's `ACTION_SEND`-with-package path isn't available from pure TypeScript.
 
-## 5c. Consent, Firebase forwarding and sales metadata (1.2.0, change 03)
+## 5c. Consent, Firebase forwarding and sales metadata (1.2.0)
 
-All calls go to the native SDKs (behaviour: shared/SDK_BEHAVIOUR.md "Change 03"). They may be called
+All calls go to the native SDKs. They may be called
 before `configure`.
 
 ```ts
@@ -533,7 +533,7 @@ the hex APNs token with `{ provider: 'apns' }`) when you choose; on iOS keep for
 
 **Test link domain.** Your app's test subdomain (`myapp.dev.ciz.to`, Clikgate's test links) must never reach a
 production build. Put it in `testLinkDomain`, not `linkDomains` (the plugin refuses both). Never list a shared
-domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`): shared domains can't open your app (change 09). Set the variant per EAS build profile, as
+domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`): shared domains can't open your app. Set the variant per EAS build profile, as
 Expo documents for app variants:
 
 ```json

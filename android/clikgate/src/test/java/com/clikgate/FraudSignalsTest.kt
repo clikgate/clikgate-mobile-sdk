@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Fraud signals on `/install` (change 02, B.5.2): heuristics and payload serialisation. */
+/** Fraud signals on `/install`: heuristics and payload serialisation. */
 @RunWith(RobolectricTestRunner::class)
 class FraudSignalsTest {
     private lateinit var env: TestEnv

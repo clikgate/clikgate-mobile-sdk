@@ -22,7 +22,7 @@ export interface LinkDomains {
   live: string[];
   /** Test domain (debug builds only), or undefined when not used. */
   test?: string;
-  /** Per-platform hosts (each app's own subdomain; change 09 N.1). Override live/test for that platform's files. */
+  /** Per-platform hosts (each app's own subdomain). Override live/test for that platform's files. */
   android?: { live: string[]; test?: string };
   ios?: { live: string[]; test?: string };
 }
@@ -78,8 +78,8 @@ export function planAndroidLinks(pb: PlanBuilder, mod: AndroidModule, domains: L
       if (edit.changed) pb.change(r, edit.text, `App Links for ${domains.test}, ${s.name} builds only`);
     }
   }
-  // Test domains must never reach release builds, and shared domains can't open the app (change 09
-  // N.1). We never remove lines: report them.
+  // Test domains must never reach release builds, and shared domains can't open the app.
+  // We never remove lines: report them.
   for (const f of [{ name: 'main', file: mod.mainManifest }, ...mod.sourceSetManifests]) {
     const text = pb.current(rel(root, f.file));
     if (!text) continue;
@@ -261,7 +261,7 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
       );
     }
   }
-  // Shared domains in any configuration (change 09 N.1): reported once per file, never removed.
+  // Shared domains in any configuration: reported once per file, never removed.
   const seen = new Set<string>();
   for (const c of ios.configs) {
     if (!c.entitlements || seen.has(c.entitlements)) continue;

@@ -65,7 +65,7 @@ dependencies {
     // google-services.json; push registration is skipped when Firebase isn't configured.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
-    // Change 03: Firebase Analytics receives Clikgate attribution (Clikgate.enableFirebaseForwarding).
+    // Firebase Analytics receives Clikgate attribution (Clikgate.enableFirebaseForwarding).
     // runtimeOnly: the SDK finds it by reflection, and the sample never calls it (its 24.x Kotlin metadata
     // is newer than this build's Kotlin 2.1 compiler accepts).
     runtimeOnly(libs.firebase.analytics)

@@ -1,7 +1,7 @@
 # Engage features vs the backend path
 
-Each Clikgate SDK is one package with two layers (spec v3, sections 0.4 and 17A; one package per
-platform since 2.1.0, owner decision 2026-11-12):
+Each Clikgate SDK is one package with two layers (one package per
+platform since 2.1.0):
 
 | Layer | Where | What it does |
 |---|---|---|
@@ -83,7 +83,7 @@ rewards, server events for confirmed purchases) and identity checks.
   `code_expired`, `rate_limited`, ...). These are interactive calls: at most one retry, and only
   for network errors; nothing is queued.
 - **No UI.** Engage has no screens or widgets; apps render their own.
-- **Share a link (Change 13).** `share.link(url, message?, app?, shareUrls?)` and
+- **Share a link.** `share.link(url, message?, app?, shareUrls?)` and
   `share.referralLink(link, message?, app?)` open the phone's share menu (or one app): each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click),
   with `POST /v1/share-events` and the SDK key. Referral links keep the referral code. Apps with a
   backend can pass the link's `share_urls` from the Clikgate API instead. `ShareApp` names the apps.
@@ -103,9 +103,7 @@ backend with `POST /v1/identity-signals`. Apps without a backend can't use ident
 The core exposes a small internal request context (installation id, SDK key, environment, base
 URL, identity token, user id, version headers) and an error report-back; Engage gets a fresh
 context per call and reports `feature_disabled` / invalid-key / kill-switch / unknown-installation
-answers back so the core reacts as it does for its own calls. Details:
-[shared/SDK_BEHAVIOUR.md](../shared/SDK_BEHAVIOUR.md) ("Core SDK vs Engage features") and
-[shared/PLATFORM_CHANNEL.md](../shared/PLATFORM_CHANNEL.md) ("Engage split"). CI checks the split
+answers back so the core reacts as it does for its own calls. CI checks the split
 with `scripts/check_sdk_boundaries.sh` (public-API snapshots, "no Engage API in core", "core code
 never uses Engage", size budgets for core and Engage separately).
 

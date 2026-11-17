@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 17 R.2: Universal Links skip the redirect, so `/resolve` runs the link gates and the SDK must honour them.
+/// Universal Links skip the redirect, so `/resolve` runs the link gates and the SDK must honour them.
 final class LinkGateTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
@@ -153,7 +153,7 @@ final class LinkGateTests: XCTestCase {
         XCTAssertTrue(links.items.isEmpty)
     }
 
-    /// Change 17 R.2: /install answers for a gated launch URL too. Even if it carried a deep link, iOS ignores it and
+    /// /install answers for a gated launch URL too. Even if it carried a deep link, iOS ignores it and
     /// re-resolves the launch URL, so only the gate's answer reaches the app.
     func testGatedInstallAnswerCarryingADeepLinkDeliversNoDestination() async throws {
         var install = Fixtures.json("install_response_password_required")

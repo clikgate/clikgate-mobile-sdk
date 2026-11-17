@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 /**
- * Change 20 (S.1, R.40): the native SDKs send `deeplink_handled` (the handled path, IDs replaced with
+ * The native SDKs send `deeplink_handled` (the handled path, IDs replaced with
  * `:id`) in test mode or while the debug view is open. The JavaScript layer only passes the key and the
  * links through: it never cleans the app's link, never adds a call of its own, and nothing is sent as
  * an event.

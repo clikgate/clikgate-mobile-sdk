@@ -17,13 +17,13 @@ import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Change 21 (S.1, S.2, R.2, R.4, R.25): the open payloads the server counts existing-user opens from.
+ * The open payloads the server counts existing-user opens from.
  *
  * - A **direct** App Link open (no redirect) goes to `/resolve` with the URL as opened and the installation in
  *   `Clikgate-Installation-Id` (the server finds the `ins_` row from it): the server records the click.
  * - A **redirect** open carries the redirect's `cg_click_id` inside that URL: the server attaches to that click and
  *   never records a new one. One tap, one `/resolve`, one click.
- * - X's `twclid` travels unchanged in the URLs and the Play install referrer, like `li_fat_id` (change 19 S.2).
+ * - X's `twclid` travels unchanged in the URLs and the Play install referrer, like `li_fat_id`.
  */
 @RunWith(RobolectricTestRunner::class)
 class Change21Test {

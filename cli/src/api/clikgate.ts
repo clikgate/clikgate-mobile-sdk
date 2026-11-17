@@ -14,7 +14,7 @@ export interface App {
   /** Publishable test key; the CLI token never receives the live `sdk_key`. */
   sdk_key_test?: string;
   sdk_settings?: { shared_domain_app_links?: boolean; test_domain_app_links?: boolean; [k: string]: unknown };
-  /** Change 09 (N.1): the app's link subdomain (never null; an unconfirmed suggestion for older apps). */
+  /** The app's link subdomain (never null; an unconfirmed suggestion for older apps). */
   link_subdomain?: string | null;
   link_subdomain_confirmed?: boolean;
   link_subdomain_editable?: boolean;
@@ -39,7 +39,7 @@ export interface Domain {
   mode?: string;
   platform_tier?: string | null;
   eligible_for_new_links?: boolean | null;
-  /** Change 09: `custom`, `platform` or `app_subdomain`. */
+  /** `custom`, `platform` or `app_subdomain`. */
   kind?: string;
 }
 

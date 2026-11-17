@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
  * A mock of the Clikgate API endpoints the setup command uses (backend spec B.1–B.3), with the
  * shapes the backend confirmed: error envelope, RFC 8628 token errors (428/429/403/410, or 400
  * with the same codes), list envelope, `mode: live|test` domains, setup-check with `applies`, and the
- * change 09 app link subdomains (contract B2: `link_subdomain`, `app_link_domains`, availability).
+ * app link subdomains (`link_subdomain`, `app_link_domains`, availability).
  */
 
 export interface MockApp {
@@ -34,7 +34,7 @@ export interface MockOptions {
   /** Link subdomains another organisation already uses. */
   takenSubdomains?: string[];
   setupCheck?: (app: MockApp, polls: number) => unknown;
-  /** Parent of the apps' live link subdomain: `ciz.to` (Starter and up, default) or `ciz.ng` (Free, change 10). */
+  /** Parent of the apps' live link subdomain: `ciz.to` (Starter and up, default) or `ciz.ng` (Free). */
   liveParent?: 'ciz.to' | 'ciz.ng';
 }
 

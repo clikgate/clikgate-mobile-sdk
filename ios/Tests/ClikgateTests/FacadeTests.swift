@@ -43,7 +43,7 @@ final class FacadeTests: XCTestCase {
     }
 
     func testInstallationIdViaFacade() async throws {
-        // Change 22 (I.7, R.26): `try await Clikgate.shared.installationId()`; the completion form for wrappers.
+        // `try await Clikgate.shared.installationId()`; the completion form for wrappers.
         stubHappyPath()
         let unconfigured = Clikgate()
         do { _ = try await unconfigured.installationId(); XCTFail("expected not_configured") } catch let e as ClikgateError {

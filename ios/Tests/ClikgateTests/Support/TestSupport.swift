@@ -154,7 +154,7 @@ final class FakeClock: ClikgateClock, @unchecked Sendable {
 final class FakeKeychain: KeychainStoring, @unchecked Sendable {
     private let lock = NSLock()
     var value: String?
-    /// The this-device-only marker (change 26, R.1); same as `value` unless a test says otherwise (a restore).
+    /// The this-device-only marker; same as `value` unless a test says otherwise (a restore).
     var marker: String?
     init(_ v: String? = nil) { value = v; marker = v }
     func readInstallationId() -> String? { lock.lock(); defer { lock.unlock() }; return value }
@@ -163,7 +163,7 @@ final class FakeKeychain: KeychainStoring, @unchecked Sendable {
     func writeDeviceMarker(_ id: String) { lock.lock(); marker = id; lock.unlock() }
 }
 
-/// Change 26: the phone's install facts and Apple's app record.
+/// Existing users: the phone's install facts and Apple's app record.
 final class FakeInstallFacts: AppInstallFactsProviding, @unchecked Sendable {
     private let lock = NSLock()
     var channelValue = "app_store"
@@ -384,7 +384,7 @@ final class FakeBrowser: BrowserPresenting, @unchecked Sendable {
     @MainActor func open(_ url: URL) -> Bool { lock.lock(); _opened.append(url); lock.unlock(); return succeeds }
     @MainActor func openExternal(_ url: URL) { lock.lock(); _external.append(url); lock.unlock() }
     var opened: [URL] { lock.lock(); defer { lock.unlock() }; return _opened }
-    /// URLs sent to the system browser (Change 17 password links).
+    /// URLs sent to the system browser (password links).
     var external: [URL] { lock.lock(); defer { lock.unlock() }; return _external }
 }
 

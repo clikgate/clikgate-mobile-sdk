@@ -45,7 +45,7 @@ writes these SDKs' versions and configure snippets, so an SDK change and the mat
 land in one PR. `scripts/check_cli_sdk_versions.mjs` fails when the versions in
 `cli/src/constants.ts` drift from `android/gradle.properties`, `ios/Clikgate.podspec`,
 `flutter/pubspec.yaml` or `react-native/package.json`. Flags, edits, doctor, fixtures and publishing:
-[docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md); decisions: [cli/DECISIONS.md](cli/DECISIONS.md).
+[docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md).
 
 ## Samples
 
@@ -70,10 +70,10 @@ the same links) and declare each one in the app: iOS Associated Domains
 `applinks:<domain>`, and an Android `autoVerify` intent filter host. The OS opens the app only for
 declared domains. The SDKs also add the domains the server returns in `/v1/sdk/config`
 (`link_domains`) and log a warning for each one missing from `linkDomains`. Never declare a shared domain
-(`ciz.to`, `ciz.ng`, `dev.ciz.to`): from change 09 their app-links files list no customer app, so
+(`ciz.to`, `ciz.ng`, `dev.ciz.to`): their app-links files list no customer app, so
 they can't open yours. Platform details are in each guide.
 
-## Consent, privacy and growth features (SDK 1.2.0, change 03)
+## Consent, privacy and growth features (SDK 1.2.0)
 
 Every SDK has a consent API (`setConsent`, `getConsent`, `setConsentRegion`; buffering in consent
 regions), Google click ids (`gclid` / `gbraid` / `wbraid`), the minimum-SDK-version policy, Firebase
@@ -81,8 +81,6 @@ forwarding (`enableFirebaseForwarding`, Firebase detected at runtime), `attribut
 sales matching, and on iOS DeviceCheck / App Attest identity checks, the opt-in clipboard deferred
 link and Google on-device measurement (`enableGoogleOnDeviceMeasurement`). The iOS SDK no longer
 collects any probabilistic-matching or fingerprinting signal (see `ios/CHANGELOG.md` "Privacy").
-Behaviour: [shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md) "Change 03"; wire format:
-[shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 03 additions".
 
 ## Send goals: one `goal()` method (Payment goals, enums)
 
@@ -96,7 +94,7 @@ Every SDK has one `goal()` method for the outcomes the business chose (`account_
 | Flutter | `final r = await Clikgate.goal('purchase', reference: 'T123456', provider: ClikgateProvider.paystack);` |
 | React Native | `const r = await Clikgate.goal('purchase', { reference: 'T123456', provider: ClikgateProvider.Paystack });` |
 
-- `goal()` is the only method for what happens in the app (Change 22). Every
+- `goal()` is the only method for what happens in the app (2.0.0). Every
   name sent with `goal()` appears in the dashboard's "Seen from your app and website" and counts once the business
   ticks "Count this as a goal". Goals work on every plan, up to the plan's allowance.
 - The result has `status` (`GoalStatus`: counted, waiting, received or refused), `reason`, `goalKind` (`GoalKind`:
@@ -114,10 +112,9 @@ Every SDK has one `goal()` method for the outcomes the business chose (`account_
 - Goals use the offline queue, consent buffering and retries, and are idempotent by key and reference. **Never put
   customer data in goal calls; use the business's reference only.** In an organisation's **private mode** the SDKs
   stop sending the customer ID of `identifyUser()`; goals still work.
-- `payment()` (Change 11) is removed on every platform. Behaviour: [shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md)
-  "Change 12"; wire format: [shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 12 additions".
+- `payment()` is removed on every platform.
 
-## Identify your users: `identifyUser()` and the installation ID (Change 22)
+## Identify your users: `identifyUser()` and the installation ID (2.0.0)
 
 Optional: for labels and the person timeline, referrals and leaderboards that need a verified user, and "existing
 customer" checks. The customer ID is your own internal user ID (never an email, phone, BVN or NIN). Guide:
@@ -144,14 +141,12 @@ in private mode). Right after `configure` it waits for the first launch's config
 answers at once); a reinstall gets a new ID. It is `null` when tracking is off (opt-out, consent denied or not given
 yet where it's required, deep-link-only mode), so the server skips `identifyUser`.
 
-## Password and country-restricted links on app opens (Change 17)
+## Password and country-restricted links on app opens
 
 App Links and Universal Links open the app without Clikgate's redirect, so `/v1/sdk/resolve` runs the link's gates.
 A password link opens its password page in the system browser (nothing is delivered); a link blocked for the
 visitor's country (or by a block rule) arrives on the deep-link callback with `blockMessage` set and no path, click
-or link. A/B tests: the server picks the version and its path arrives as usual. Behaviour:
-[shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md) "Change 17"; wire format: [shared/API_CONTRACT.md](shared/API_CONTRACT.md)
-"Change 17 additions".
+or link. A/B tests: the server picks the version and its path arrives as usual.
 
 ## Shared-domain links of other organisations (native SDKs 1.4.0, Flutter 1.4.0, React Native 1.5.0)
 
@@ -160,11 +155,9 @@ open an app for another organisation's link on them. When `/resolve` answers `ma
 such a link, the SDKs open it in an in-app browser (Android Custom Tabs in an explicit browser
 package, iOS `SFSafariViewController`; never an implicit intent or `UIApplication.open`, which could
 loop back into the app), deliver no deep link, and report a browser handoff (`onBrowserHandoff` on Android, Flutter and React
-Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `platformDomainBrowserFallback` (default on) turns it off. Behaviour:
-[shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md) "Change 06 (SDK 1.4.0)"; contract:
-[shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Shared platform domains".
+Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `platformDomainBrowserFallback` (default on) turns it off.
 
-## Consistency fixes (native SDKs 1.5.0, Flutter 1.5.0, React Native 1.6.0, setup command 1.1.0, change 09)
+## Consistency fixes (native SDKs 1.5.0, Flutter 1.5.0, React Native 1.6.0, setup command 1.1.0)
 
 - `/install` sends the four-purpose consent object only; an opted-out first install sends every purpose
   `denied` (no more `tracking_allowed`).
@@ -174,26 +167,20 @@ Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `
   `dev.ciz.to`. The setup command writes that, and `doctor` flags shared domains left in a project.
 - Leaderboard trophies, challenges and progress are server API and webhooks only: no SDK has them.
 
-Contract: [shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 09 additions"; behaviour:
-[shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md) "Change 09".
-
-## Deep links on every plan (change 10)
+## Deep links on every plan
 
 - Deep links into your app work on every plan, Free included: direct links without a limit, deferred deep
   links 1,000 a month on Free and 10,000 on Starter (no monthly cap on Growth and up).
 - On Free the app's link subdomain is `yourapp.ciz.ng` in release builds (`yourapp.ciz.to` on Starter and up);
   debug builds use `yourapp.dev.ciz.to` on every plan. The setup command and `doctor` handle both. An app
   subdomain under `ciz.ng` is not a shared domain.
-- Since change 20, basic install attribution and goals work on every plan, up to the plan's allowance. Only when
+- Basic install attribution and goals work on every plan, up to the plan's allowance. Only when
   attribution is switched off for the app (deep-link-only mode) does `goal()` log one warning and do nothing (no
   error); attribution reads `organic`.
 - At the monthly deferred deep link allowance the SDK gets the normal "no deferred link" result (the app opens
   its home screen), never an error.
 
-Contract: [shared/API_CONTRACT.md](shared/API_CONTRACT.md) "Change 10 additions"; behaviour:
-[shared/SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md) "Change 10".
-
-## Replacing Firebase Dynamic Links (change 21)
+## Replacing Firebase Dynamic Links
 
 Firebase Dynamic Links has shut down. Each guide shows the Firebase calls and the Clikgate calls side by side:
 [Android](docs/android.md#4a-replacing-firebase-dynamic-links), [iOS](docs/ios.md#3a-replacing-firebase-dynamic-links),
@@ -212,11 +199,6 @@ tracking), then mark the app as no longer tracked in the Clikgate dashboard.
 
 [`shared/`](shared) is the single source of truth every SDK and the backend implement:
 
-- [API_CONTRACT.md](shared/API_CONTRACT.md): every `/v1/sdk` endpoint, header, body, error code
-  and the retry policy.
-- [SDK_BEHAVIOUR.md](shared/SDK_BEHAVIOUR.md): lifecycle, storage, queueing, deep-link delivery,
-  pasteboard, push tokens, opt-out.
-- [PLATFORM_CHANNEL.md](shared/PLATFORM_CHANNEL.md): the bridge contract for Flutter and React Native.
 - `schemas/` (JSON Schema) and `fixtures/` (example payloads), generated by
   `python3 shared/generate.py`. SDK unit tests decode the fixtures; the backend tests validate
   its responses against the schemas.
@@ -228,11 +210,7 @@ Change a field in the contract, the schemas, the backend and every SDK together.
 - [engage.md](docs/engage.md): the core SDK, its Engage features, and the recommended backend path.
 - [PRIVACY.md](docs/PRIVACY.md): what is collected, why, retention, probabilistic matching policy.
 - [TESTING_DEEP_LINKS.md](docs/TESTING_DEEP_LINKS.md): the device test matrix, step by step.
-- [RELEASING.md](docs/RELEASING.md): tags, what each release job publishes, and the publish order
-  (native → Flutter / React Native → setup command).
 - [SETUP_COMMAND.md](docs/SETUP_COMMAND.md): `npx @clikgate/setup` and `doctor`.
-- `docs/spec/`: the build specification.
-- Each SDK (and `cli/`) keeps a `DECISIONS.md` with platform-doc findings and judgement calls.
 
 ## Building
 
@@ -249,19 +227,17 @@ Change a field in the contract, the schemas, the backend and every SDK together.
 CI workflows are in `.github/workflows/` (one per SDK, each with a release job on its own tag
 prefix: `android-v*`, `ios-v*`, `flutter-v*`, `react-native-v*`; plus `sdk-boundaries.yml` running `scripts/check_sdk_boundaries.sh`, and `cli.yml` /
 `cli-release.yml` for the setup command on `cli-v*`, npm trusted publishing). Releases need the publishing
-secrets described in each workflow and have not been run yet; the order is in
-[docs/RELEASING.md](docs/RELEASING.md).
+secrets described in each workflow and have not been run yet.
 
 ## Licence
 
 This repository has mixed licences:
 
 - **Apache License 2.0** for every mobile SDK (Android, iOS, Flutter and React Native, including
-  their Engage features; owner decision 2026-10-26): [LICENSE](LICENSE), with the same text in `ios/`,
+  their Engage features): [LICENSE](LICENSE), with the same text in `ios/`,
   `flutter/` and `react-native/` for their packages. The Android POM,
   the podspecs and the SDK `package.json` files declare `Apache-2.0`.
 - **MIT** for the setup command in `cli/`: [cli/LICENSE](cli/LICENSE), and `"license": "MIT"` in
-  `cli/package.json` (it kept its licence when it moved here from `clikgate_sdks`, owner decision
-  2026-10-26).
+  `cli/package.json` (it kept its licence when it moved here from `clikgate_sdks`).
 
 The server SDKs and AI guides in `clikgate_sdks` are MIT.

@@ -10,7 +10,7 @@ const BOARD = 'lb_01JAB3C4D5E6F7G8H9JKMNPQRS';
 const ok = (body: string) => ({ status: 200, body });
 const err = (status: number, body: string) => ({ status, body });
 
-describe('saved referral links (change 26, R.28)', () => {
+describe('saved referral links', () => {
   function store(initial: unknown = null) {
     const saved: Array<{ programId: string; link: unknown; token: string }> =
       [];

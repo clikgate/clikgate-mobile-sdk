@@ -1,9 +1,9 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 26 (existing users): what the first `/install` says about when the app arrived (EX.3, R.1, R.3, R.4),
-/// the hint (R.23), Apple's app record (KC.6, R.14), the existing-user error (RF.1), the server's wait with jitter
-/// (R.11) and the saved referral links the core keeps for Engage (R.28).
+/// Existing users: what the first `/install` says about when the app arrived,
+/// the hint, Apple's app record, the existing-user error, the server's wait with jitter
+/// and the saved referral links the core keeps for Engage.
 final class Change26Tests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared

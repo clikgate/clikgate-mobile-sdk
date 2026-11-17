@@ -3,7 +3,7 @@ import { setupCommand, setupSubcommand } from './command';
 export type Platform = 'flutter' | 'react-native' | 'expo' | 'android' | 'ios';
 export const PLATFORMS: Platform[] = ['flutter', 'react-native', 'expo', 'android', 'ios'];
 
-/** Website servers the `website` command recognises (change 16 S, R.2). */
+/** Website servers the `website` command recognises. */
 export type WebsiteServer = 'nextjs' | 'express' | 'laravel' | 'django' | 'spring-boot' | 'aspnet-core' | 'wordpress' | 'shopify';
 export const WEBSITE_SERVERS: WebsiteServer[] = ['nextjs', 'express', 'laravel', 'django', 'spring-boot', 'aspnet-core', 'wordpress', 'shopify'];
 

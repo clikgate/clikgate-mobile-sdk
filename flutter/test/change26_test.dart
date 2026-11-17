@@ -2,7 +2,7 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 26 (existing users): the configure options pass through, an
+/// Existing users: the configure options pass through, an
 /// existing user's attribution keeps `organic` with the flag, and the
 /// `existing_user` error is an [ExistingUserException].
 void main() {

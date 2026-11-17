@@ -6,7 +6,7 @@ Assembles what the Swift Package Manager mirror (clikgate/clikgate-ios-sdk) publ
 
 OUT_DIR gets `Package.swift` (ios/Package.swift without its test targets, so it doesn't point at folders the
 mirror leaves out), `Sources/` (every target's path and resources), `LICENSE` and `README.md`. Tests, the sample
-app, scripts, the API snapshot, DECISIONS.md and build output stay in this repository. ios.yml publishes OUT_DIR,
+app, scripts, the API snapshot and build output stay in this repository. ios.yml publishes OUT_DIR,
 and scripts/scan_release_packages.py --spm scans the same set.
 """
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Size budgets of the iOS SDK (spec 0.4): core < 410 KB, Engage < 95 KB (80 KB until Change 13 share.link; see DECISIONS.md).
+# Size budgets of the iOS SDK: core < 410 KB, Engage < 95 KB (80 KB before share.link was added).
 #
 #   ios/scripts/check_size.sh
 #

@@ -16,10 +16,10 @@ beforeEach(() => {
 });
 
 /**
- * Change 22: one method, `goal()` (R.9 `received` is a success), and `getInstallationId()` for
- * identity Path B (I.7, R.26). The bridge stays thin: the native SDKs decide the value.
+ * One method, `goal()` (`received` is a success), and `getInstallationId()` for
+ * identity Path B. The bridge stays thin: the native SDKs decide the value.
  */
-describe('Change 22', () => {
+describe('goal() and the installation ID', () => {
   it('received is a success status, with its reason', async () => {
     const results = fixture('goals_response_received').results as object[];
     mockModule.goal.mockResolvedValueOnce(toBridgeMap(results[0]) as never);

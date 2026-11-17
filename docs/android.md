@@ -143,13 +143,13 @@ Clikgate.onDeepLink { link ->
   with `isDeferred = true`.
 - **Direct** (App Link / scheme): resolved via the server, `isDeferred = false`.
 - Links that arrive before a listener is set are buffered (latest 10).
-- **Password and country-restricted links (Change 17).** An App Link opens your app without Clikgate's
+- **Password and country-restricted links.** An App Link opens your app without Clikgate's
   redirect, so the SDK asks the server first. A password link opens in the browser app (the password page;
   `onDeepLink` isn't called). A link blocked for the visitor's country (or by a block rule) arrives with
   `link.blockMessage` set and no `path`, `clickId` or `link`: show the text and don't route
   (`if (link.blockMessage != null) { showNotice(link.blockMessage); return@onDeepLink }`).
 
-**App link subdomain (change 09).** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
+**App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
 shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
@@ -167,7 +167,7 @@ switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal
 nothing (no error, nothing is sent), and attribution reads `organic`. `Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION)` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
-the click they came from, so one tap is one click (change 21).
+the click they came from, so one tap is one click.
 
 ### Shared-domain links of other organisations (1.4.0)
 
@@ -444,7 +444,7 @@ Rules:
   `share_unavailable` (nothing can show a share sheet). Constants: `EngageErrors`. Referral errors
   from `redeem` carry `offlineTouchId` (the touch was recorded).
 - `share.link(context, url, message?, app?, shareUrls?, chooserTitle?)` and
-  `share.referralLink(context, link, message?, app?, chooserTitle?)` (Change 13): each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). The
+  `share.referralLink(context, link, message?, app?, chooserTitle?)`: each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). The
   menu is `Intent.createChooser` with a per-app text for the apps Clikgate knows and an `IntentSender`
   callback (Engage's own receiver) that reports the app picked; "Copy" counts as another app. With `app`,
   the share goes straight into that app (its packages in turn, then the default SMS or email app) and
@@ -524,7 +524,7 @@ query parameters (no server call).
 on-device heuristics (Build properties; `test-keys`, `su` paths and, below Android 11, known root
 apps), plus the Play Install Referrer click and install-begin times. They need no permission and
 no `<queries>` entry, never block the install, and are hints for Clikgate's fraud scoring, not
-proof. Not sent when the user opted out. Details: [android/DECISIONS.md](../android/DECISIONS.md).
+proof. Not sent when the user opted out.
 
 **Backup.** The SDK's manifest excludes `clikgate.prefs.xml` and `clikgate_events.db` from
 Auto Backup and device transfer (a restored app is a new installation). If your app declares

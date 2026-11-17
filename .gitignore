@@ -23,3 +23,11 @@ node_modules/
 cli/dist/
 cli/*.tgz
 .clikgate-setup-backup/
+
+# Internal build material lives in the private clikgate-sdk-internal repository, never here
+# (scripts/check_public_repo.py fails the build if it comes back)
+docs/spec/
+DECISIONS.md
+PROGRESS.md
+__pycache__/
+*.pyc

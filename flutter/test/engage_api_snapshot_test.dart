@@ -20,7 +20,7 @@ void main() {
         reason: 'Public API changed. If intended: UPDATE_API_SNAPSHOT=1 flutter test test/engage_api_snapshot_test.dart');
   });
 
-  test('native code: the share bridge over the native SDK\'s Engage features (Change 13)', () {
+  test('native code: the share bridge over the native SDK\'s Engage features', () {
     expect(File('android/src/main/kotlin/com/clikgate/clikgate_flutter/EngageShareBridge.kt').readAsStringSync(),
         contains('com.clikgate.engage.ClikgateEngage'));
     expect(File('ios/clikgate_flutter/Sources/clikgate_flutter/EngageShareBridge.swift').readAsStringSync(),

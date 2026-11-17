@@ -5,7 +5,7 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 20 (S.1, R.40): the native SDKs send `deeplink_handled` (the handled
+/// The native SDKs send `deeplink_handled` (the handled
 /// path, IDs replaced with `:id`) in test mode or while the debug view is open.
 /// The Dart layer only passes the key and the links through: it never cleans
 /// the app's link, never adds a call of its own, and nothing is tracked as an

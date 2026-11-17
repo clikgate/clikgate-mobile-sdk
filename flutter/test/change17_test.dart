@@ -5,10 +5,10 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 17 (R.2): an app opened by a link skips the redirect, so `/resolve`
+/// An app opened by a link skips the redirect, so `/resolve`
 /// runs the link gates. The native SDKs open a password link's `web_url` in the
 /// system browser (nothing reaches Dart) and deliver a blocked link as a deep
-/// link with `blockMessage` and no route (shared/PLATFORM_CHANNEL.md "DeepLink").
+/// link with `blockMessage` and no route.
 Map<String, dynamic> fixture(String name) =>
     jsonDecode(File('../shared/fixtures/$name.json').readAsStringSync())
         as Map<String, dynamic>;

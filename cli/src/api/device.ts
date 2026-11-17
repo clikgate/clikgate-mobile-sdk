@@ -66,7 +66,7 @@ export async function signIn(api: ApiClient, projectType: string, deps: DeviceFl
   deps.print('To connect this project to Clikgate, open:');
   deps.print(`  ${url}`);
   deps.print(`and check that the code shown is ${code.user_code}.`);
-  // Change 09 (N.3): two-factor is asked for on the approval page; polling is unchanged.
+  // Two-factor is asked for on the approval page; polling is unchanged.
   deps.print('If your account uses two-factor sign-in, the page also asks for your authenticator code (or a recovery code).');
   deps.openBrowser?.(url);
 

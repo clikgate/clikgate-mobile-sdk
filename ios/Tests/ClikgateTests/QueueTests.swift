@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// The persisted queue and its flushing. Change 22: goals only (`track()` and app events were removed).
+/// The persisted queue and its flushing: goals only (`track()` and app events were removed).
 final class QueueTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
@@ -93,7 +93,7 @@ final class QueueTests: XCTestCase {
     }
 
     func testAppEventsLeftByAnEarlierBuildAreDroppedWithoutANetworkCall() async throws {
-        // Change 22 (S): an app event persisted by an earlier development build has no `goal`: it's dropped on the
+        // An app event persisted by an earlier development build has no `goal`: it's dropped on the
         // next flush and never sent; the goals around it are sent.
         stubHappyPath()
         let q = EventQueue(directory: h.dir)
@@ -112,7 +112,7 @@ final class QueueTests: XCTestCase {
     }
 
     func testNoTrackOrMoneyAPI() {
-        // Change 22 (D1): goal() is the only method. A compile-time check lives in the API dump
+        // goal() is the only method. A compile-time check lives in the API dump
         // (scripts/check_api.sh); here, the facade's selectors.
         XCTAssertFalse(Clikgate.shared.responds(to: NSSelectorFromString("track:")))
         XCTAssertNil(NSClassFromString("Clikgate.ClikgateMoney"))

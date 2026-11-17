@@ -57,7 +57,7 @@ jobs:
             const extra = files.filter(f => !allowed.includes(f));
             if (extra.length) { console.error('Unexpected files:', extra); process.exit(1); }
             console.log(files.join('\n'));"
-      # Change 12, S.4: nothing internal ships (bundled dependencies excluded by their esbuild module markers;
+      # Nothing internal ships (bundled dependencies excluded by their esbuild module markers;
       # see scripts/scan_release_packages.py).
       - name: Scan the package
         run: python3 ../scripts/scan_release_packages.py --cli .

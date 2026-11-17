@@ -10,7 +10,7 @@ features** (`ClikgateEngage`, section 7b), which ship in the same package. See [
 - iOS 13+ devices. Build with **Xcode 26 or newer** (Swift 6.2; clean under strict concurrency): App Store
   submissions need the iOS 26 SDK, and CI builds and tests only with Xcode 26.
 - No third-party dependencies. Size budgets (arm64, `-Osize`, every public API in use): core
-  < 410 KB (measured 385.4 KB in 2.1.0), Engage features < 95 KB (measured 92.4 KB), each measured on its own module; see `ios/DECISIONS.md`.
+  < 410 KB (measured 385.4 KB in 2.1.0), Engage features < 95 KB (measured 92.4 KB), each measured on its own module.
 - It never shows the ATT prompt or the notification-permission prompt.
 
 ## 1. Install
@@ -131,9 +131,9 @@ switched off for the app does the SDK run in deep-link-only mode: `Clikgate.shar
 nothing (no error, nothing is sent), and attribution reads `organic`. `Clikgate.shared.isFeatureEnabled(ClikgateFeatures.appAttribution)` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
-the click they came from, so one tap is one click (change 21).
+the click they came from, so one tap is one click.
 
-**Password and country-restricted links (Change 17).** A Universal Link opens your app without Clikgate's
+**Password and country-restricted links.** A Universal Link opens your app without Clikgate's
 redirect, so the SDK asks the server first. A **password link** opens in Safari (the password page; your app gets
 nothing). A link **blocked for the visitor's country** (or by a block rule) arrives on `onDeepLink` with
 `result.blockMessage` set and no `path`, `clickId` or `link`: show the text and don't route.
@@ -530,8 +530,8 @@ Details:
   `code_not_found`, `code_expired`, `code_disabled`, `redemption_limit_reached`, `rate_limited`
   (5/hour), or a referral error (`already_referred`, `self_referral`, …) with `error.offlineTouchId` set,
   because the touch was still recorded.
-- `share.link(_:message:app:shareUrls:from:)` and `share.referralLink(_:message:app:from:)` (Change 13,
-  `async`): each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). The share sheet asks for the item per app (`UIActivityItemSource`), and its
+- `share.link(_:message:app:shareUrls:from:)` and `share.referralLink(_:message:app:from:)`
+  (`async`): each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). The share sheet asks for the item per app (`UIActivityItemSource`), and its
   completion handler reports the app; Messages and Mail are named by iOS, other apps by their share
   extension. iOS reports "completed" for some apps even after a cancel inside them, so a recorded share
   means "share started". With `app`, WhatsApp (needs `whatsapp` in `LSApplicationQueriesSchemes`),
@@ -600,7 +600,7 @@ choose, and keep forwarding the token with `setPushToken`.
 - Mention the pasteboard read in your privacy policy if you opt in to `.automatic`.
 - 1.2.0 removed every signal used only for probabilistic matching or fingerprinting: screen size / scale and
   the 1.1.0 jailbreak heuristics (`is_rooted`). `/install` still carries `is_emulator` (a compile-time
-  Simulator flag). Details: [ios/CHANGELOG.md](../ios/CHANGELOG.md), [ios/DECISIONS.md](../ios/DECISIONS.md).
+  Simulator flag). Details: [ios/CHANGELOG.md](../ios/CHANGELOG.md).
 
 See [PRIVACY.md](PRIVACY.md).
 

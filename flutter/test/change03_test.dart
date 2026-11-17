@@ -2,7 +2,7 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 03 bridge methods (shared/PLATFORM_CHANNEL.md "Change 03 methods").
+/// Consent, click id and Firebase bridge methods (SDK 1.2.0).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =

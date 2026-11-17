@@ -134,7 +134,7 @@ describe('signed-in setup (Flutter fixture)', () => {
     // Play App Signing fingerprint added (add-only).
     const patch = server.requests.find((r) => r.method === 'PATCH' && r.path === '/v1/apps/app_1');
     expect(patch?.body).toEqual({ sha256_cert_fingerprints: [FP, PLAY] });
-    // Change 09 (N.1): no shared-domain opt-in any more.
+    // No shared-domain opt-in any more.
     expect(server.requests.some((r) => r.path.endsWith('/sdk-settings'))).toBe(false);
     // Only allow-listed endpoints, always with the token.
     for (const r of server.requests) {
@@ -161,7 +161,7 @@ describe('signed-in setup (Flutter fixture)', () => {
     // Next steps: one goal() method with the Provider enum (never payment()).
     expect(ui.text).toContain("3. Send goals with one call: Clikgate.goal('purchase', reference: 'T123456', provider: ClikgateProvider.paystack)");
     expect(ui.text).not.toContain('payment(');
-    // Change 22 (I.2): identity Path A by default, Path B mentioned, the guide linked; never track().
+    // Identity Path A by default, Path B mentioned, the guide linked; never track().
     expect(ui.text).toContain("4. Identify signed-in users (optional): return a token from your server's createIdentityToken(user.id)");
     expect(ui.text).toContain('Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateToken)');
     expect(ui.text).toContain('await Clikgate.getInstallationId()');
@@ -175,7 +175,7 @@ describe('signed-in setup (Flutter fixture)', () => {
     expect(JSON.stringify([...fs.readdirSync(dir)])).not.toContain(MOCK_TOKEN);
   });
 
-  it('Free plan (change 10): release builds get <sub>.ciz.ng from app_link_domains, debug builds <sub>.dev.ciz.to; doctor passes', async () => {
+  it('Free plan: release builds get <sub>.ciz.ng from app_link_domains, debug builds <sub>.dev.ciz.to; doctor passes', async () => {
     server = await startMockServer({ liveParent: 'ciz.ng' });
     const dir = copyFixture('flutter');
     const clock = fakeClock();

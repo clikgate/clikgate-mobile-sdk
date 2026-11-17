@@ -25,7 +25,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.CopyOnWriteArrayList
 
-/** Unmatched links on shared platform domains open in an in-app browser (change 06, SDK 1.4.0). */
+/** Unmatched links on shared platform domains open in an in-app browser (SDK 1.4.0). */
 @RunWith(RobolectricTestRunner::class)
 class SharedDomainFallbackTest {
     private lateinit var env: TestEnv

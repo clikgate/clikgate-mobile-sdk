@@ -1,14 +1,14 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 21 (S.1, S.2, R.2, R.4, R.25): the open payloads the server counts existing-user opens from.
+/// The open payloads the server counts existing-user opens from.
 ///
 /// - A direct Universal Link open (no redirect) goes to `/resolve` with the URL as opened and the installation in
 ///   `Clikgate-Installation-Id` (the server finds the `ins_` row from it): the server records the click.
 /// - A redirect open carries the redirect's `cg_click_id` inside that URL: the server attaches to that click.
 /// - One tap is one click: after `/install` matched the launch URL (`status: matched`), the SDK never `/resolve`s the
 ///   same URL again (that would record a second click); it attaches by `click_id` or delivers the link locally.
-/// - X's `twclid` travels unchanged in the launch and resolved URLs, like `li_fat_id` (change 19 S.2).
+/// - X's `twclid` travels unchanged in the launch and resolved URLs, like `li_fat_id`.
 final class Change21Tests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared

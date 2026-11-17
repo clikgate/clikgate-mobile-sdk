@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 22 (R.22): `/v1/sdk/identify` answers 200 with `verified: false` and a `reason` for a bad identity token;
+/// `/v1/sdk/identify` answers 200 with `verified: false` and a `reason` for a bad identity token;
 /// the SDK keeps the customer ID and warns with the reason (never the token or the customer ID). Referral calls
 /// refused with `403 identity_expired` are logged the same way.
 final class IdentityVerifyTests: XCTestCase {

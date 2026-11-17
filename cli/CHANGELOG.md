@@ -28,7 +28,7 @@
   (the plugin forwards the token). SwiftUI apps without an AppDelegate get a manual step. Running setup again changes
   nothing. New doctor warnings `ios.push.aps_environment` and `ios.push.token_forward` (the latter not for Flutter).
 
-## 2.0.0 (unreleased) (Change 22)
+## 2.0.0 (unreleased)
 
 - **Breaking: installs the 2.0.0 SDKs, where `track()` was removed in favour of `goal()`.** Android, iOS, Flutter and React Native 2.0.0 (`~> 2.0` for the pod); doctor's minimum versions follow, so projects on 1.x get a warning to upgrade. The setup command never wrote `track()` calls, so no generated code changes. This is the first public release.
 - **Android backup rules are merged.** An app that declares its own `android:fullBackupContent` / `android:dataExtractionRules` (every Android Studio template) no longer fails the manifest merge after setup: Clikgate's excludes go into the app's backup rules files (a missing file or `<cloud-backup>` / `<device-transfer>` section is created) and the attributes are listed in `tools:replace`. Running setup again changes nothing. New doctor check `android.backup_rules`.
@@ -36,12 +36,12 @@
 
 ## 1.1.1 (unreleased)
 
-- Installs the SDK patch releases: Android, iOS and Flutter 1.5.1, React Native 1.6.1 (Change 21: one tap is one
+- Installs the SDK patch releases: Android, iOS and Flutter 1.5.1, React Native 1.6.1 (one tap is one
   click, X `twclid`). Doctor's minimum versions follow. Nothing else changes.
 
 ## Unreleased
 
-- **Websites (change 16 S, R.2): `npx @clikgate/setup website`.** Detects Next.js, Express, Laravel, Django,
+- **Websites: `npx @clikgate/setup website`.** Detects Next.js, Express, Laravel, Django,
   Spring Boot, ASP.NET Core, WordPress and Shopify themes by their package files (also a few folders down in a
   monorepo); when nothing is recognised it asks "Does your website have its own server?". With a server it adds the
   `/cg/keep` route with the framework's Clikgate server SDK and `data-server-endpoint="/cg/keep"` on the web script
@@ -54,9 +54,9 @@
   (`Clikgate.goal("purchase", reference = "T123456", provider = Provider.PAYSTACK)` on Android). The SDKs'
   `payment()` method is gone; a Payment goal is reported with `goal()`.
 
-## 1.1.0 (unreleased): app link subdomains (change 09)
+## 1.1.0 (unreleased): app link subdomains
 
-- **Free plan app subdomains (change 10, folded into this unreleased version).** On the Free plan the app's live
+- **Free plan app subdomains (folded into this unreleased version).** On the Free plan the app's live
   hostname is `yourapp.ciz.ng`: release builds get it from `app_link_domains.release`, debug builds still get
   `yourapp.dev.ciz.to` from `app_link_domains.debug`. `yourapp.ciz.ng` is an app subdomain, not a shared domain
   (the shared-domain check stays an exact match on `ciz.to`, `ciz.ng`, `dev.ciz.to`), so setup writes it
@@ -68,7 +68,7 @@
   also `app_link_domains.debug` (`yourapp.dev.ciz.to`). Never a shared domain (`ciz.to`, `ciz.ng`,
   `dev.ciz.to`), on iOS entitlements and Android intent filters alike. Each platform's files get only its own
   app's hosts.
-- An unconfirmed link subdomain (apps from before change 09) is confirmed after asking, with
+- An unconfirmed link subdomain (apps from before 1.1.0) is confirmed after asking, with
   `PATCH /v1/apps/{id} {"link_subdomain"}`; another name is checked with `GET /v1/link-subdomains/availability`.
   `--yes` confirms the suggestion.
 - The shared-domain opt-in (`sdk-settings`) is gone.
@@ -82,12 +82,12 @@
   The `not_listed_on_shared_domain` and `shared_domain_file_full` fixes are removed.
 - **Device sign-in (N.3):** prints that the approval page asks for the authenticator code when the account uses
   two-factor; after a minute of waiting, reminds the person to approve in the browser. Polling is unchanged.
-- Writes the SDKs of change 09: `clikgate_flutter ^1.5.0`, `@clikgate/react-native ^1.6.0`,
+- Writes the 1.5.0 SDKs: `clikgate_flutter ^1.5.0`, `@clikgate/react-native ^1.6.0`,
   `com.clikgate:clikgate-android:1.5.0`, `pod 'Clikgate', '~> 1.5'`.
 
 ## 1.0.0 (unreleased)
 
-First release of `npx @clikgate/setup` (Change 06 S.1–S.6, S.8).
+First release of `npx @clikgate/setup`.
 
 - Sets up Flutter, React Native, Expo, native Android and native iOS projects:
   - browser sign-in (RFC 8628 device flow; the token is kept in memory only);

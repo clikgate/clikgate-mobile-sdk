@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * The persisted queue and its flushing (Change 22: goals only; `track()` and app events were removed), and
+ * The persisted queue and its flushing (goals only; `track()` and app events were removed), and
  * identifyUser().
  */
 @RunWith(RobolectricTestRunner::class)
@@ -43,7 +43,7 @@ class QueueTest {
 
     @Test
     fun noTrackOrMoneyApi() {
-        // Change 22 (D1): goal() is the only method; there is no track(), trackValidated() or ClikgateMoney.
+        // goal() is the only method; there is no track(), trackValidated() or ClikgateMoney.
         val names = Clikgate::class.java.methods.map { it.name }.toSet()
         assertFalse(names.any { it.startsWith("track") })
         assertTrue("goal" in names)
@@ -158,7 +158,7 @@ class QueueTest {
 
     @Test
     fun appEventsQueuedByAnEarlierBuildAreDroppedWithoutANetworkCall() {
-        // Change 22 (S): the queue is persisted. App events left by an earlier development build are dropped on the
+        // The queue is persisted. App events left by an earlier development build are dropped on the
         // next flush, never sent; the goals around them are sent.
         installed()
         val q = env.queue
@@ -217,7 +217,7 @@ class QueueTest {
         assertTrue(identifyAt > installAt)
     }
 
-    // ------------------------------------------------------------ Change 14: identifyUser
+    // ------------------------------------------------------------ identifyUser
 
     @Test
     fun identifyUserWithOnlyALabelKeepsTheCustomerId() {

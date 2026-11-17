@@ -4,7 +4,7 @@ import XCTest
 @_spi(ClikgateEngage) import Clikgate
 @testable import ClikgateEngage
 
-/// Change 13 S.1: share.link / share.referralLink, the per-activity item and share events.
+/// share.link / share.referralLink, the per-activity item and share events.
 @MainActor
 final class EngageShareLinkTests: XCTestCase {
     private func app(_ v: String) -> ClikgateShareApp { ClikgateShareApp(rawValue: v)! }

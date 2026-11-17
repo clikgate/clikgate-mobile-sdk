@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// Unmatched links on shared platform domains open in an in-app browser (change 06, SDK 1.4.0).
+/// Unmatched links on shared platform domains open in an in-app browser (SDK 1.4.0).
 final class SharedDomainFallbackTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared

@@ -158,7 +158,7 @@ final class OptOutTests: XCTestCase {
         await core.start(startTimers: false)
         XCTAssertEqual(server.requests.map { $0.key }, ["POST /v1/sdk/install"])
         let body = try XCTUnwrap(server.requests.first?.json)
-        // Change 09 (X.E23): every purpose denied replaces tracking_allowed = false.
+        // Every purpose denied replaces tracking_allowed = false.
         let consent = try XCTUnwrap(body["consent"] as? [String: Any])
         for p in ["analytics", "attribution", "ad_user_data", "ad_personalization"] {
             XCTAssertEqual(consent[p] as? String, "denied", p)

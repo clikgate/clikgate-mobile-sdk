@@ -1,8 +1,8 @@
 # Setup command (`npx @clikgate/setup`)
 
-Source: `cli/` in this repository (`clikgate_mobile_sdk`; it moved here from `clikgate_sdks` on 2026-10-26, see [`cli/DECISIONS.md`](../cli/DECISIONS.md)). Change 06 S.1–S.6 and S.8 (milestones C6-S1 and C6-S2). Licence: **MIT** (`cli/LICENSE`), unlike the mobile SDKs in this repository, which are Apache 2.0.
+Source: `cli/` in this repository (`clikgate_mobile_sdk`; it moved here from `clikgate_sdks` on 2026-10-26). Licence: **MIT** (`cli/LICENSE`), unlike the mobile SDKs in this repository, which are Apache 2.0.
 
-The command sets up Clikgate in a Flutter, React Native, Expo, native Android or native iOS app project. It shows every change as a diff and asks once before writing anything. It only ever uses the **test** SDK key. App links use the app's own **link subdomain** (`yourapp.ciz.to`, or `yourapp.ciz.ng` on the Free plan, and `yourapp.dev.ciz.to` in **debug builds only**) plus the organisation's verified custom domains, never a shared domain (change 09 N.1).
+The command sets up Clikgate in a Flutter, React Native, Expo, native Android or native iOS app project. It shows every change as a diff and asks once before writing anything. It only ever uses the **test** SDK key. App links use the app's own **link subdomain** (`yourapp.ciz.to`, or `yourapp.ciz.ng` on the Free plan, and `yourapp.dev.ciz.to` in **debug builds only**) plus the organisation's verified custom domains, never a shared domain.
 
 - npm package: **`@clikgate/setup`**, bin **`clikgate-setup`**. The documented command is `npx @clikgate/setup`; Flutter projects can use `dart run clikgate_flutter` instead (no Node.js, [below](#flutter-projects-dart-run-clikgate_flutter)).
 - Node 18 or newer. One bundled file (`dist/cli.cjs`, built with tsup) with no runtime dependencies to install.
@@ -41,7 +41,7 @@ The device sign-in prints "If your account uses two-factor sign-in, the page als
 
 ## Flutter projects: `dart run clikgate_flutter`
 
-Owner decision 2026-11-13 (option A): Flutter developers run the same command without Node.js.
+Flutter developers run the same command without Node.js.
 
 ```
 flutter pub add clikgate_flutter     # dart run only finds packages that are in pubspec.yaml
@@ -83,7 +83,6 @@ wrote and reports it as already set up (an older constraint than `SDK.flutter.mi
   steps. A checksum mismatch is never run, and there is no fallback for it.
 - **Overrides** (testing, offline): `CLIKGATE_SETUP_BINARY=<path>` runs that binary (no download, no hash
   check); `CLIKGATE_SETUP_BASE_URL=<url>` downloads `<url>/<asset>.gz` instead (still verified).
-- Release: [RELEASING.md](RELEASING.md) "Setup command binaries".
 
 ## What it does (S.3)
 
@@ -99,8 +98,8 @@ wrote and reports it as already set up (an older constraint than `SDK.flutter.mi
 5. **Signing details.** It reads the debug keystore SHA-256 with `keytool`: the module's own keystore (React Native templates ship one), else `~/.android/debug.keystore`.
    - It asks for the Play App Signing SHA-256 (Play Console › Release › Setup › App signing), or adds a reminder.
    - Fingerprints are sent with `PATCH /v1/apps/{id}`, add-only (existing + new). The Team ID is sent when Clikgate doesn't have it.
-6. **Link domains** (change 09 N.1). Each app's hosts come from `GET /v1/apps/{id}` `app_link_domains`: `release` is the app's live subdomain (`yourapp.ciz.to`; on the Free plan `yourapp.ciz.ng`, change 10) plus the organisation's active custom domains, `debug` the test subdomain (`yourapp.dev.ciz.to`, every plan). An app subdomain under `ciz.ng` is not a shared domain: the shared-domain check is an exact match on the four hosts. They never contain a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`), and the command filters them out anyway.
-   - **Unconfirmed subdomain** (apps created before change 09 carry a suggestion, `link_subdomain_confirmed: false`): it asks `Use "<name>"?`. No → it asks for another name, checks it with `GET /v1/link-subdomains/availability` (showing the reason and a suggestion), and confirms with `PATCH /v1/apps/{id} {"link_subdomain": "<name>"}`. `--yes` confirms the suggestion. Skipping it leaves a manual step and no app links for that app. `--dry-run` uses the suggestion without confirming.
+6. **Link domains**. Each app's hosts come from `GET /v1/apps/{id}` `app_link_domains`: `release` is the app's live subdomain (`yourapp.ciz.to`; on the Free plan `yourapp.ciz.ng`) plus the organisation's active custom domains, `debug` the test subdomain (`yourapp.dev.ciz.to`, every plan). An app subdomain under `ciz.ng` is not a shared domain: the shared-domain check is an exact match on the four hosts. They never contain a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`), and the command filters them out anyway.
+   - **Unconfirmed subdomain** (older apps carry a suggestion, `link_subdomain_confirmed: false`): it asks `Use "<name>"?`. No → it asks for another name, checks it with `GET /v1/link-subdomains/availability` (showing the reason and a suggestion), and confirms with `PATCH /v1/apps/{id} {"link_subdomain": "<name>"}`. `--yes` confirms the suggestion. Skipping it leaves a manual step and no app links for that app. `--dry-run` uses the suggestion without confirming.
    - Each platform's files get only its own app's hosts (the Android and iOS apps may have different subdomains; one app's subdomain files don't list the other). The start-up code's `linkDomains` lists every platform's release hosts and the first test subdomain; the SDKs add the rest from `/v1/sdk/config`.
    - With two or more custom domains it lets the person deselect some (release builds). The app subdomain always stays.
    - The old shared-domain opt-in (`sdk-settings` `shared_domain_app_links` / `test_domain_app_links`) is gone: the backend ignores those settings.
@@ -112,7 +111,7 @@ wrote and reports it as already set up (an older constraint than `SDK.flutter.mi
    - On failure it stops, lists the changed and new files, and prints how to undo: `git checkout -- …` or the backup folder, plus the new files to delete. Exit 1.
 9. **Verify** with `doctor` (and Clikgate's setup check when signed in). Then it waits for the first test event ("Waiting for the first event from your app… (up to 5 minutes, press Enter to skip)").
 10. **Summary:** what changed, what was already set up, the manual steps with snippets, reminders, and next steps.
-    - Next steps: create a link; go live by replacing the test key at `<file>:<line>` with the live key for release builds (the command never handles the live key); send goals with the one `goal()` method, for example `Clikgate.goal("purchase", reference = "T123456", provider = Provider.PAYSTACK)` on Android (a Payment goal waits until the payment provider or the business's server confirms it); identify signed-in users (optional, Change 22): Path A by default (a token from the server's `createIdentityToken(user.id)` passed to `identifyUser(...)`), Path B mentioned (send the installation ID from `getInstallationId()` to the server), with the link https://clikgate.com/docs/identify-users. Step 4 of the summary prints it.
+    - Next steps: create a link; go live by replacing the test key at `<file>:<line>` with the live key for release builds (the command never handles the live key); send goals with the one `goal()` method, for example `Clikgate.goal("purchase", reference = "T123456", provider = Provider.PAYSTACK)` on Android (a Payment goal waits until the payment provider or the business's server confirms it); identify signed-in users (optional): Path A by default (a token from the server's `createIdentityToken(user.id)` passed to `identifyUser(...)`), Path B mentioned (send the installation ID from `getInstallationId()` to the server), with the link https://clikgate.com/docs/identify-users. Step 4 of the summary prints it.
     - The last line is **"Clikgate sees every click. Setup complete."**
 
 ### Dependencies
@@ -120,14 +119,14 @@ wrote and reports it as already set up (an older constraint than `SDK.flutter.mi
 The command writes the dependency into the manifest itself, so the diff shows it and a re-run sees it. Then it runs the package manager to resolve it:
 
 - `pubspec.yaml`: `clikgate_flutter: ^2.1.0`, then `flutter pub get`;
-- `package.json`: `@clikgate/react-native: ^2.1.0`, in alphabetical position, then `<pm> install`. Expo uses the same path (see [cli/DECISIONS.md](../cli/DECISIONS.md): `npx expo install` adds nothing for packages outside Expo's bundled list);
+- `package.json`: `@clikgate/react-native: ^2.1.0`, in alphabetical position, then `<pm> install`. Expo uses the same path (`npx expo install` adds nothing for packages outside Expo's bundled list);
 - Gradle: `implementation("com.clikgate:clikgate-android:2.1.0")` (Kotlin DSL), `implementation 'com.clikgate:clikgate-android:2.1.0'` (Groovy), or a version-catalog entry `clikgate-android` plus `implementation(libs.clikgate.android)`;
 - Podfile: `pod 'Clikgate', '~> 2.0'` in the app target.
 - An existing, older constraint is never rewritten: setup lists it as a manual step ("Update clikgate_flutter … to ^2.1.0") and doctor warns (`sdk.version`, minimum 2.1.0 for Flutter, React Native, Android and iOS).
 - The SDKs' `platformDomainBrowserFallback` option (default on) is never written.
   - Without a Podfile it prints the Xcode "Add Package Dependencies" steps for `https://github.com/clikgate/clikgate-ios-sdk` as a manual step. It doesn't edit Swift package references in `project.pbxproj`: they are several linked objects, and a partial edit breaks the project.
 
-## Websites: `npx @clikgate/setup website` (Change 16)
+## Websites: `npx @clikgate/setup website`
 
 Adds the Clikgate web script to a website and, when the site has its own server, the `/cg/keep` route that saves
 the click ID from that server. Safari, and every browser on iPhone, keeps a click ID saved by a script for up to
@@ -150,7 +149,7 @@ browser's limit.
 
 ## What gets changed (S.4)
 
-All edits use real parsers (see [cli/DECISIONS.md](../cli/DECISIONS.md)). Inserted code sits between `// clikgate-setup:start` and `// clikgate-setup:end`; manifests use `<!-- … -->` and Podfile/Gradle use their own comment syntax. Existing code, intent filters and entitlements are never removed or reordered. Source files are edited only in recognised template shapes; anything else becomes a manual step with the exact snippet.
+All edits use real parsers. Inserted code sits between `// clikgate-setup:start` and `// clikgate-setup:end`; manifests use `<!-- … -->` and Podfile/Gradle use their own comment syntax. Existing code, intent filters and entitlements are never removed or reordered. Source files are edited only in recognised template shapes; anything else becomes a manual step with the exact snippet.
 
 | Platform | App links | Start-up code |
 |---|---|---|
@@ -182,7 +181,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
   - every release manifest and release entitlements file covers every live domain;
   - the app's test subdomain (`*.dev.ciz.to`) is in debug builds and never in release builds (it fails if it is);
   - no shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) in any manifest, entitlements file or Expo plugin entry: `android.shared_domains`, `ios.shared_domains`, `expo.shared_domains` warn "remove this: shared domains can't open your app";
-  - a Free plan app subdomain (`yourapp.ciz.ng`, change 10) passes like `yourapp.ciz.to`: only the bare shared hosts warn;
+  - a Free plan app subdomain (`yourapp.ciz.ng`) passes like `yourapp.ciz.to`: only the bare shared hosts warn;
   - every configuration's `CODE_SIGN_ENTITLEMENTS` file exists and parses;
   - the Expo plugin entry;
   - uninstall tracking on iOS (warnings): `ios.push.aps_environment` (every configuration's entitlements have `aps-environment`) and `ios.push.token_forward` (an AppDelegate passes the APNs token to Clikgate; not checked for Flutter, whose plugin does it);
@@ -268,7 +267,7 @@ Fixtures are trimmed to the files the command reads or edits: no build outputs, 
 2. From a clean checkout of this repository, with an owner account: `node scripts/check_cli_sdk_versions.mjs && cd cli && npm ci && npm test && npm run build && npm publish --access public` (version `1.0.0`). This first publish has no provenance; every later one does.
 3. On npmjs.com › `@clikgate/setup` › Settings › Trusted publishing, add GitHub Actions with organisation `clikgate`, repository **`clikgate-mobile-sdk`**, workflow `cli-release.yml` and environment `npm`. The `npm` environment already exists in this repository for the React Native releases; add required reviewers if wanted.
 4. Then set "Publishing access" to "Require two-factor authentication and disallow tokens", so only the workflow can publish.
-5. Later releases: bump `cli/package.json` `version` and `CLI_VERSION` in `cli/src/constants.ts`, update the changelog, run `node scripts/check_cli_sdk_versions.mjs`, then tag `cli-v<version>` and push it. Release the SDK versions the command writes first (see [RELEASING.md](RELEASING.md)), so `npx @clikgate/setup` never installs an unpublished version.
+5. Later releases: bump `cli/package.json` `version` and `CLI_VERSION` in `cli/src/constants.ts`, update the changelog, run `node scripts/check_cli_sdk_versions.mjs`, then tag `cli-v<version>` and push it. Release the SDK versions the command writes first, so `npx @clikgate/setup` never installs an unpublished version.
 
 **Look-alike names to reserve** (S.1). Publish a placeholder `0.0.1` under each, with a README that says "Use `npx @clikgate/setup`" and points to the docs, then deprecate it with `npm deprecate <name> "Use npx @clikgate/setup"`:
 

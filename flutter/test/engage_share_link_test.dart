@@ -6,7 +6,7 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 13 S.1: share.link / share.referralLink go to the native Engage features.
+/// share.link / share.referralLink go to the native Engage features.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('com.clikgate/engage');

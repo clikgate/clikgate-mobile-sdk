@@ -1,8 +1,8 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 22: one method, `goal()` (R.9 `received`; R.5 no conversion values from goals), and
-/// `installationId()` for identity Path B (I.7, R.26).
+/// One method, `goal()` (`received`; no conversion values from goals), and
+/// `installationId()` for identity Path B.
 final class Change22Tests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared

@@ -304,7 +304,7 @@ final class GoalsTests: XCTestCase {
         }
         XCTAssertEqual(Set(attempts).count, 1, "the same items on every retry")
         XCTAssertFalse(attempts.contains("[]"), "every retry carried the goals")
-        // Change 09 (X.E15): one random Idempotency-Key per call, reused by that call's retries.
+        // One random Idempotency-Key per call, reused by that call's retries.
         let firstKeys = Set(server.requests("POST /v1/sdk/goals").map { $0.headers["Idempotency-Key"] ?? "" })
         XCTAssertEqual(firstKeys.count, 1)
         XCTAssertGreaterThan(server.requests("POST /v1/sdk/goals").count, 1, "retried")
@@ -393,7 +393,7 @@ final class GoalsTests: XCTestCase {
         XCTAssertEqual(sentGoals().first?["reference"] as? String, "ORD-1")
     }
 
-    // MARK: - Change 14: identifyUser and labels
+    // MARK: - identifyUser and labels
 
     func testIdentifyUserWithOnlyALabelKeepsTheCustomerId() async throws {
         let core = h.makeCore()

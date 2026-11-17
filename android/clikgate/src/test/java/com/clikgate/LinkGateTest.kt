@@ -26,7 +26,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.CopyOnWriteArrayList
 
-/** Change 17 R.2: App Links skip the redirect, so `/resolve` runs the link gates and the SDK honours them. */
+/** App Links skip the redirect, so `/resolve` runs the link gates and the SDK honours them. */
 @RunWith(RobolectricTestRunner::class)
 class LinkGateTest {
     private lateinit var env: TestEnv

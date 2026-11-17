@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Change 22: one method, `goal()` (R.9 `received`), and `getInstallationId()` for identity Path B (I.7, R.26).
+ * One method, `goal()` (`received`), and `getInstallationId()` for identity Path B.
  */
 @RunWith(RobolectricTestRunner::class)
 class Change22Test {

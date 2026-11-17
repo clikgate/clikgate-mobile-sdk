@@ -1,7 +1,7 @@
 import XCTest
 @_spi(ClikgateWrapper) @testable import Clikgate
 
-/// Change 10 (D.5, contract B3a.2): deep links on, attribution off (Free, Starter, or an app with
+/// Deep links on, attribution off (Free, Starter, or an app with
 /// attribution switched off). goal() warns once ("switched off") and does nothing; the
 /// server's `feature_disabled` answer on /goals is never retried; the "no deferred link"
 /// install result at the monthly cap is a normal empty result.

@@ -20,7 +20,7 @@ function emit(payload: Record<string, unknown>) {
   DeviceEventEmitter.emit('ClikgateDeepLink', payload);
 }
 
-/** The map the native modules send for a blocked `/resolve` answer (shared/PLATFORM_CHANNEL.md). */
+/** The map the native modules send for a blocked `/resolve` answer. */
 const blockedEvent = () => ({
   url: 'https://inv.myapp.com/offer',
   path: null,
@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 /**
- * Change 17 (R.2): an app opened by a link skips the redirect, so `/resolve` runs the link gates.
+ * An app opened by a link skips the redirect, so `/resolve` runs the link gates.
  * The native SDKs open a password link's `web_url` in the system browser (nothing reaches JS) and
  * deliver a blocked link with `blockMessage` and no route.
  */

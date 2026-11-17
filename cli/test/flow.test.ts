@@ -70,7 +70,7 @@ describe('offline mode', () => {
     expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a'], { ui })).toBe(1);
     expect(ui.text).toContain('Offline mode needs --domain');
   });
-  it('refuses a shared domain in --domain: shared domains can\'t open the app (change 09)', async () => {
+  it('refuses a shared domain in --domain: shared domains can\'t open the app', async () => {
     const dir = copyFixture('android-views');
     const ui = new ScriptedUI();
     expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'ciz.to,go.acme.com', '--yes'], { ui })).toBe(1);
@@ -82,7 +82,7 @@ describe('offline mode', () => {
     expect(fs.readFileSync(path.join(dir, 'app/src/main/AndroidManifest.xml'), 'utf8')).not.toContain('dev.ciz.to');
     expect(fs.readFileSync(path.join(dir, 'app/src/debug/AndroidManifest.xml'), 'utf8')).toContain('acme.dev.ciz.to');
   });
-  it('Free plan (change 10): an app subdomain under ciz.ng is not a shared domain; debug builds get <sub>.dev.ciz.to', async () => {
+  it('Free plan: an app subdomain under ciz.ng is not a shared domain; debug builds get <sub>.dev.ciz.to', async () => {
     const dir = copyFixture('android-views');
     expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'acme.ciz.ng', '--yes'], { ui: new ScriptedUI() })).toBe(0);
     const release = fs.readFileSync(path.join(dir, 'app/src/main/AndroidManifest.xml'), 'utf8');

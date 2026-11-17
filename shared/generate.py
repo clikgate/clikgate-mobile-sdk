@@ -29,7 +29,7 @@ MATCH_TYPE = {
         None,
     ]
 }
-# Platform short domains shared by many organisations (change 06 A.4): paid, free, test, spare.
+# Platform short domains shared by many organisations: paid, free, test, spare.
 SHARED_LINK_DOMAINS = ["ciz.to", "ciz.ng", "dev.ciz.to"]
 REFERRAL_STATUS = {
     "enum": ["installed", "signed_up", "in_progress", "holding", "qualified", "disqualified", "rejected"]
@@ -108,7 +108,7 @@ PUSH = obj(
     additional=False,
 )
 
-# Change 03 (B.3): consent purposes and the request-side consent object. Sent on every SDK request
+# Consent purposes and the request-side consent object. Sent on every SDK request
 # body from SDK 1.2.0 (install, open, resolve, goals, identify, push-token, attest, consent).
 CONSENT_STATE = {"enum": ["granted", "denied", "unknown"]}
 # Region hint (`setConsentRegion`): an ISO 3166-1 alpha-2 country code or one of the region codes
@@ -116,7 +116,7 @@ CONSENT_STATE = {"enum": ["granted", "denied", "unknown"]}
 REGION = {"type": "string", "pattern": "^(EEA|UK|[A-Z]{2})$"}
 CONSENT = obj(
     {
-        # Deprecated (change 09, X.E23): SDKs before 1.5.0 (React Native 1.6.0) sent it on /install,
+        # Deprecated: SDKs before 1.5.0 (React Native 1.6.0) sent it on /install,
         # false = the user opted out (`setTrackingEnabled(false)`) before the first install. Newer SDKs
         # never send it: the opted-out install says so with every purpose `denied` (the backend reads
         # `attribution: denied` as "no attribution"). Kept so old SDKs' bodies still validate.
@@ -130,7 +130,7 @@ CONSENT = obj(
         "updated_at": nullable(TIMESTAMP),
     }
 )
-# Change 03 (B.4): Google click ids read from the app link / universal link that opened the app or
+# Google click ids read from the app link / universal link that opened the app or
 # from the Android install referrer. Each optional; the backend applies the precedence
 # gclid > gbraid > wbraid.
 CLICK_ID = {"type": "string", "minLength": 1, "maxLength": 512}
@@ -155,7 +155,7 @@ ATTESTATION = obj(
         "token": {"type": "string"},
         "key_id": NULLABLE_STRING,
         "challenge": {"type": "string"},
-        # Change 03: Play Integrity request flavour (standard: requestHash = nonce; classic: nonce).
+        # Play Integrity request flavour (standard: requestHash = nonce; classic: nonce).
         # Optional; absent means classic (SDK <= 1.1).
         "request_type": {"enum": ["standard", "classic"]},
     },
@@ -163,17 +163,17 @@ ATTESTATION = obj(
 )
 VERSION = {"type": "string", "pattern": r"^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$"}
 SDK_CALL = {
-    # Change 22: "events" removed (goal() is the only method; there is no events call).
+    # "events" removed (goal() is the only method; there is no events call).
     "enum": ["config", "install", "install_ping", "open", "resolve", "identify", "push_token",
              "opt_out", "consent", "attest", "apple_search_ads", "referrals", "leaderboards", "codes",
-             # Change 06: POST /v1/sdk/goals
+             # POST /v1/sdk/goals
              "goals"]
 }
 
-# ---- Change 06 (S.1): goals ----
+# ---- goals ----
 # Goal key (backend B.1): snake_case, 2-40 characters.
 GOAL_KEY = {"type": "string", "pattern": r"^[a-z][a-z0-9_]{1,39}$"}
-# Change 12: payment provider keys (shared/providers.json, from the backend's OpenAPI Provider enum).
+# Payment provider keys (shared/providers.json, from the backend's OpenAPI Provider enum).
 # The schema takes any provider key so SDKs can send providers added after their release
 # (`Provider.fromString`); the server answers unknown_provider for keys it doesn't know.
 PROVIDER = {"type": "string", "pattern": r"^[a-z][a-z0-9_]{1,29}$"}
@@ -195,7 +195,7 @@ GOAL_ITEM = obj(
         "value": {"anyOf": [GOAL_VALUE, {"type": "null"}]},
         "currency": nullable(CURRENCY),
         "is_first": {"type": ["boolean", "null"]},
-        # Change 14: the person's label (source device), trimmed, 1-80 characters ("" clears); dropped on the
+        # The person's label (source device), trimmed, 1-80 characters ("" clears); dropped on the
         # device in private mode unless config `allow_labels`
         "label": {"type": ["string", "null"], "maxLength": 80},
         # Set at goal() time and kept across retries.
@@ -204,7 +204,7 @@ GOAL_ITEM = obj(
         # the install's click; null/absent = the backend uses the installation's attribution
         # (Clikgate-Installation-Id header). Same value attributionMetadata() returns as cg_click_id.
         "click_id": NULLABLE_STRING,
-        # Change 12: a Provider value (shared/providers.json, generated into each SDK). Required by
+        # A Provider value (shared/providers.json, generated into each SDK). Required by
         # the server for a Payment goal (with reference), checked and otherwise ignored for a
         # Standard goal. There is never a goal kind in the call: it lives in the goal's settings.
         "provider": nullable(PROVIDER),
@@ -225,14 +225,14 @@ GOAL_REJECTION_CODES = [
     "occurred_at_in_future",
     "private_mode_field_rejected",
     "validation_error",
-    # Change 12: a Payment goal sent without provider or reference (`missing` lists which).
+    # A Payment goal sent without provider or reference (`missing` lists which).
     "payment_goal_needs_confirmation",
     "unknown_provider",
 ]
 
-# ---- Change 12 (S.1): one goal() method, enums (backend contract C12 B2, B3) ----
+# ---- one goal() method, enums ----
 # GoalStatus and GoalKind (OpenAPI enums). The SDKs map unknown values defensively.
-# Change 22 (R.9): `received` = stored, not counted (the name isn't ticked as a goal yet, reason `not_counted_yet`,
+# `received` = stored, not counted (the name isn't ticked as a goal yet, reason `not_counted_yet`,
 # or the goal is archived, reason `goal_archived`). A success: the SDKs remove it from the queue and never retry it.
 GOAL_STATUS = {"enum": ["counted", "waiting", "received", "refused"]}
 GOAL_KIND = {"enum": ["standard", "payment"]}
@@ -295,7 +295,7 @@ SCHEMAS: dict[str, dict] = {
                         {
                             "ios_app_attest": {"enum": ["off", "monitor", "enforce"]},
                             "android_play_integrity": {"enum": ["off", "monitor", "enforce"]},
-                            # Change 03 (S.2): the customer's Google Cloud project number. When set (or
+                            # The customer's Google Cloud project number. When set (or
                             # passed in ClikgateOptions) Android uses Play Integrity standard requests.
                             "android_cloud_project_number": {"type": ["integer", "null"], "minimum": 1},
                         },
@@ -327,7 +327,7 @@ SCHEMAS: dict[str, dict] = {
                     ["id", "name", "status", "client_link_creation", "allow_manual_code_entry"],
                 ),
             },
-            # Change 22 (R.5): no `conversion_value_schema` (the SDKs never update SKAdNetwork values from goal()).
+            # No `conversion_value_schema` (the SDKs never update SKAdNetwork values from goal()).
             "batching": obj(
                 {
                     "max_batch_size": {"type": "integer"},
@@ -340,7 +340,7 @@ SCHEMAS: dict[str, dict] = {
             ),
             "reattestation_interval_days": {"type": "integer"},
             "session_timeout_minutes": {"type": "integer"},
-            # ---- Change 03 (all optional: servers before change 03 omit them) ----
+            # ---- SDK 1.2.0 fields (all optional: older servers omit them) ----
             # B.3 consent mode, already resolved for this device's region (the `region_hint` query
             # parameter if the SDK sent one, else the IP-derived country).
             "consent": obj(
@@ -381,14 +381,14 @@ SCHEMAS: dict[str, dict] = {
                 },
                 ["enabled"],
             ),
-            # ---- Change 06 (optional: servers before change 06 omit it; absent = false) ----
+            # ---- optional: older servers omit it; absent = false ----
             # B.5 organisation private mode. When true the SDK sends no customer ID on /identify and
             # logs one warning in debug builds. goal() works normally.
             "private_mode": {"type": "boolean", "default": False},
-            # ---- Change 14 (absent = true): false in private mode without "Allow labels in private mode";
+            # ---- labels (absent = true): false in private mode without "Allow labels in private mode";
             # the SDKs then drop labels on the device with one debug warning.
             "allow_labels": {"type": "boolean", "default": True},
-            # ---- Change 26 (optional; absent = no start date, no Android device key) ----
+            # ---- existing users (optional; absent = no start date, no Android device key) ----
             "existing_users": obj(
                 {
                     # The app's Clikgate start date for this platform and environment (R.3), null until set.
@@ -447,7 +447,7 @@ SCHEMAS: dict[str, dict] = {
             "attestation": nullable(ATTESTATION),
             "apple_search_ads_token": {"type": ["string", "null"], "maxLength": 8192},
             "consent": nullable(CONSENT),
-            # ---- Change 03 (optional) ----
+            # ---- SDK 1.2.0 fields (optional) ----
             "google_click_ids": nullable(GOOGLE_CLICK_IDS),
             "app_instance_id": APP_INSTANCE_ID,
             "device_check_token": DEVICE_CHECK_TOKEN,
@@ -462,11 +462,11 @@ SCHEMAS: dict[str, dict] = {
                     additional=False,
                 )
             ),
-            # Fraud signals (change 02, B.5.2): device heuristics, hints rather than proof. Optional;
+            # Fraud signals: device heuristics, hints rather than proof. Optional;
             # omitted when a check fails (old SDKs send fewer of them).
             "is_emulator": {"type": ["boolean", "null"]},
             "is_rooted": {"type": ["boolean", "null"]},
-            # ---- Change 26 (EX.3, R.1, R.3-R.8; all optional) ----
+            # ---- existing users (all optional) ----
             # How the app was installed: iOS from the receipt URL (`app_store`, `testflight`, `xcode`);
             # Android `debug` (FLAG_DEBUGGABLE), `store` (an installer package) or `sideload` (none / the package installer).
             "install_channel": {"enum": ["app_store", "testflight", "xcode", "store", "sideload", "debug"]},
@@ -502,7 +502,7 @@ SCHEMAS: dict[str, dict] = {
             "install_id": ID,
             "attribution": obj(
                 {
-                    # Change 26: `existing` = an existing user now tracked (the app was on the phone before
+                    # `existing` = an existing user now tracked (the app was on the phone before
                     # Clikgate): never attributed, `is_reinstall` false.
                     "status": {"enum": ["pending", "attributed", "organic", "existing"]},
                     "match_type": MATCH_TYPE,
@@ -511,7 +511,7 @@ SCHEMAS: dict[str, dict] = {
                     "clicked_at": nullable(TIMESTAMP),
                     "is_reinstall": {"type": "boolean"},
                     "link": nullable(LINK),
-                    # Change 03 (B.5, optional): attribution source for Firebase forwarding.
+                    # Optional: attribution source for Firebase forwarding.
                     "source": NULLABLE_STRING,
                     "medium": NULLABLE_STRING,
                     "campaign": NULLABLE_STRING,
@@ -522,7 +522,7 @@ SCHEMAS: dict[str, dict] = {
             "deep_link": nullable(DEEP_LINK),
             "referral": nullable(REFERRAL),
             "retry_after_ms": {"type": ["integer", "null"]},
-            # Change 26 (optional): how the server classified this first launch.
+            # Optional: how the server classified this first launch.
             "install_kind": {"enum": ["new", "reinstall", "existing_user"]},
         },
         ["install_id", "attribution", "deep_link", "referral", "retry_after_ms"],
@@ -565,7 +565,7 @@ SCHEMAS: dict[str, dict] = {
         },
         ["matched", "click_id", "deep_link", "link", "is_reengagement", "referral"],
     ),
-    # Change 14 identifyUser(): `customer_user_id` absent keeps it, null clears it (never sent in private mode);
+    # identifyUser(): `customer_user_id` absent keeps it, null clears it (never sent in private mode);
     # `label` trimmed, 1-80 characters, "" clears.
     "identify_request": obj(
         {
@@ -583,7 +583,7 @@ SCHEMAS: dict[str, dict] = {
             "person_id": NULLABLE_STRING,
             # "plan": below Growth the label isn't stored; "lower_rank": a label from your server or team was kept
             "label_ignored": {"enum": ["plan", "lower_rank", None]},
-            # Change 22 (R.22): the token check on this call; a bad token no longer fails identify
+            # The token check on this call; a bad token no longer fails identify
             "verified": {"type": "boolean"},
             "reason": {"enum": ["expired", "bad_signature", "secret_rotated", "no_secret_set", "not_yet_valid", None]},
         },
@@ -608,13 +608,13 @@ SCHEMAS: dict[str, dict] = {
         ["type", "challenge", "token"],
         additional=False,
     ),
-    # Change 03 (B.3): consent record (`consent_records`, source `sdk`). Sent whenever the app changes
+    # Consent record (`consent_records`, source `sdk`). Sent whenever the app changes
     # consent or the region hint, once the installation exists.
     "consent_request": obj({"consent": CONSENT}, ["consent"], additional=False),
     "consent_response": obj({"ok": {"type": "boolean"}}, ["ok"]),
-    # Change 03 (B.3): anonymous install count when consent is required and `attribution` is denied
+    # Anonymous install count when consent is required and `attribution` is denied
     # (only if config consent.anonymous_counts). No installation id header, no identifiers.
-    # Change 26, KC.6 / R.14 (iOS 16+): Apple's signed app record (AppTransaction.jwsRepresentation), sent
+    # iOS 16+: Apple's signed app record (AppTransaction.jwsRepresentation), sent
     # once after the install, in the background. The server stores only the original purchase date.
     "app_record_request": obj(
         {
@@ -741,7 +741,7 @@ SCHEMAS: dict[str, dict] = {
         },
         ["offline_touch_id", "code", "referral"],
     ),
-    # ---- Change 06 (S.1): POST /v1/sdk/goals ----
+    # ---- POST /v1/sdk/goals ----
     "goals_request": obj(
         {
             "goals": {"type": "array", "minItems": 1, "maxItems": 100, "items": GOAL_ITEM},
@@ -767,7 +767,7 @@ SCHEMAS: dict[str, dict] = {
                         # (never its content).
                         "param": NULLABLE_STRING,
                         "message": {"type": "string"},
-                        # Change 12: the item's position in the request, and for
+                        # The item's position in the request, and for
                         # payment_goal_needs_confirmation the missing fields ("provider", "reference").
                         "index": {"type": ["integer", "null"]},
                         "missing": {"type": ["array", "null"], "items": {"enum": ["provider", "reference"]}},
@@ -775,7 +775,7 @@ SCHEMAS: dict[str, dict] = {
                     ["goal", "reference", "code"],
                 ),
             },
-            # Change 12: one result per item, in request order (also for rejected items, as refused).
+            # One result per item, in request order (also for rejected items, as refused).
             # Absent from older servers: the SDKs then report accepted items as counted.
             "results": {"type": "array", "items": GOAL_RESULT},
         },
@@ -1102,8 +1102,8 @@ FIXTURES: dict[str, dict] = {
     },
     "push_fcm_uninstall_check": {"cg": "uc"},
     "push_apns_uninstall_check": {"aps": {"content-available": 1}, "cg": {"t": "uc"}},
-    # Not an API body: Clikgate's shared platform link domains (API_CONTRACT.md "Shared platform
-    # domains"). Each SDK keeps the same list in one place and its tests compare it with this file.
+    # Not an API body: Clikgate's shared platform link domains.
+    # Each SDK keeps the same list in one place and its tests compare it with this file.
     "shared_link_domains": {"shared_link_domains": SHARED_LINK_DOMAINS},
     "push_app_message": {"type": "chat", "body": "hi"},
 }
@@ -1111,7 +1111,7 @@ FIXTURES: dict[str, dict] = {
 # A pre-Part-3 server: `/config` without `link_domains` (SDKs fall back to the configured linkDomains).
 FIXTURES["config_response_legacy"] = {k: v for k, v in FIXTURES["config_response"].items() if k != "link_domains"}
 
-# Fraud signals set (change 02, B.5.2; SDK 1.2 body without consent set or attestation): an emulator / rooted Android install whose Play install-begin
+# Fraud signals set (SDK 1.2 body without consent set or attestation): an emulator / rooted Android install whose Play install-begin
 # time is earlier than the referrer click (`install_before_click`), and a jailbroken iOS install.
 UNKNOWN_CONSENT = {
     "analytics": "unknown",
@@ -1135,8 +1135,8 @@ FIXTURES["install_request_android_signals"] = {
     "is_emulator": True,
     "is_rooted": True,
 }
-# iOS SDK 1.1.0 sent `is_rooted` (jailbreak heuristics) and `screen`; 1.2.0 sends neither (change 03,
-# S.2). The fixture keeps the 1.1 shape: old SDKs in the field still send it and the schema accepts it.
+# iOS SDK 1.1.0 sent `is_rooted` (jailbreak heuristics) and `screen`; 1.2.0 sends neither.
+# The fixture keeps the 1.1 shape: old SDKs in the field still send it and the schema accepts it.
 FIXTURES["install_request_ios_signals"] = {
     **{k: v for k, v in FIXTURES["install_request_ios"].items() if k not in ("google_click_ids", "device_check_token", "google_on_device_measurement", "pasteboard_outcome")},
     "sdk_version": "1.1.0",
@@ -1146,7 +1146,7 @@ FIXTURES["install_request_ios_signals"] = {
     "is_rooted": True,
 }
 
-# Change 09 (X.E23): the opted-out first /install (`setTrackingEnabled(false)` before the first
+# The opted-out first /install (`setTrackingEnabled(false)` before the first
 # launch): the required fields and the consent object with every purpose denied, nothing else. It
 # replaces the old `{"tracking_allowed": false}` body.
 FIXTURES["install_request_opted_out"] = {
@@ -1164,7 +1164,7 @@ FIXTURES["install_request_opted_out"] = {
     },
 }
 
-# ---- Change 03 fixtures ----
+# ---- SDK 1.2.0 fixtures ----
 FIXTURES["config_response_consent_required"] = {
     **FIXTURES["config_response"],
     "consent": {
@@ -1251,7 +1251,7 @@ FIXTURES["attest_request_device_check"] = {
     "consent": FIXTURES["install_request_android"]["consent"],
 }
 
-# ---- Change 06 fixtures ----
+# ---- SDK 1.3.0 fixtures ----
 FIXTURES["config_response_private_mode"] = {**FIXTURES["config_response"], "latest_version": "1.3.0", "private_mode": True, "allow_labels": False}
 FIXTURES["goals_request"] = {
     "goals": [
@@ -1284,7 +1284,7 @@ FIXTURES["goals_response_rejected"] = {
     ],
 }
 
-# Change 10 (D.5, contract B3a.2): deep-link-only mode (Free, Starter, or an app with attribution
+# Deep-link-only mode (Free, Starter, or an app with attribution
 # switched off). /config says app_attribution off and deep_linking on; the Free app subdomain is
 # under ciz.ng (an app subdomain, not the shared domain ciz.ng itself).
 FIXTURES["config_response_deep_link_only"] = {
@@ -1370,7 +1370,7 @@ FIXTURE_SCHEMA = {
 }
 
 
-# ---- Change 26 fixtures (existing users) ----
+# ---- existing-user fixtures ----
 FIXTURES["install_request_android_existing"] = {
     **FIXTURES["install_request_android"],
     "sdk_version": "2.1.2",
@@ -1465,7 +1465,7 @@ FIXTURE_SCHEMA.update({
 })
 
 
-# ---- Change 12 fixtures ----
+# ---- Payment goal fixtures ----
 # A Payment goal reported by the app: provider and reference, no value (the server would ignore it).
 FIXTURES["goals_request_payment"] = {
     "goals": [
@@ -1491,7 +1491,7 @@ FIXTURES["goals_response_results"] = {
          "goal_kind": "payment", "counted": False, "value_ignored": False, "id": None},
     ],
 }
-# ---- Change 22 (R.9): a name not ticked as a goal yet, and an archived goal: stored, not counted. A success. ----
+# ---- a name not ticked as a goal yet, and an archived goal: stored, not counted. A success. ----
 FIXTURES["goals_response_received"] = {
     "accepted": 2,
     "duplicates": 0,
@@ -1550,7 +1550,7 @@ FIXTURE_SCHEMA.update(
     }
 )
 
-# ---- Change 13: share helpers (Engage share.link, website share widget) ----
+# ---- share helpers (Engage share.link, website share widget) ----
 SHARE_APP = {"enum": json.loads((ROOT / "share_targets.json").read_text())["share_apps"]}
 # POST /v1/share-events (SDK key, or a web key from the website widget). The SDKs send the URL that was shared
 # (its ending tells Clikgate the version); `link_id` is the alternative. Endings in examples are made up.
@@ -1592,7 +1592,7 @@ FIXTURES["share_event_response"] = {
 }
 FIXTURE_SCHEMA.update({"share_event_request": "share_event_request", "share_event_response": "share_event_response"})
 
-# ---- Change 14: identifyUser() and goal labels ----
+# ---- identifyUser() and goal labels ----
 FIXTURES["config_response_private_mode_labels"] = {**FIXTURES["config_response_private_mode"], "allow_labels": True}
 FIXTURES["identify_request_label"] = {"label": "Ada (VIP)"}
 FIXTURES["identify_request_user"] = {"customer_user_id": "user_42", "identity_token": "sig.1760954400", "label": "Ada"}
@@ -1604,7 +1604,7 @@ FIXTURE_SCHEMA.update({
     "identify_response_plan": "identify_response",
     "identify_response": "identify_response",
 })
-# ---- Change 22 (R.22): a bad identity token answers 200 with the reason; the customer ID stays unverified ----
+# ---- a bad identity token answers 200 with the reason; the customer ID stays unverified ----
 FIXTURES["identify_response_token_expired"] = {
     **FIXTURES["identify_response"], "identity_verified": False, "verified": False, "reason": "expired",
 }
@@ -1655,11 +1655,11 @@ FIXTURES["share_cases"] = {
 }
 
 
-# ---- Change 17 (R.2): opening the app directly must not skip the link gates ----
+# ---- opening the app directly must not skip the link gates ----
 # Universal Links / App Links skip the redirect, so `/resolve` runs the same gates (allowed countries, password,
 # smart-routing block rules, A/B split). `status` says which answer it is; `web_url` and `block_message` go with
 # the gated ones. A gated answer carries no click, destination, deep link, link or referral, and `matched` is
-# false, so SDKs from before Change 17 simply see no match.
+# false, so older SDKs simply see no match.
 RESOLVE_STATUS = {"enum": ["matched", "no_match", "password_required", "blocked"]}
 _resolve = SCHEMAS["resolve_response"]
 _resolve["properties"].update({
@@ -1708,8 +1708,8 @@ FIXTURE_SCHEMA.update({
     "resolve_response_ab_variant": "resolve_response",
 })
 
-# Change 17 (R.2), first launch: `/install` reports what the launch URL gave with the same `status` / `web_url` /
-# `block_message` as `/resolve`. Optional (SDKs from before Change 17 ignore them) and null when the app wasn't
+# First launch: `/install` reports what the launch URL gave with the same `status` / `web_url` /
+# `block_message` as `/resolve`. Optional (older SDKs ignore them) and null when the app wasn't
 # opened with a launch URL. A gated launch URL carries no click and no deep link: Android opens `web_url` in the
 # system browser (password) or delivers the blocked result; iOS re-resolves every launch URL and ignores the
 # install deep link when the status is gated.
@@ -1752,7 +1752,7 @@ FIXTURE_SCHEMA.update({
 })
 
 
-# ---- Change 20 (S.1, R.40): `deeplink_handled` for the live check ("See it live") and the debug view ----
+# ---- `deeplink_handled` for the live check ("See it live") and the debug view ----
 # When the app is handed a matched Clikgate deep link (direct from /resolve, deferred from /install), the SDK sends
 # the path it handled: no query or fragment, every segment that looks like an ID, an email address or a phone number
 # replaced with `:id` on the device (cases below). Only with a test SDK key (`cg_sdk_test_`), or when the /resolve or
@@ -1794,7 +1794,7 @@ FIXTURE_SCHEMA.update({
     "install_response_debug_view": "install_response",
 })
 
-# ---- Change 22 (R.6): `deeplink_handled` in live mode for App banner taps measuring the right screen ----
+# ---- `deeplink_handled` in live mode for App banner taps measuring the right screen ----
 # /v1/sdk/resolve says `measure_right_screen: true` when the opening click came from an App banner with "measure right
 # screen" on; the SDK then reports the handled path in live mode too, with that click as `click_id`. Still never
 # queued, metered, a goal or a "Seen from your app and website" name.

@@ -243,8 +243,8 @@ interface ChosenDomains {
 const LABEL: Record<PlatformKey, string> = { android: 'Android', ios: 'iOS' };
 
 /**
- * Change 09 (N.1): an app opens links from its own link subdomain (`<sub>.ciz.to`; on the Free plan
- * `<sub>.ciz.ng`, change 10 D.1; debug builds `<sub>.dev.ciz.to` on every plan) and the organisation's
+ * An app opens links from its own link subdomain (`<sub>.ciz.to`; on the Free plan
+ * `<sub>.ciz.ng`; debug builds `<sub>.dev.ciz.to` on every plan) and the organisation's
  * active custom domains, from `app_link_domains`. Never a shared domain. An unconfirmed suggestion is
  * confirmed (after asking) with PATCH /v1/apps/{id}.
  */

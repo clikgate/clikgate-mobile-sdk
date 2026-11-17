@@ -14,7 +14,7 @@ import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Change 19 (R.20 S.2): LinkedIn `li_fat_id` and Snap `ScCid` reach Clikgate in the URLs and the Play install
+ * LinkedIn `li_fat_id` and Snap `ScCid` reach Clikgate in the URLs and the Play install
  * referrer the server reads itself (the redirect adds them only when the app's `pass_ad_click_ids` allows it).
  */
 @RunWith(RobolectricTestRunner::class)

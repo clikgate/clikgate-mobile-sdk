@@ -81,7 +81,7 @@ The plugin forwards App Links / Universal Links and custom-scheme opens to the n
 automatically (platform setup below). For URLs from elsewhere (QR codes):
 `await Clikgate.handleUrl(url)`.
 
-**App link subdomain (change 09).** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
+**App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
 shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
@@ -99,9 +99,9 @@ switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal
 nothing (no error, nothing is sent), and attribution reads `organic`. `await Clikgate.isFeatureEnabled(ClikgateFeatures.appAttribution)` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
-the click they came from, so one tap is one click (change 21).
+the click they came from, so one tap is one click.
 
-**Password and country-restricted links (Change 17).** App Links and Universal Links open your app without
+**Password and country-restricted links.** App Links and Universal Links open your app without
 Clikgate's redirect, so the native SDK asks the server first. A password link opens in the system browser (the
 password page; `onDeepLink` stays silent). A link blocked for the visitor's country (or by a block rule) arrives
 with `link.blockMessage` set and no `path`, `clickId` or `link`: show the text and don't route.
@@ -363,7 +363,7 @@ Rules (spec 17A.3):
 - Ranks are live server-side; poll while the screen is visible and call `clearCache()` before
   an explicit refresh (the example refreshes every 15 s).
 
-`share.link(url, {message, app, shareUrls})` / `share.referralLink(link, {message, app})` (Change 13):
+`share.link(url, {message, app, shareUrls})` / `share.referralLink(link, {message, app})`:
 each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They use the native SDK's Engage share menu (the plugin's
 `com.clikgate/engage` channel, over `com.clikgate.engage` on Android and `ClikgateEngage` on iOS; everything else stays Dart),
 so the behaviour is the [Android](android.md) and [iOS](ios.md) one. With CocoaPods nothing extra is
@@ -380,9 +380,9 @@ Share helper setup:
   chooser) is used. Unlike the native Android Engage `whatsApp`, the helper opens the
   `whatsapp://` link rather than targeting WhatsApp Business by package name.
 
-## 5e. Consent, Firebase forwarding and sales metadata (1.2.0, change 03)
+## 5e. Consent, Firebase forwarding and sales metadata (1.2.0)
 
-The native SDKs implement the behaviour (shared/SDK_BEHAVIOUR.md "Change 03"); the plugin only
+The native SDKs implement the behaviour; the plugin only
 passes the calls through.
 
 ```dart

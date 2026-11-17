@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Change 20 (S.1, R.40): `deeplink_handled` reports the handled deep link's path for the live check, with IDs,
+ * `deeplink_handled` reports the handled deep link's path for the live check, with IDs,
  * emails and phone numbers replaced on the device; only in test mode or while the debug view is open; never
  * queued, metered or counted as an event.
  */

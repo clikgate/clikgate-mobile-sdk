@@ -96,7 +96,7 @@ function startupFiles(input: DoctorInput): string[] {
 function localChecks(input: DoctorInput): { checks: Check[]; liveHostsFound: Set<string> } {
   const checks: Check[] = [];
   const add = (c: Omit<Check, 'group'> & { group?: CheckGroup }) => checks.push({ group: 'project', ...c });
-  // Change 09 (N.1): shared domains list no customer app, so they can never open this one.
+  // Shared domains list no customer app, so they can never open this one.
   const sharedCheck = (id: string, name: string, hosts: string[], prefix = '') => {
     const shared = [...new Set(hosts.map((h) => h.toLowerCase()))].filter((h) => SHARED_PLATFORM_DOMAINS.includes(h));
     if (shared.length) {
@@ -408,7 +408,7 @@ export function serverChecks(app: { id: string; platform: 'android' | 'ios' }, r
     const ok = a.team_id_present ?? Boolean(a.team_id);
     add({ id: `clikgate.${app.platform}.team_id`, status: ok ? 'pass' : 'fail', title: `${label} app: Team ID`, ...(ok ? {} : { fix: 'Add your Apple Team ID (10 characters) in the dashboard or rerun setup.' }) });
   }
-  // Change 09 (N.1): the app's own link subdomain, whose files list only this app.
+  // The app's own link subdomain, whose files list only this app.
   if (a.link_subdomain) {
     const hosts = a.link_hostnames ?? { live: `${a.link_subdomain}.ciz.to`, test: `${a.link_subdomain}.dev.ciz.to` };
     if (a.link_subdomain_confirmed === false) {

@@ -46,7 +46,7 @@ final class LifecycleTests: XCTestCase {
         let core = h.makeCore()
         await core.start(startTimers: false)
         let sent = Set(try XCTUnwrap(server.requests("POST /v1/sdk/install").first).json.keys)
-        // Change 26: the existing-user fields are in their own fixture
+        // The existing-user fields are in their own fixture
         let fixtureKeys = Set(Fixtures.json("install_request_ios").keys).union(Fixtures.json("install_request_ios_existing").keys)
         let schemaOnlyOptional: Set<String> = ["attestation", "apple_search_ads_token"]
         XCTAssertTrue(sent.isSubset(of: fixtureKeys.union(schemaOnlyOptional)), "unexpected keys: \(sent.subtracting(fixtureKeys))")

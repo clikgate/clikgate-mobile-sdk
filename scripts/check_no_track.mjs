@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// Change 22 (S, R.44): fail if the removed app-event API creeps back into the mobile SDKs repository, and check that
-// every mobile SDK reference page and README links to the "Identify your users" guide (I.8).
+// Fail if the removed app-event API creeps back into the mobile SDKs repository, and check that
+// every mobile SDK reference page and README links to the "Identify your users" guide.
 //
 //   node scripts/check_no_track.mjs              # scan the repository (git-tracked and new, non-ignored files)
 //   node scripts/check_no_track.mjs --self-test  # prove the patterns match what they should, and only that
 //
-// Same patterns and exemptions as clikgate_sdks/scripts/check_no_track.mjs. Matches Clikgate identifiers only (R.44):
+// Same patterns and exemptions as clikgate_sdks/scripts/check_no_track.mjs. Matches Clikgate identifiers only:
 // a Clikgate track call, `trackEvent`, the removed webhook type and routes, and "Event rules" (case-sensitive).
-// Allowed, by path: third-party code and build output (dependencies are git-ignored and never scanned), docs/spec/
-// (the change specs), and this file. In a CHANGELOG.md only the entry recording the removal ("- **Removed") may name
+// Allowed, by path: third-party code and build output (dependencies are git-ignored and never scanned)
+// and this file. In a CHANGELOG.md only the entry recording the removal ("- **Removed") may name
 // them. Test files that assert the old routes are gone carry the marker `no-track-guard: 404 test` on the line.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -29,7 +29,6 @@ export const RULES = [
 
 /** Paths never scanned, with the reason. */
 export const ALLOWED_PATHS = [
-  [/^docs\/specs?\//, 'change specs'],
   [/(^|\/)(node_modules|vendor|Pods|\.dart_tool|\.gradle|\.build|build|dist|DerivedData|\.cache)\//, 'third-party code and build output'],
   [/^scripts\/check_no_track\.mjs$/, 'this guard'],
   [/\.(png|jpe?g|gif|webp|ico|pdf|jar|zip|gz|tgz|aar|keystore|jks|ttf|otf|woff2?)$/i, 'binary files'],
@@ -127,7 +126,7 @@ function selfTest() {
   if (!hits('ios/README.md', '- **Removed:** `Clikgate.shared.track(...)`').length) fails.push('only CHANGELOG.md removal entries are allowed');
   if (!hits('ios/CHANGELOG.md', '- **Added:** `Clikgate.shared.track(...)`').length) fails.push('other CHANGELOG lines are scanned');
   if (hits('ios/Tests/QueueTests.swift', 'XCTAssertTrue(paths.allSatisfy { !$0.contains("/v1/sdk/events") }) // no-track-guard: 404 test').length) fails.push('marked tests must be allowed');
-  if (!allowedPath('docs/spec/clikgate-change-22.md') || !allowedPath('react-native/node_modules/x/index.js') || !allowedPath('android/build/tmp/a.kt') || allowedPath('android/clikgate/src/main/java/com/clikgate/Clikgate.kt')) fails.push('path allow-list is wrong');
+  if (allowedPath('docs/android.md') || !allowedPath('react-native/node_modules/x/index.js') || !allowedPath('android/build/tmp/a.kt') || allowedPath('android/clikgate/src/main/java/com/clikgate/Clikgate.kt')) fails.push('path allow-list is wrong');
   if (fails.length) {
     console.error(`check_no_track self-test failed:\n  ${fails.join('\n  ')}`);
     process.exit(1);

@@ -34,7 +34,7 @@ class FirstLaunchTest {
     fun firstLaunchSendsInstallMatchingContractFixture() {
         seedInstallationId()
         Clikgate.setPushToken("fcm-token-123", PushProvider.FCM)
-        // Change 03: consent set at the fixture's time, probabilistic matching on (screen), Play
+        // Consent set at the fixture's time, probabilistic matching on (screen), Play
         // Integrity standard request (cloud project number in config).
         Clikgate.setConsent(ConsentState.GRANTED, ConsentState.GRANTED, ConsentState.DENIED, null)
         env.attestation = object : com.clikgate.internal.AttestationProvider {

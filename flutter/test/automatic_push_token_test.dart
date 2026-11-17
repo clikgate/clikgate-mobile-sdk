@@ -2,8 +2,7 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// 2.1.0: `automaticPushToken` (default true) is passed to both native SDKs
-/// (shared/PLATFORM_CHANNEL.md "configure").
+/// 2.1.0: `automaticPushToken` (default true) is passed to both native SDKs.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =

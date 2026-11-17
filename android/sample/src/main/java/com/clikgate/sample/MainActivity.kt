@@ -162,7 +162,7 @@ class MainActivity : Activity() {
                 show("purchase: ${result.status} ${result.reason ?: ""}")
             }
         })
-        // Change 03: consent (your own banner would call these) and sales metadata.
+        // Consent (your own banner would call these) and sales metadata.
         root.addView(button("Consent: accept all") {
             Clikgate.setConsent(ConsentState.GRANTED, ConsentState.GRANTED, ConsentState.GRANTED, ConsentState.GRANTED)
             show("consent: ${Clikgate.getConsent()}")

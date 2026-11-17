@@ -108,7 +108,7 @@ class OptOutTest {
         settle(300)
         val install = env.api.calls("POST /v1/sdk/install").single()
         val body = env.api.body(install)
-        // Change 09 (X.E23): the four-purpose object says it, every purpose denied; no tracking_allowed.
+        // The four-purpose object says it, every purpose denied; no tracking_allowed.
         val consent = body.getJSONObject("consent")
         for (p in listOf("analytics", "attribution", "ad_user_data", "ad_personalization")) assertEquals("denied", consent.getString(p))
         assertFalse(consent.has("tracking_allowed"))

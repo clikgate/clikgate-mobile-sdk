@@ -15,7 +15,7 @@ function camel(key: string): string {
 
 /**
  * The bridge map the native SDKs build from an API body: the same structure with camelCase
- * keys (shared/PLATFORM_CHANNEL.md), recursively.
+ * keys, recursively.
  */
 export function toBridgeMap(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(toBridgeMap);

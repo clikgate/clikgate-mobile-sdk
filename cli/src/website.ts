@@ -20,7 +20,7 @@ import { Exit, printManual, reviewAndApply, type Deps } from './setup';
 import { paint, type UI } from './ui';
 
 /**
- * `npx @clikgate/setup website` (change 16 S and R.2): the web script tag, and, when the website has its own server,
+ * `npx @clikgate/setup website`: the web script tag, and, when the website has its own server,
  * the `/cg/keep` route plus the tag's `data-server-endpoint="/cg/keep"`. The server is detected from package files;
  * when nothing is recognised the command asks "Does your website have its own server?". Edits follow the app setup's
  * rules: shown as a diff first, idempotent, never overwriting a file, and anything that can't be placed safely is a

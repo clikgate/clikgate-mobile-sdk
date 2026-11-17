@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 /**
- * Change 10 (D.5): deep-link-only mode (Free, Starter, or an app with attribution switched off).
+ * Deep-link-only mode (Free, Starter, or an app with attribution switched off).
  * The native SDKs warn once ("switched off") and resolve goal, so the JS calls never
  * reject; the install result has organic attribution and, at the deferred deep link cap, no link.
  */

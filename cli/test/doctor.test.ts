@@ -147,7 +147,7 @@ describe('doctor --json', () => {
     expect(byId(report, 'expo.plugin')?.status).toBe('fail');
   });
 
-  it('warns on shared domains left in a project: "remove this: shared domains can\'t open your app" (change 09)', async () => {
+  it('warns on shared domains left in a project: "remove this: shared domains can\'t open your app"', async () => {
     const dir = await setUp('react-native');
     const main_ = path.join(dir, 'android/app/src/main/AndroidManifest.xml');
     fs.writeFileSync(main_, fs.readFileSync(main_, 'utf8').replace('<data android:host="go.acme.com" />', '<data android:host="go.acme.com" />\n            <data android:host="ciz.ng" />'));
@@ -177,7 +177,7 @@ describe('doctor --json', () => {
     expect(byId(report, 'android.debug_test_domain')?.title).toContain('acme.dev.ciz.to');
   });
 
-  it('accepts a Free plan app subdomain (<sub>.ciz.ng) in release builds (change 10)', async () => {
+  it('accepts a Free plan app subdomain (<sub>.ciz.ng) in release builds', async () => {
     const dir = copyFixture('flutter');
     expect(await main(['--cwd', dir, '--sdk-key', 'cg_sdk_test_a', '--domain', 'acme.ciz.ng', '--yes'], { ui: new ScriptedUI() })).toBe(0);
     const { code, report } = await doctorJson(dir, ['--domain', 'acme.ciz.ng']);
@@ -220,13 +220,13 @@ describe("doctor: Clikgate's setup check", () => {
     expect(c.status).toBe('fail');
     expect(c.fix).toMatch(fix);
   });
-  it('checks the app link subdomain: confirmed passes, unconfirmed fails with a fix (change 09)', () => {
+  it('checks the app link subdomain: confirmed passes, unconfirmed fails with a fix', () => {
     const ok = serverChecks(app, { app: { fingerprints_present: true, link_subdomain: 'acme', link_subdomain_confirmed: true }, domains: [] });
     expect(ok.checks.find((c) => c.id === 'clikgate.android.link_subdomain')).toMatchObject({ status: 'pass', title: 'Android app: link subdomain acme.ciz.to (debug builds acme.dev.ciz.to)' });
     const no = serverChecks(app, { app: { fingerprints_present: true, link_subdomain: 'acme', link_subdomain_confirmed: false }, domains: [] });
     expect(no.checks.find((c) => c.id === 'clikgate.android.link_subdomain')).toMatchObject({ status: 'fail', code: 'link_subdomain_not_confirmed' });
   });
-  it('a Free plan app subdomain from the server passes (change 10)', () => {
+  it('a Free plan app subdomain from the server passes', () => {
     const r = serverChecks(app, {
       app: { fingerprints_present: true, link_subdomain: 'acme', link_subdomain_confirmed: true, link_hostnames: { live: 'acme.ciz.ng', test: 'acme.dev.ciz.to' } },
       domains: [{ hostname: 'acme.ciz.ng', assetlinks: ok, aasa: other }],

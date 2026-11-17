@@ -1,5 +1,5 @@
-# Change 22 (S, R.44): one method, goal(). Fails if the removed app-event API (the patterns are listed in
-# scripts/check_no_track.mjs) comes back anywhere in the repository (docs/spec/, third-party code and build output, and
+# One method, goal(). Fails if the removed app-event API (the patterns are listed in
+# scripts/check_no_track.mjs) comes back anywhere in the repository (third-party code and build output, and
 # CHANGELOG removal entries are allowed), and if a mobile SDK reference page or README stops linking to
 # https://clikgate.com/docs/identify-users. Runs on every push and pull request (no path filter: docs count too).
 name: no-track-guard

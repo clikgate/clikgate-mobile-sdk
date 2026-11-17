@@ -18,7 +18,7 @@ import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
 
-/** Change 03 (SDK 1.2.0): consent, click ids, version policy, Firebase, metadata, identity checks. */
+/** SDK 1.2.0: consent, click ids, version policy, Firebase, metadata, identity checks. */
 @RunWith(RobolectricTestRunner::class)
 class Change03Test {
     private lateinit var env: TestEnv
@@ -264,7 +264,7 @@ class Change03Test {
         val blocked = com.clikgate.internal.VersionPolicy.parse(JSONObject().put("version_status", "blocked"))
         assertTrue(blocked.allows("install"))
         assertFalse(blocked.allows("goals")) // only when the server lists it
-        assertFalse(blocked.allows("events")) // Change 22: no events call
+        assertFalse(blocked.allows("events")) // No events call
         assertFalse(blocked.allows("resolve"))
     }
 
@@ -379,7 +379,7 @@ class Change03Test {
         assertEquals(listOf("cg_first_source" to "google", "cg_first_campaign" to "lagos_launch"), fb.props.toList())
         assertEquals("aiid-1", env.api.body(installs().single()).getString("app_instance_id"))
 
-        // Change 22: no event mirroring (there are no app events); goals aren't logged to Firebase.
+        // No event mirroring (there are no app events); goals aren't logged to Firebase.
         Clikgate.goal("signup")
         settle(200)
         assertEquals(listOf("clikgate_attribution"), fb.events.map { it.first })

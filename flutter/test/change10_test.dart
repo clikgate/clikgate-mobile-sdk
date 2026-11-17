@@ -5,7 +5,7 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 10 (D.5): deep-link-only mode (Free, Starter, or an app with
+/// Deep-link-only mode (Free, Starter, or an app with
 /// attribution switched off). The native SDKs warn once ("switched off") and
 /// answer goal with success, so the Dart calls complete without an
 /// error; the install result has organic attribution and, at the deferred deep

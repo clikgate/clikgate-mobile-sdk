@@ -14,7 +14,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// Change 19 (R.20 S.2): LinkedIn `li_fat_id` and Snap `ScCid` reach the native SDK (and from there Clikgate's
+// LinkedIn `li_fat_id` and Snap `ScCid` reach the native SDK (and from there Clikgate's
 // /install launch_url and /resolve url) exactly as the link carried them; the native SDKs never strip them.
 describe('ad click ids in links', () => {
   it('handleUrl passes li_fat_id and ScCid unchanged (ScCid keeps its case)', async () => {

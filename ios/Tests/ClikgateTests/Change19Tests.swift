@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 19 (R.20 S.1, S.2): the AdServices token is requested when /install is actually sent (also after consent
+/// The AdServices token is requested when /install is actually sent (also after consent
 /// buffering), again after 24 hours, never kept on the device; IDFV goes with it for Redownload linking; LinkedIn
 /// `li_fat_id` and Snap `ScCid` reach the server in the launch / resolved URL.
 final class Change19Tests: XCTestCase {

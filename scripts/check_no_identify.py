@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 `identifyUser()` replaced `identify()` on every SDK. Fails when `identify(` (the old call) appears anywhere in the SDKs,
-their samples, docs, READMEs or AI-facing text, except CHANGELOGs and the internal decision and progress records.
+their samples, docs, READMEs or AI-facing text, except CHANGELOGs.
 
     python3 scripts/check_no_identify.py
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_DIRS = {"node_modules", "build", ".build", ".dart_tool", "Pods", ".gradle", "dist", ".venv", "DerivedData", "spec"}
 BUILT = ("lib/module", "lib/typescript", "lib/commonjs")
-SKIP_NAMES = {"CHANGELOG.md", "DECISIONS.md", "PROGRESS.md", "check_no_identify.py"}
+SKIP_NAMES = {"CHANGELOG.md", "check_no_identify.py"}
 SUFFIXES = {".md", ".kt", ".swift", ".dart", ".ts", ".tsx", ".js", ".py", ".mm", ".m", ".h", ".xml", ".xcprivacy"}
 OLD = re.compile(r"(?<![A-Za-z_$])identify\(")
 

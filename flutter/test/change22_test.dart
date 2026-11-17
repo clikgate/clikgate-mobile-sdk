@@ -2,8 +2,8 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 22: one method, `goal()` (R.9 `received` is a success), and `getInstallationId()` for identity Path B
-/// (I.7, R.26). The plugin stays thin: the native SDKs decide the value (null when tracking is off).
+/// One method, `goal()` (`received` is a success), and `getInstallationId()` for identity Path B
+/// The plugin stays thin: the native SDKs decide the value (null when tracking is off).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =

@@ -9,7 +9,7 @@
 
 ## 2.1.1 (unreleased): Existing users
 
-- **Existing users (Change 26).** The first `/install` now says how and when the app arrived on the phone, so
+- **Existing users.** The first `/install` now says how and when the app arrived on the phone, so
   Clikgate can tell people who had the app before your first release with Clikgate ("existing users, now tracked")
   from new installs. Existing users are never attributed and don't count as installs; their goals, uninstalls,
   identify, referrals as referrers and deep links work as before.
@@ -53,14 +53,14 @@
   capability). Side effect: other push tools in the app also get the token. `false` restores the previous behaviour.
 - Size: core 389.0 KB (-Osize; 386.3 KB before automaticPushToken, 385.4 KB before pasteboard_outcome; ceiling 410 KB).
 
-## 2.0.0 (unreleased): one method, `goal()`; installation ID (Change 22)
+## 2.0.0 (unreleased): one method, `goal()`; installation ID
 
 **Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.
 
 - **Requires Xcode 26 or newer to build** (App Store submissions need the iOS 26 SDK). Devices from iOS 13 are still supported.
 - **Removed:** `Clikgate.shared.track(_:revenue:properties:completion:)` and `ClikgateMoney`. `goal()` is the only method for what happens in the app. Names arrive in the dashboard's "Seen from your app and website" and count once they are ticked.
 - **Removed:** the app-event call and its queue path. App events left in the persisted queue by an earlier development build are dropped on the next flush, without a network call.
-- **Removed:** SKAdNetwork / AdAttributionKit conversion-value updates on the device and the `conversion_value_schema` config (change 22 R.5). The SDK no longer imports StoreKit or AdAttributionKit.
+- **Removed:** SKAdNetwork / AdAttributionKit conversion-value updates on the device and the `conversion_value_schema` config. The SDK no longer imports StoreKit or AdAttributionKit.
 - **Removed:** `ClikgateFirebaseForwardingOptions.mirrorEvents` and `eventNameMap`. Attribution forwarding to Firebase is unchanged.
 - **Added:** `ClikgateGoalStatus.received`: stored, not counted (`not_counted_yet`, `goal_archived`). A success: never retried.
 - **Added:** `try await Clikgate.shared.installationId()` (and a completion form) for identity Path B. Nil when tracking is off. Guide: https://clikgate.com/docs/identify-users
@@ -69,7 +69,7 @@
 - **Changed (R.22):** `identifyUser()` with an identity token that doesn't verify: the server now answers 200 with `verified: false` and a `reason` (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`). The SDK keeps the customer ID (unverified) and logs a warning naming the reason in plain words, e.g. "identifyUser: the identity token did not verify (expired); the customer ID is kept but not verified". The new fields are optional: an older server's `422 identity_invalid` is still handled. Referral calls refused with `403 identity_expired` (or `422 identity_invalid`) return that error and log a warning to get a new token. The token, the identity secret and the customer ID are never logged. No public API change (`identifyUser()` returns nothing).
 - Size: core 385.3 KB after R.22 (382.6 KB before; was 407.6 KB; ceiling 410 KB).
 
-## 1.5.1 (unreleased): one tap is one click, X click ids (Change 21)
+## 1.5.1 (unreleased): one tap is one click, X click ids
 
 Nothing has been published yet: this patch also carries everything under "Unreleased" below.
 
@@ -90,13 +90,13 @@ Nothing has been published yet: this patch also carries everything under "Unrele
 - A call of its own: never queued with events, never an app event, never counted or metered; one retry, then dropped. Nothing is sent while consent is pending or denied, after opt-out, or for password-protected or blocked links. No API change.
 - Size: core 407.0 KB (was 403.9 KB; ceiling 410 KB). The path check works on UTF-8 bytes without allocations: a `String`/`Character` version cost 7.6 KB and went over the ceiling.
 
-### Apple Ads token at send time; LinkedIn and Snap click ids (Change 19)
+### Apple Ads token at send time; LinkedIn and Snap click ids
 - The AdServices token (`apple_search_ads`, iOS 14.3+) is now requested when the install is sent, so after the consent grant when consent is required, instead of on the first launch. A new token is requested when 24 hours have passed since it was fetched (long retries). It is kept in memory only and never written to the SDK's storage; a token stored by an earlier build is dropped. It isn't requested when attribution consent is denied.
 - With identity-check consent the install also carries the IDFV when Apple Ads is on, so Clikgate can link an Apple Ads redownload to the earlier install.
 - LinkedIn `li_fat_id` and Snap `ScCid` in Clikgate links reach Clikgate unchanged in the launch / resolved URL (tests added; no API change).
 - Size: core about +0.5 KB (estimate, not measured in this change; was 402.1 KB, ceiling 410 KB).
 
-### Password and country-restricted links on app opens (Change 17)
+### Password and country-restricted links on app opens
 - A Universal Link no longer skips the link's gates: `/resolve` answers `password_required` (the SDK opens the password page in Safari with `UIApplication.open`, at most once per URL per 30 s, and delivers nothing) or `blocked` (`onDeepLink` gets a result with the new `ClikgateDeepLinkResult.blockMessage` and no path, click or link; show the text, don't route). A/B tests: the server picks the version; its path arrives as usual. A gated answer never hands over a destination, deferred or direct.
 - An `/install` answer whose `status` is `password_required` or `blocked` never delivers its deep link; the launch URL is resolved as before and gets the gate's answer.
 - Size: core 402.1 KB (was 409.7 KB): the JSON readers are no longer inlined at every call site (no behaviour change).
@@ -136,7 +136,7 @@ Breaking against the unreleased 1.5.0 API. No version is published yet, so this 
   tenth of a second, and two long warnings are shorter.
 - Payment goals go to `POST /v1/sdk/goals` with `provider` and `reference`; `/v1/sdk/payments` and the
   `payments` version-policy call are gone. Queueing, retries and idempotency are unchanged.
-- Published sources no longer carry internal notes or references; `Change03.swift` is now `ConsentPolicy.swift`.
+- Published sources no longer carry internal notes or references; the consent policy source file was renamed to `ConsentPolicy.swift`.
 
 ## 1.5.0 (unreleased): consistency fixes
 

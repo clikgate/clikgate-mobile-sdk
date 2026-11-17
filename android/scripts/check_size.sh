@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Size budgets (spec 0.4): core Android < 150 KB, Engage Android < 44 KB (40 KB until Change 13 share.link; see DECISIONS.md).
+# Size budgets: core Android < 150 KB, Engage Android < 44 KB (40 KB before share.link was added).
 #
 # Builds the release AAR (unminified, as published; since 2.1.0 one artifact with the Engage features under
 # com.clikgate.engage) and reports, for the core classes and the Engage classes separately:
@@ -10,7 +10,7 @@
 #            method ships; apps shrink with R8, so this is the app-size contribution). Kotlin
 #            @Metadata annotations are not kept: R8 drops them in apps unless kotlin.Metadata is
 #            kept explicitly (AGP's default rules don't), and they'd be ~1/3 of the Engage number.
-# The budget is enforced on the R8 number (see android/DECISIONS.md "Engage split" / Size).
+# The budget is enforced on the R8 number.
 #
 # Usage: android/scripts/check_size.sh [--no-build]
 # Env: ANDROID_HOME / ANDROID_SDK_ROOT (else local.properties sdk.dir), BUILD_TOOLS (version dir).

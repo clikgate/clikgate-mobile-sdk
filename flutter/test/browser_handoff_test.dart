@@ -2,9 +2,8 @@ import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Change 06 (1.4.0): shared-domain links of other organisations are opened in an in-app browser
-/// by the native SDKs and reported as tagged events on the deep-link channel
-/// (shared/PLATFORM_CHANNEL.md "Browser handoff").
+/// 1.4.0: shared-domain links of other organisations are opened in an in-app browser
+/// by the native SDKs and reported as tagged events on the deep-link channel.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =

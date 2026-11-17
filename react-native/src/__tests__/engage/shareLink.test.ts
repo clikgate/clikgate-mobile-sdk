@@ -8,7 +8,7 @@ import { SHARE_APPS, ShareApp } from '../../engage/shareApp';
 import { fixture } from './harness';
 import type { ReferralLink } from '../../engage/models';
 
-/** Change 13 S.1: share.link / share.referralLink go to the native Engage features. */
+/** share.link / share.referralLink go to the native Engage features. */
 describe('share.link', () => {
   const calls: Record<string, unknown>[] = [];
   const engage = (reply: () => Promise<boolean> = async () => true) =>

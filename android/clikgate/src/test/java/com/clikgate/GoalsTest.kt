@@ -185,7 +185,7 @@ class GoalsTest {
         val bodies = env.api.calls("POST /v1/sdk/goals").map { env.api.body(it).getJSONArray("goals").toString() }
         assertEquals(1, bodies.toSet().size) // the same items on every retry (references, times)
         assertEquals(2, env.api.body(env.api.calls("POST /v1/sdk/goals").last()).getJSONArray("goals").length())
-        // Change 09 (X.E15): one random Idempotency-Key per call, reused by its retries, never a hash of the reference.
+        // One random Idempotency-Key per call, reused by its retries, never a hash of the reference.
         val keys = env.api.calls("POST /v1/sdk/goals").map { it.getHeader("Idempotency-Key") }
         assertEquals(1, keys.toSet().size)
         assertTrue(keys.first()!!.matches(Regex("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")))
@@ -247,7 +247,7 @@ class GoalsTest {
         assertEquals(1, env.queue.count())
     }
 
-    // ------------------------------------------------------------------ consent (change 03)
+    // ------------------------------------------------------------------ consent
 
     @Test
     fun goalsAreBufferedForConsentAndSentAfterGrant() {
@@ -319,7 +319,7 @@ class GoalsTest {
         assertNull(env.storage.customerUserId)
     }
 
-    // ------------------------------------------------------------ Change 14: labels
+    // ------------------------------------------------------------ labels
 
     @Test
     fun goalCarriesALabel() {

@@ -239,7 +239,7 @@ describe('method and argument mapping', () => {
     });
   });
 
-  it('reports an existing user as organic with the flag (change 26)', async () => {
+  it('reports an existing user as organic with the flag', async () => {
     mockModule.getAttribution.mockResolvedValueOnce({
       status: 'organic',
       isExistingUser: true,
@@ -250,7 +250,7 @@ describe('method and argument mapping', () => {
   });
 });
 
-describe('existing users (change 26)', () => {
+describe('existing users', () => {
   it('maps the existing_user rejection to ExistingUserError', () => {
     const e = ClikgateError.fromNative({
       code: 'existing_user',

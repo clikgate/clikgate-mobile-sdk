@@ -1,7 +1,7 @@
 import XCTest
 @testable import Clikgate
 
-/// Change 03 (S.2): the iOS SDK sends no signal used only for probabilistic matching or
+/// SDK 1.2.0: the iOS SDK sends no signal used only for probabilistic matching or
 /// fingerprinting (`screen`, jailbreak heuristics `is_rooted`). `is_emulator` is a compile-time flag.
 final class PrivacyTests: XCTestCase {
     var h: Harness!

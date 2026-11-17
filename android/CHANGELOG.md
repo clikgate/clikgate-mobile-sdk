@@ -9,7 +9,7 @@
 
 ## 2.1.1 (unreleased): Existing users
 
-- **Existing users (Change 26).** The first `/install` now says how and when the app arrived on the phone, so
+- **Existing users.** The first `/install` now says how and when the app arrived on the phone, so
   Clikgate can tell people who had the app before your first release with Clikgate ("existing users, now tracked")
   from new installs. Existing users are never attributed and don't count as installs; their goals, uninstalls,
   identify, referrals as referrers and deep links work as before.
@@ -54,7 +54,7 @@
   `FirebaseMessaging.getInstance()` / `getToken()` with `-dontwarn`, so apps without Firebase build cleanly. Set
   `automaticPushToken = false` to control push registration timing yourself.
 
-## 2.0.0 (unreleased): one method, `goal()`; installation ID (Change 22)
+## 2.0.0 (unreleased): one method, `goal()`; installation ID
 
 **Breaking: `track()` was removed in favour of `goal()`.** `goal()` is now the only method for anything that happens in the app; names arrive in the dashboard's "Seen from your app and website" and count once they are ticked. This is the first public release: nothing was published before, so no public version ever had `track()`. It also carries every unreleased section below.
 
@@ -68,7 +68,7 @@
 - Docs: plan wording fixed (goals work on every plan; the old "needs Growth" comment is gone).
 - **Changed (R.22):** `identifyUser()` with an identity token that doesn't verify: the server now answers 200 with `verified: false` and a `reason` (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`). The SDK keeps the customer ID (unverified) and logs a warning naming the reason in plain words, e.g. "identifyUser: the identity token did not verify (expired); the customer ID is kept but not verified". The new fields are optional: an older server's `422 identity_invalid` is still handled. Referral calls refused with `403 identity_expired` (or `422 identity_invalid`) return that error and log a warning to get a new token. The token, the identity secret and the customer ID are never logged. No public API change (`identifyUser()` returns nothing).
 
-## 1.5.1 (unreleased): one tap is one click, X click ids (Change 21)
+## 1.5.1 (unreleased): one tap is one click, X click ids
 
 Nothing has been published yet: this patch also carries everything under "Unreleased" below.
 
@@ -88,10 +88,10 @@ Nothing has been published yet: this patch also carries everything under "Unrele
 - Path only: the query and fragment are removed, and every path segment that looks like an ID (numbers, UUIDs, long hex or base64-like tokens, codes), an email address or a phone number is replaced with `:id` on the device. Your `onDeepLink` result is unchanged.
 - A call of its own: never queued with events, never an app event, never counted or metered; one retry, then dropped. Nothing is sent while consent is pending or denied, after opt-out, or for password-protected or blocked links. No API change.
 
-### LinkedIn and Snap click ids (Change 19)
+### LinkedIn and Snap click ids
 - `li_fat_id` and Snap `ScCid` in Clikgate App Links and the Play install referrer reach Clikgate unchanged in the launch / resolved URL and the referrer (tests added; no code or API change).
 
-### Password and country-restricted links on app opens (Change 17)
+### Password and country-restricted links on app opens
 - An App Link no longer skips the link's gates: `/resolve` answers `password_required` (the SDK opens the password page in the browser app itself: an explicit browser package, no Custom Tabs, never this app; nothing is delivered) or `blocked` (`onDeepLink` gets a `ClikgateDeepLink` with the new `blockMessage` and no path, click or link; show the text, don't route). A/B tests: the server picks the version; its path arrives as usual. A gated answer never hands over a destination, deferred or direct.
 - First launch on your own domain: when `/install` says the launch URL is `password_required` or `blocked`, the SDK now does the same as for `/resolve` (password page in the browser, or the blocked result) instead of opening nothing.
 

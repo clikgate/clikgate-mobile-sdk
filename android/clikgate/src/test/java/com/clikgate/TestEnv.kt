@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 /**
- * The Change 26 install fields (when the app arrived on the phone; covered by Change26Test), removed
+ * The existing-user install fields (when the app arrived on the phone; covered by Change26Test), removed
  * before comparing a body with a fixture from before them.
  */
 internal val CHANGE26_INSTALL_FIELDS = listOf(
