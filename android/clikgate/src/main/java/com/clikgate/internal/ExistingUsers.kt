@@ -26,9 +26,9 @@ internal data class AppInstallFacts(
     val lastUpdateTime: Long? = null,
     /** `PackageInfo.longVersionCode`. */
     val versionCode: Long? = null,
-    /** FLAG_SYSTEM or FLAG_UPDATED_SYSTEM_APP: preloaded by the phone maker (R.5). */
+    /** FLAG_SYSTEM or FLAG_UPDATED_SYSTEM_APP: preloaded by the phone maker. */
     val preinstalled: Boolean = false,
-    /** `Settings.Secure.ANDROID_ID` (app-scoped since Android 8). Never sent as is: only its keyed hash (R.8). */
+    /** `Settings.Secure.ANDROID_ID` (app-scoped since Android 8). Never sent as is: only its keyed hash. */
     val androidId: String? = null,
 )
 
@@ -72,7 +72,7 @@ internal object AppInstallFactsReader {
 internal object ExistingUserFields {
     const val HOUR_MS = 3_600_000L
 
-    /** Two package times this close are "the same moment" (EX.4 rule 2, R.4). */
+    /** Two package times this close are "the same moment". */
     const val SAME_MOMENT_MS = 60_000L
 
     /** Installer packages that mean "installed by hand" (an APK file), not a store. */
@@ -91,7 +91,7 @@ internal object ExistingUserFields {
         val nowMs: Long,
         /** `ClikgateOptions.existingUser`. */
         val hint: Boolean,
-        /** Tracking consent denied or opted out: no dates, only [startAtMs] compared on the phone (R.3). */
+        /** Tracking consent denied or opted out: no dates, only [startAtMs] compared on the phone. */
         val datesAllowed: Boolean,
         /** `/config existing_users.start_at` (ms), null when not set yet. */
         val startAtMs: Long?,
@@ -111,7 +111,7 @@ internal object ExistingUserFields {
         else -> "store"
     }
 
-    /** The phone's install date and its source: Google's server time wins over the phone's own clock (EX.3). */
+    /** The phone's install date and its source: Google's server time wins over the phone's own clock. */
     fun installedAt(i: Inputs): Pair<Long, String>? {
         val debug = i.debugInstalledAtMs
         if (debug != null && i.debuggable && i.testEnvironment) return debug to "android_first_install_time"
@@ -126,7 +126,7 @@ internal object ExistingUserFields {
         if (i.hint) body.put("existing_user_hint", true)
         val installed = installedAt(i)
         if (!i.datesAllowed) {
-            // R.3: whether the app was here before the start date, worked out on the phone; never the dates
+            // Whether the app was here before the start date, worked out on the phone; never the dates
             val start = i.startAtMs
             if (installed != null && start != null && !i.facts.preinstalled) {
                 body.put("installed_before_start", installed.first < start)
@@ -148,7 +148,7 @@ internal object ExistingUserFields {
         deviceKey(i.facts.androidId, i.deviceKeySalt)?.let { body.put("android_device_key", it) }
     }
 
-    /** R.8: hex HMAC-SHA256 of ANDROID_ID with the per-app key; null without either. */
+    /** Hex HMAC-SHA256 of ANDROID_ID with the per-app key; null without either. */
     fun deviceKey(androidId: String?, saltBase64: String?): String? {
         if (androidId.isNullOrEmpty() || saltBase64.isNullOrEmpty()) return null
         return try {
@@ -162,7 +162,7 @@ internal object ExistingUserFields {
         }
     }
 
-    /** Rounded down to the hour (R.4: the server keeps the day only). */
+    /** Rounded down to the hour (the server keeps the day only). */
     fun isoHour(ms: Long): String = iso(ms - Math.floorMod(ms, HOUR_MS))
 
     fun iso(ms: Long): String =

@@ -37,7 +37,7 @@ jobs:
           mkdir -p build
           xcodebuild test -scheme Clikgate-Package -destination "$SIMULATOR" -derivedDataPath build/dd | tee build/test.log | grep -E "Executed|error:|TEST (SUCC|FAIL)"
 
-      - name: Public API snapshots + core/Engage boundary (spec 0.4, section 20)
+      - name: Public API snapshots + core/Engage boundary
         working-directory: ios
         run: ./scripts/check_api.sh
 
@@ -77,7 +77,7 @@ jobs:
   # Configured, not yet exercised. Needs secrets:
   #   COCOAPODS_TRUNK_TOKEN  — `pod trunk me` session token of an owner of the Clikgate pod
   #   SPM_MIRROR_TOKEN       — token with push access to clikgate/clikgate-ios-sdk (the SPM mirror)
-  # Public releases are PAUSED (owner 2026-11-08): track() is being removed and no published version may include it.
+  # Public releases are gated: no published version may include the removed track() API.
   # This job runs only when the repository variable PUBLIC_SDK_RELEASES_ENABLED is set to 'true' (unset = paused).
   release:
     if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/ios-v')

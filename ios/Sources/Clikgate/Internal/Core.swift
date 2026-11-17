@@ -118,7 +118,7 @@ actor ClikgateCore {
     private func ensureInstallationId() {
         if let id = state.installationId {
             if deps.keychain.readInstallationId() != id { deps.keychain.writeInstallationId(id) }
-            // R.1: phones that ran an earlier SDK get the this-device-only marker too
+            // Phones that ran an earlier SDK get the this-device-only marker too
             if deps.keychain.readDeviceMarker() != id { deps.keychain.writeDeviceMarker(id) }
             return
         }
@@ -146,7 +146,7 @@ actor ClikgateCore {
         return deps.installFacts.containerCreatedAt()
     }
 
-    /// R.23: the hint with no readable install date skips the pasteboard and the AdServices token.
+    /// The existing-user hint with no readable install date skips the pasteboard and the AdServices token.
     private var hintOnly: Bool { options.existingUser && platformInstalledAt() == nil }
 
     private func existingUserFields(tracking: Bool) -> JSONObject {
@@ -156,7 +156,7 @@ actor ClikgateCore {
                                  startAt: config.sdkStartAt, now: deps.clock.now())
     }
 
-    /// KC.6 / R.14: Apple's signed app record, once per installation, tried at the install and the next launch.
+    /// Apple's signed app record, once per installation, tried at the install and the next launch.
     /// Only while referrals are on (it's used only by the referral rule); never `AppTransaction.refresh()`.
     func sendAppRecordIfNeeded() async {
         guard !state.appRecordSent, state.appRecordTries < 2, state.installDone, state.trackingEnabled, gate == .allowed,

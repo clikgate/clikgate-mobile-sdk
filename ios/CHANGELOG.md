@@ -66,8 +66,8 @@
 - **Added:** `try await Clikgate.shared.installationId()` (and a completion form) for identity Path B. Nil when tracking is off. Guide: https://clikgate.com/docs/identify-users
 - **Added:** the reason `unknown_goal` (`.refused`) for a name that isn't set up as a goal while the organisation accepts only set-up goals, and `.refused` / `goal_archived` for an archived goal there. Both are final: dropped from the queue, never retried. Debug builds log "Goal `{name}` isn't set up in Clikgate" with the goal name only. A whole-request `422` answered as `{status: "refused", reason}` is refused with that reason. The SDK never checks names itself. No public API change.
 - A blocked SDK version's default calls no longer list `events`; goals go only when the server lists `goals`.
-- **Changed (R.22):** `identifyUser()` with an identity token that doesn't verify: the server now answers 200 with `verified: false` and a `reason` (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`). The SDK keeps the customer ID (unverified) and logs a warning naming the reason in plain words, e.g. "identifyUser: the identity token did not verify (expired); the customer ID is kept but not verified". The new fields are optional: an older server's `422 identity_invalid` is still handled. Referral calls refused with `403 identity_expired` (or `422 identity_invalid`) return that error and log a warning to get a new token. The token, the identity secret and the customer ID are never logged. No public API change (`identifyUser()` returns nothing).
-- Size: core 385.3 KB after R.22 (382.6 KB before; was 407.6 KB; ceiling 410 KB).
+- **Changed:** `identifyUser()` with an identity token that doesn't verify: the server now answers 200 with `verified: false` and a `reason` (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`). The SDK keeps the customer ID (unverified) and logs a warning naming the reason in plain words, e.g. "identifyUser: the identity token did not verify (expired); the customer ID is kept but not verified". The new fields are optional: an older server's `422 identity_invalid` is still handled. Referral calls refused with `403 identity_expired` (or `422 identity_invalid`) return that error and log a warning to get a new token. The token, the identity secret and the customer ID are never logged. No public API change (`identifyUser()` returns nothing).
+- Size: core 385.3 KB after the identity-token change (382.6 KB before; was 407.6 KB; ceiling 410 KB).
 
 ## 1.5.1 (unreleased): one tap is one click, X click ids
 
@@ -173,7 +173,7 @@ Breaking against the unreleased 1.5.0 API. No version is published yet, so this 
 - `pasteboardMode` defaults to `.off`; no trophy, challenge or progress API in core or Engage.
 
 ### Tests
-`ReferralAndOptOutTests` (opted-out install consent), `Change03Tests` / `LifecycleTests` (no
+`ReferralAndOptOutTests` (opted-out install consent), `ConsentAndVersionPolicyTests` / `LifecycleTests` (no
 `tracking_allowed`), `GoalsTests` (key reused across retries, a new key per call), `EventQueueTests`
 (`ofMinor`).
 

@@ -1,7 +1,7 @@
 # Clikgate sample backend
 
-A minimal "app backend" (FastAPI, Python 3.12) for the **recommended integration path**
-(spec 0.4 / 17A.4): the mobile app uses only the core Clikgate SDK, and its own server calls the
+A minimal "app backend" (FastAPI, Python 3.12) for the **recommended integration path**:
+the mobile app uses only the core Clikgate SDK, and its own server calls the
 Clikgate control-plane API with an API key for everything on the referrer side. The API key and
 the app's identity secret stay on this server; the app never sees them.
 
@@ -30,7 +30,7 @@ Errors are `{"error": {"code", "message"}}`; Clikgate's codes are passed through
 The shapes of `/leaderboards/*` mirror the SDK's Engage models (`leaderboard_page`, `my_rank`), so
 an app can switch between the two paths without changing its screens.
 
-Identity token (as Clikgate verifies it, `clikgate_api` `src/sdk/utils/identity_tokens.py`):
+Identity token (as Clikgate verifies it):
 
 ```
 issued_at      = unix seconds
@@ -63,7 +63,7 @@ Settings (environment or `.env`, see [.env.example](.env.example)): `CLIKGATE_AP
 `CLIKGATE_IDENTITY_SECRET` (`POST /v1/apps/{app_id}/identity-secret/rotate`),
 `CLIKGATE_PROGRAM_ID`, `CLIKGATE_LEADERBOARD_IDS`, `CLIKGATE_APP_ID` (or
 `CLIKGATE_APP_ID_ANDROID` / `_IOS`), `CLIKGATE_API_URL` (default `https://api.clikgate.com`; a
-local `clikgate_api` is `http://localhost:8000`), `SESSION_SECRET`.
+local Clikgate backend is `http://localhost:8000`), `SESSION_SECRET`.
 
 From the Android emulator the backend is `http://10.0.2.2:8080`, from the iOS simulator
 `http://localhost:8080`.

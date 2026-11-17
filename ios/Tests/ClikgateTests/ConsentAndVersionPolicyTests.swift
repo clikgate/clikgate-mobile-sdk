@@ -3,7 +3,7 @@ import XCTest
 
 /// SDK 1.2.0: consent, buffering, click ids, version policy, Firebase forwarding,
 /// attribution metadata, clipboard opt-in, identity checks and Google on-device measurement.
-final class Change03Tests: XCTestCase {
+final class ConsentAndVersionPolicyTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
     let token = "cgdl_9Xk2abcdefghijklmnopqrstuv"
@@ -105,7 +105,7 @@ final class Change03Tests: XCTestCase {
             assertConsent(server.requests(key).first, attribution: "granted")
         }
         let install = try XCTUnwrap(server.requests("POST /v1/sdk/install").first).json["consent"] as? [String: Any]
-        XCTAssertNil(install?["tracking_allowed"], "no tracking_allowed from 1.5.0 (X.E23)")
+        XCTAssertNil(install?["tracking_allowed"], "no tracking_allowed from 1.5.0")
         XCTAssertEqual(install?["ad_user_data"] as? String, "denied")
         XCTAssertEqual(install?["ad_personalization"] as? String, "unknown")
         XCTAssertNotNil(install?["updated_at"] as? String)

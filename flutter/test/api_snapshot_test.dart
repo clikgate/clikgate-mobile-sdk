@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'api_listing.dart';
 
-/// Public-API snapshot of `package:clikgate_flutter` (CI boundary check, spec 20).
+/// Public-API snapshot of `package:clikgate_flutter` (CI boundary check).
 ///
 /// Update after an intended API change:
 /// `UPDATE_API_SNAPSHOT=1 flutter test test/api_snapshot_test.dart`.

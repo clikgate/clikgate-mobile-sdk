@@ -16,7 +16,7 @@ import type { IosProject } from './project/ios';
 import { targetSwiftFiles } from './project/ios';
 
 /**
- * `doctor` (S.5): local checks of the project files, then (when signed in) Clikgate's
+ * `doctor`: local checks of the project files, then (when signed in) Clikgate's
  * setup-check, then an optional wait for the first test event. Never changes anything.
  * The JSON form (`--json`) is a stable interface for CI and AI assistants: schema_version 1.
  */

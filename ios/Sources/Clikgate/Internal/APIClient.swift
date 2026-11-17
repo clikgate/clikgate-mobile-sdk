@@ -130,7 +130,7 @@ struct APIClient: Sendable {
             case .forever: canRetry = true
             }
             guard canRetry, Self.isRetryable(failure) else { return result }
-            // R.11: a server-requested wait gets up to 25 % random extra (a whole user base told the same wait)
+            // A server-requested wait gets up to 25 % random extra (a whole user base told the same wait)
             let wait = failure.retryAfter.map { max($0, 0) * (1 + 0.25 * abs(jitter())) } ?? backoff(attempt: attempt - 1)
             let retrying = wait <= maxRetryDelay
             logger.debug("\(request.url?.path ?? "") failed (\(failure.error.code)); " + (retrying ? "retrying in \(Int(wait.rounded(.up))) s" : "not retrying"))

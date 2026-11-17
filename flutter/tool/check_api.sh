@@ -1,5 +1,5 @@
 #!/bin/sh
-# Flutter boundary checks (spec 20): public-API snapshots of clikgate_flutter (core) and of its Engage
+# Flutter boundary checks: public-API snapshots of clikgate_flutter (core) and of its Engage
 # features (lib/engage.dart, one package since 2.1.0), "core has no Engage API" and "core code never uses
 # Engage". No device, no build.
 #   flutter/tool/check_api.sh            check

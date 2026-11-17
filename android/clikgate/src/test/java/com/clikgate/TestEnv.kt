@@ -25,17 +25,17 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 /**
- * The existing-user install fields (when the app arrived on the phone; covered by Change26Test), removed
+ * The existing-user install fields (when the app arrived on the phone; covered by ExistingUsersTest), removed
  * before comparing a body with a fixture from before them.
  */
-internal val CHANGE26_INSTALL_FIELDS = listOf(
+internal val EXISTING_USER_INSTALL_FIELDS = listOf(
     "install_channel", "debuggable", "preinstalled", "platform_installed_at", "platform_installed_source",
     "android_last_update_at", "android_updated_since_install", "android_version_code", "device_time",
     "existing_user_hint", "installed_before_start", "android_device_key",
 )
 
-internal fun withoutChange26(body: JSONObject): JSONObject =
-    JSONObject(body.toString()).apply { CHANGE26_INSTALL_FIELDS.forEach { remove(it) } }
+internal fun withoutExistingUserFields(body: JSONObject): JSONObject =
+    JSONObject(body.toString()).apply { EXISTING_USER_INSTALL_FIELDS.forEach { remove(it) } }
 
 /** Shared contract fixtures from ../shared/fixtures (on the test classpath). */
 internal object Fixtures {

@@ -1,6 +1,6 @@
 # clikgate_flutter example
 
-The primary Clikgate demo, in two variants (spec 17A.4) selected with
+The primary Clikgate demo, in two variants selected with
 `--dart-define=CLIKGATE_VARIANT=backend|engage` (default `backend`):
 
 - **backend** (recommended path): sign-in, invite link, stats, weekly leaderboard / "my rank"

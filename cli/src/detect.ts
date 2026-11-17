@@ -42,7 +42,7 @@ export function expoAppConfig(dir: string): string | undefined {
   return undefined;
 }
 
-/** The project types found in one folder (S.3 step 1). */
+/** The project types found in one folder. */
 export function detectIn(dir: string): Candidate[] {
   const out: Candidate[] = [];
   const pubspec = readIfExists(path.join(dir, 'pubspec.yaml'));

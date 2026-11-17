@@ -32,7 +32,7 @@ final class LifecycleTests: XCTestCase {
         XCTAssertEqual(body["installation_id"] as? String, id)
         XCTAssertNil(body["keychain_previous_installation_id"] as? String)
         XCTAssertEqual(body["platform"] as? String, "ios")
-        XCTAssertNil((body["consent"] as? [String: Any])?["tracking_allowed"], "no tracking_allowed from 1.5.0 (X.E23)")
+        XCTAssertNil((body["consent"] as? [String: Any])?["tracking_allowed"], "no tracking_allowed from 1.5.0")
         XCTAssertEqual((body["consent"] as? [String: Any])?["attribution"] as? String, "unknown")
         XCTAssertEqual(installs[0].headers["Clikgate-Installation-Id"], id)
         XCTAssertEqual(installs[0].headers["Clikgate-SDK-Key"], "cg_sdk_test")

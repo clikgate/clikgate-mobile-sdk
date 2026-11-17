@@ -2,7 +2,7 @@
 """
 Generates the `Provider` type of every mobile SDK from the committed provider list.
 
-Source of truth: the backend's committed OpenAPI `Provider` enum (`clikgate_api/docs/openapi.json`,
+Source of truth: the backend's committed OpenAPI `Provider` enum (`docs/openapi.json` in the backend repository,
 `components.schemas.Provider.enum`: every gateway in `GET /v1/payment-gateways`, enabled or not, plus
 `shopify`, `woocommerce` and `custom`). Its values are copied into `shared/providers.json`, which is
 checked in, so builds and CI never call the API or a gateway.
@@ -12,7 +12,7 @@ checked in, so builds and CI never call the API or a gateway.
     python3 scripts/generate_providers.py --openapi PATH        # refresh shared/providers.json from an openapi.json, then generate
     python3 scripts/generate_providers.py --check --openapi PATH  # also fail if the snapshot differs from that openapi.json
 
-Without --openapi, --check also compares the snapshot with ../clikgate_api/docs/openapi.json when that
+Without --openapi, --check also compares the snapshot with the backend's docs/openapi.json when that
 checkout exists next to this repository (skipped otherwise, e.g. in this repository's CI).
 """
 
@@ -242,7 +242,7 @@ def main() -> int:
                 problems.append(f"shared/providers.json differs from {openapi} (Provider enum)")
             else:
                 snapshot = {
-                    "source": "clikgate_api docs/openapi.json, components.schemas.Provider.enum",
+                    "source": "backend docs/openapi.json, components.schemas.Provider.enum",
                     "providers": upstream,
                 }
                 SNAPSHOT.write_text(json.dumps(snapshot, indent=2) + "\n")
@@ -267,7 +267,7 @@ def main() -> int:
     if problems:
         for p in problems:
             print(f"error: {p}", file=sys.stderr)
-        print("Run: python3 scripts/generate_providers.py [--openapi ../clikgate_api/docs/openapi.json]", file=sys.stderr)
+        print("Run: python3 scripts/generate_providers.py [--openapi PATH/TO/openapi.json]", file=sys.stderr)
         return 1
     if args.check:
         print(f"providers up to date ({len(providers)} providers, {len(TARGETS)} generated files)")

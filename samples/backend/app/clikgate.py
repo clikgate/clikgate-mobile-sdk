@@ -1,6 +1,6 @@
 """Thin client for the Clikgate control-plane API (server-to-server, API key auth).
 
-Only the calls the sample needs (see clikgate_api docs/API.md):
+Only the calls the sample needs (see Clikgate's API reference):
 
 - referrers: `POST /v1/referral-programs/{id}/referrers` (get-or-create by customer user id),
   `GET /v1/referral-programs/{id}/referrers/by-user/{customer_user_id}`

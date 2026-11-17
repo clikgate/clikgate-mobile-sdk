@@ -2,7 +2,7 @@ import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 /**
- * A mock of the Clikgate API endpoints the setup command uses (backend spec B.1–B.3), with the
+ * A mock of the Clikgate API endpoints the setup command uses, with the
  * shapes the backend confirmed: error envelope, RFC 8628 token errors (428/429/403/410, or 400
  * with the same codes), list envelope, `mode: live|test` domains, setup-check with `applies`, and the
  * app link subdomains (`link_subdomain`, `app_link_domains`, availability).

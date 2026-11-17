@@ -54,7 +54,7 @@ class FirstLaunchTest {
         val req = env.api.calls("POST /v1/sdk/install").first()
         val body = env.api.body(req)
         val expected = Fixtures.json("install_request_android")
-        assertEquals(sortKeys(expected).toString(), sortKeys(withoutChange26(body)).toString())
+        assertEquals(sortKeys(expected).toString(), sortKeys(withoutExistingUserFields(body)).toString())
         SchemaCheck.assertValid("install_request", body)
 
         assertEquals("cg_sdk_test", req.getHeader("Clikgate-SDK-Key"))

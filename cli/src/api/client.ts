@@ -1,7 +1,7 @@
 import * as os from 'node:os';
 import { CLI_VERSION } from '../constants';
 
-/** Error envelope (backend spec 6.2): `{"error": {type, code, message, param, request_id}}`. */
+/** Error envelope: `{"error": {type, code, message, param, request_id}}`. */
 export class ApiError extends Error {
   constructor(
     readonly status: number,

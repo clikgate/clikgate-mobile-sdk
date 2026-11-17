@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * - X's `twclid` travels unchanged in the URLs and the Play install referrer, like `li_fat_id`.
  */
 @RunWith(RobolectricTestRunner::class)
-class Change21Test {
+class OpenPayloadsTest {
     private lateinit var env: TestEnv
     private val links = CopyOnWriteArrayList<ClikgateDeepLink>()
     private val opened = CopyOnWriteArrayList<String>()
@@ -91,7 +91,7 @@ class Change21Test {
     @Test
     fun matchedSharedDomainLaunchUrlIsNotResolvedAgain() {
         // /install matched the launch URL (and recorded its click) but the link has no deep link: a /resolve of the
-        // same URL would record a second click (R.2).
+        // same URL would record a second click.
         val answer = Fixtures.json("install_response_organic").put("status", "matched")
         env.api.on("POST /v1/sdk/install", ok(answer.toString()))
         Clikgate.handleIntent(null, view("https://ciz.to/my-org-link"))
@@ -115,7 +115,7 @@ class Change21Test {
         assertFalse(body.has("click_id"))
     }
 
-    // ---- R.25: X's twclid travels like li_fat_id
+    // ---- X's twclid travels like li_fat_id
 
     @Test
     fun twclidTravelsInTheResolvedUrl() {

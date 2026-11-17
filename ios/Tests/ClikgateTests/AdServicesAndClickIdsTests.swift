@@ -4,7 +4,7 @@ import XCTest
 /// The AdServices token is requested when /install is actually sent (also after consent
 /// buffering), again after 24 hours, never kept on the device; IDFV goes with it for Redownload linking; LinkedIn
 /// `li_fat_id` and Snap `ScCid` reach the server in the launch / resolved URL.
-final class Change19Tests: XCTestCase {
+final class AdServicesAndClickIdsTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
 
@@ -125,7 +125,7 @@ final class Change19Tests: XCTestCase {
         XCTAssertEqual(h.searchAds.calls, 1)
     }
 
-    // MARK: - S.2: LinkedIn and Snap click ids travel in the Clikgate URLs the server reads
+    // MARK: - LinkedIn and Snap click ids travel in the Clikgate URLs the server reads
 
     func testLinkedInAndSnapClickIdsReachTheServer() async throws {
         let core = h.makeCore()

@@ -7,7 +7,7 @@ import { chooseProject, connect, printChecks, type Deps, PLATFORM_LABEL } from '
 import { paint } from './ui';
 import type { App } from './api/clikgate';
 
-/** `npx @clikgate/setup doctor` (S.5). Changes nothing. Exit 1 when any check fails. */
+/** `npx @clikgate/setup doctor`. Changes nothing. Exit 1 when any check fails. */
 export async function runDoctor(opts: Options, deps: Deps): Promise<{ code: number; report: DoctorReport }> {
   const { ui } = deps;
   const candidate = await chooseProject(opts, ui);

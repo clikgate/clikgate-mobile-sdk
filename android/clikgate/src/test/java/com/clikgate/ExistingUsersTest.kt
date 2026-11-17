@@ -29,11 +29,11 @@ import kotlin.random.Random
 
 /**
  * Existing users: what the first `/install` says about when the app arrived on the phone
- * (EX.3, R.3-R.8), the typed existing-user error (RF.1), the server's wait with jitter (R.11) and the
- * referral links Engage prepares after identifyUser() (R.28).
+ * (install date, channel, consent and device key), the typed existing-user error, the server's wait with jitter
+ * and the referral links Engage prepares after identifyUser().
  */
 @RunWith(RobolectricTestRunner::class)
-class Change26Test {
+class ExistingUsersTest {
     private lateinit var env: TestEnv
 
     // 2025-03-02T09:17:45Z, 2026-11-10T08:30:00Z
@@ -75,7 +75,7 @@ class Change26Test {
         return result!!
     }
 
-    // ------------------------------------------------------------------ EX.3
+    // ------------------------------------------------------------------ install date and channel
 
     @Test
     fun `start dates parse with Z, an offset or a fraction, on every API level`() {
@@ -105,7 +105,7 @@ class Change26Test {
         assertTrue(b.has("device_time"))
         assertFalse(b.has("existing_user_hint"))
         assertFalse(b.has("installed_before_start"))
-        // R.8: the keyed hash, never ANDROID_ID itself
+        // The keyed hash, never ANDROID_ID itself
         val mac = Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(Base64.decode("c2FsdC1mb3ItYXBw", Base64.DEFAULT), "HmacSHA256")) }
         val expected = mac.doFinal("9774d56d682e549c".toByteArray()).joinToString("") { "%02x".format(it) }
         assertEquals(expected, b.getString("android_device_key"))
@@ -119,7 +119,7 @@ class Change26Test {
         val b = installBody()
         assertEquals("android_first_install_time", b.getString("platform_installed_source"))
         assertEquals("2025-03-02T09:00:00Z", b.getString("platform_installed_at"))
-        // R.4: worked out from the exact times (30 s apart = the build carrying the SDK), then rounded
+        // Worked out from the exact times (30 s apart = the build carrying the SDK), then rounded
         assertFalse(b.getBoolean("android_updated_since_install"))
     }
 
@@ -161,7 +161,7 @@ class Change26Test {
         assertEquals("2025-03-02T09:00:00Z", b.getString("platform_installed_at"))
     }
 
-    // ------------------------------------------------------------------ R.3
+    // ------------------------------------------------------------------ opted out or consent denied
 
     @Test
     fun optedOutSendsOnlyWhetherTheAppWasHereBeforeTheStartDate() {
@@ -194,7 +194,7 @@ class Change26Test {
         assertFalse(none.has("installed_before_start"))
     }
 
-    // ------------------------------------------------------------------ RF.1
+    // ------------------------------------------------------------------ existing-user error
 
     @Test
     fun applyCodeFromAnExistingUserFailsWithTheTypedError() {
@@ -219,7 +219,7 @@ class Change26Test {
         assertFalse(a.isAttributed)
     }
 
-    // ------------------------------------------------------------------ R.11
+    // ------------------------------------------------------------------ server-requested wait
 
     @Test
     fun aWaitInTheErrorBodyIsHonouredWithJitter() {
@@ -235,7 +235,7 @@ class Change26Test {
         assertEquals(5_000L, HttpClient.failure(429, Fixtures.text("error_rate_limited"), "5").retryAfterMs)
     }
 
-    // ------------------------------------------------------------------ R.28
+    // ------------------------------------------------------------------ referral links after identifyUser()
 
     private fun configureForLinks() {
         env.api.on("POST /v1/sdk/referrals/link", ok(Fixtures.text("referral_link_response")))

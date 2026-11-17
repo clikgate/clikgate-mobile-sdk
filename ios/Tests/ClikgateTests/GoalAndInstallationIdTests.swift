@@ -3,7 +3,7 @@ import XCTest
 
 /// One method, `goal()` (`received`; no conversion values from goals), and
 /// `installationId()` for identity Path B.
-final class Change22Tests: XCTestCase {
+final class GoalAndInstallationIdTests: XCTestCase {
     var h: Harness!
     let server = StubServer.shared
 
@@ -23,7 +23,7 @@ final class Change22Tests: XCTestCase {
 
     private var sentInstallationId: String? { server.requests("POST /v1/sdk/install").first?.json["installation_id"] as? String }
 
-    // MARK: - R.9 received
+    // MARK: - received
 
     func testReceivedIsASuccessAndIsNotRetried() async {
         server.on("POST /v1/sdk/goals", .fixture("goals_response_received"))
@@ -41,7 +41,7 @@ final class Change22Tests: XCTestCase {
         XCTAssertEqual(server.requests("POST /v1/sdk/goals").count, 1)
     }
 
-    // MARK: - R.5 no SKAdNetwork / AdAttributionKit values
+    // MARK: - No SKAdNetwork / AdAttributionKit values
 
     func testAConfigStillCarryingAConversionValueSchemaIsIgnored() async {
         var c = Fixtures.json("config_response")
@@ -56,7 +56,7 @@ final class Change22Tests: XCTestCase {
         XCTAssertNil(st.json["skan_last_fine_value"])
     }
 
-    // MARK: - R.6 deeplink_handled for App banner taps in live mode
+    // MARK: - deeplink_handled for App banner taps in live mode
 
     func testLiveModeReportsTheRightScreenForABannerTapThatMeasuresIt() async throws {
         server.on("POST /v1/sdk/deeplink-handled", .fixture("deeplink_handled_response"))

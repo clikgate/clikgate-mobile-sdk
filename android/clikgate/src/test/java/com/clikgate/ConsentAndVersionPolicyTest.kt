@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** SDK 1.2.0: consent, click ids, version policy, Firebase, metadata, identity checks. */
 @RunWith(RobolectricTestRunner::class)
-class Change03Test {
+class ConsentAndVersionPolicyTest {
     private lateinit var env: TestEnv
     private val links = CopyOnWriteArrayList<ClikgateDeepLink>()
     private val now = AtomicLong(1_792_490_280_000L) // 2026-10-20T09:58:00Z

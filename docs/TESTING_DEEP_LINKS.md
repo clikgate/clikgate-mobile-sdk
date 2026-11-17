@@ -1,6 +1,6 @@
 # Testing deep links, deferred deep links, referrals and uninstalls
 
-How to exercise every path in the device matrix (spec section 20) before a release. Use a
+How to exercise every path in the device matrix before a release. Use a
 **sandbox** app in Clikgate (`"environment": "sandbox"`) so you can reset installations and
 use App Attest development keys.
 
@@ -27,7 +27,7 @@ use App Attest development keys.
 5. Re-run first-launch flows: `POST /v1/apps/{id}/sandbox/reset-installation
    {"installation_id": "..."}`, then uninstall/reinstall the app (or clear its data).
 
-Local backend: run clikgate_api (`make dev`, `make dev-redirect`, `make worker`, `make ingest`) and
+Local backend: run the Clikgate backend (`make dev`, `make dev-redirect`, `make worker`, `make ingest`) and
 point the SDK at it with `apiBaseUrl` (Android emulator: `http://10.0.2.2:8000`; iOS
 simulator: `http://localhost:8000`). Universal Links / App Links need a real HTTPS domain; for
 local link tests use the custom scheme or `adb shell am start` / `xcrun simctl openurl`.

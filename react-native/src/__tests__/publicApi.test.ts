@@ -1,5 +1,5 @@
 /**
- * Public-API snapshot and core/Engage boundary checks (spec v3 section 20).
+ * Public-API snapshot and core/Engage boundary checks.
  *
  * The listing (runtime exports, the members of `Clikgate` and `referrals`, and the exported type
  * names of src/index.ts) must equal the checked-in api/public-api.txt. After an intended API
@@ -21,7 +21,7 @@ const api: Record<string, any> = Object.fromEntries(
 );
 const SNAPSHOT = join(ROOT, 'api', 'public-api.txt');
 
-/** Core must not contain referrer-side / Engage API (spec 0.4). Case-insensitive. */
+/** Core must not contain referrer-side / Engage API. Case-insensitive. */
 const FORBIDDEN = [
   'leaderboard',
   'createlink',

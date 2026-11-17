@@ -128,7 +128,7 @@ the content they just tapped is acceptable is not clearly settled by Apple. So:
 | Probabilistic signals, pasteboard tokens | the matching window / install lookback (Redis only) |
 | Attestation challenges | 5 minutes (Redis only) |
 
-## Optional features (spec v3)
+## Optional features
 
 Each of these is an organisation feature switch (`/v1/organization/features`). A feature that is
 off collects nothing, sends no webhooks and makes the SDK calls no-ops; switching it off with

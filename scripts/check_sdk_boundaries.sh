@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Core / Engage boundary checks for every SDK (spec v3 new edition, 0.4 and section 20). Since 2.1.0
+# Core / Engage boundary checks for every SDK. Since 2.1.0
 # each SDK is one package with its Engage features in their own module / package / folder
 # (Android com.clikgate.engage, iOS ClikgateEngage module, Flutter lib/engage.dart, RN src/engage):
 #   1. public-API snapshots of the core and of its Engage features, checked in;

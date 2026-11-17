@@ -1,4 +1,4 @@
-"""Sample "app backend" for the Clikgate recommended integration path (spec 0.4 / 17A.4).
+"""Sample "app backend" for the Clikgate recommended integration path.
 
 The mobile app uses only the core Clikgate SDK. Everything the referrer side needs (invite link,
 referral stats, leaderboards) and confirmed purchases go through this server, which calls the

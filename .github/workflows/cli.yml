@@ -104,7 +104,7 @@ jobs:
           if-no-files-found: error
 
   node18-smoke:
-    # The published bundle must run on the oldest supported Node (S.1: Node 18+).
+    # The published bundle must run on the oldest supported Node (Node 18+).
     needs: test
     runs-on: ubuntu-latest
     steps:
