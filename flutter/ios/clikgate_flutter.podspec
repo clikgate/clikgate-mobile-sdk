@@ -14,7 +14,7 @@ attribution, events, referrals and push-token registration for uninstall trackin
                        DESC
   s.homepage         = 'https://clikgate.com'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Clikgate' => 'sdk@clikgate.com' }
+  s.author           = { 'Clikgate' => 'dev@clikgate.com' }
   s.source           = { :path => '.' }
   s.source_files     = 'clikgate_flutter/Sources/clikgate_flutter/**/*.swift'
   s.resource_bundles = { 'clikgate_flutter_privacy' => ['clikgate_flutter/Sources/clikgate_flutter/PrivacyInfo.xcprivacy'] }
