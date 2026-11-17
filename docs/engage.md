@@ -1,12 +1,12 @@
 # Engage features vs the backend path
 
 Each Clikgate SDK is one package with two layers (one package per
-platform since 2.1.0):
+platform):
 
 | Layer | Where | What it does |
 |---|---|---|
 | **Core SDK** | `com.clikgate:clikgate-android`, `Clikgate` (SPM product / pod), `clikgate_flutter`, `@clikgate/react-native` | Only what must happen on the device: installation id, first launch / reinstall / opens, Play Install Referrer, pasteboard token, deep links (direct + deferred), events with an offline queue, `identify`, push token + uninstall-check filtering, attestation, SKAN values, Apple Search Ads token, opt-out, feature switches, and the referee-side referral calls `referrals.applyCode` / `referrals.referredBy`. |
-| **Engage features** (use them only without a backend) | In the same packages: `com.clikgate.engage` (Android), the `ClikgateEngage` module of the `Clikgate` SPM product (`import ClikgateEngage`; with CocoaPods it's in the `Clikgate` module), `package:clikgate_flutter/engage.dart` (Dart, plus the plugin's share-menu channel), `ClikgateEngage` exported by `@clikgate/react-native` (TypeScript, plus a share-menu TurboModule) | Convenience reads and actions for apps **without their own backend**: the user's referral link, "my referral stats", leaderboards (top / me / around me / opt-out / hosted page URL), promo/offline code redemption, share helpers (share a link with a version per app, system share sheet, WhatsApp). |
+| **Engage features** (use them only without a backend) | In the same packages: `com.clikgate.engage` (Android), the `ClikgateEngage` module of the `Clikgate` SPM product (`import ClikgateEngage`; with CocoaPods it's in the `Clikgate` module, so wrap it in `#if canImport(ClikgateEngage)` to build with both), `package:clikgate_flutter/engage.dart` (Dart, plus the plugin's share-menu channel), `ClikgateEngage` exported by `@clikgate/react-native` (TypeScript, plus a share-menu TurboModule) | Convenience reads and actions for apps **without their own backend**: the user's referral link, "my referral stats", leaderboards (top / me / around me / opt-out / hosted page URL), promo/offline code redemption, share helpers (share a link with a version per app, system share sheet, WhatsApp). |
 
 Engage uses the core, never the other way round: the core code never calls Engage, and an app that
 doesn't call Engage doesn't ship it (R8, the iOS linker and Dart tree-shaking drop unused code). There

@@ -326,7 +326,7 @@ There is no identity-signal API in any SDK: identity checks are server-to-server
 
 ## 5b. Engage features (apps without a backend)
 
-Nothing extra to install: `ClikgateEngage` is exported by `@clikgate/react-native` (since 2.1.0; there is
+Nothing extra to install: `ClikgateEngage` is exported by `@clikgate/react-native` (there is
 no separate `@clikgate/react-native-engage` package).
 
 Pure TypeScript apart from the share menu (below). It calls the same `/v1/sdk/...` endpoints
