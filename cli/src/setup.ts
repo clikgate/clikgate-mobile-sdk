@@ -205,7 +205,7 @@ async function sendSigningDetails(opts: Options, deps: Deps, project: Project, c
     const debug = (deps.debugFingerprint ?? debugFingerprint)(project.android?.debugKeystore ?? defaultDebugKeystore());
     if (debug && !have.has(debug)) add.push(debug);
     if (debug) ui.out(`${paint(ui, 'green', '✓')} Debug signing SHA-256 ${have.has(debug) ? 'already in Clikgate' : 'read with keytool'}`);
-    ui.out('Production App Links need the Play App Signing SHA-256 (Play Console › Release › Setup › App signing).');
+    ui.out('Production App Links need the Play App Signing SHA-256 (Play Console › Protected with Play › Play Store protection › Manage Play app signing).');
     const play = opts.yes ? undefined : await askFingerprint(ui, 'Paste it now, or press Enter to add it later:');
     if (play && !have.has(play)) add.push(play);
     if (!play) manual.push({ label: 'Play App Signing fingerprint', detail: 'Add the Play App Signing SHA-256 to the Android app in the dashboard (Apps › your app › Signing). Without it, App Links open the browser in Play Store installs.' });

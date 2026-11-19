@@ -382,7 +382,7 @@ const PROBLEM_FIXES: Record<string, (host: string, platform: 'android' | 'ios') 
   missing_team_id: () => 'Add your Apple Team ID (10 characters) to the iOS app in the dashboard, or rerun `' + setupCommand() + '`.',
   missing_fingerprints: () => 'Add your signing SHA-256 fingerprints (debug and Play App Signing) to the Android app in the dashboard, or rerun `' + setupCommand() + '`.',
   app_not_listed: (h) => `${h}'s app-links file doesn't list this app yet. Check the app's identifiers in the dashboard, then run doctor again in a few minutes.`,
-  wrong_fingerprint: () => 'The fingerprints in Clikgate don\'t match your signing certificate. Add the SHA-256 from `keytool` (debug) and Play Console › Release › Setup › App signing (release).',
+  wrong_fingerprint: () => 'The fingerprints in Clikgate don\'t match your signing certificate. Add the SHA-256 from `keytool` (debug) and Play Console › Protected with Play › Play Store protection › Manage Play app signing (release).',
   link_subdomain_not_confirmed: () => 'Confirm the app\'s link subdomain in the dashboard (Apps › your app › Link subdomain), or run `' + setupCommand() + '` and confirm it.',
 };
 

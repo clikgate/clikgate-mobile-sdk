@@ -1,3 +1,7 @@
+## 2.1.3: Package contact
+
+- The package contact is now dev@clikgate.com. Code comments tidied. No behaviour change (native SDKs 2.1.3).
+
 ## 2.1.2: Free plan link domain is ciz.ng
 
 - The Free plan's shared link domain is now `ciz.ng` (it was `clk.ng`, which Clikgate never put live). Links on
