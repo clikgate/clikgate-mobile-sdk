@@ -1,5 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import * as os from 'node:os';
 import { CLI_VERSION } from '../constants';
+
+/** Statuses worth retrying: Cloudflare's "origin unreachable" family and plain 502–504. */
+const RETRY_STATUSES = new Set([502, 503, 504, 520, 521, 522, 523, 524, 530]);
+/** Waits before the 2nd and 3rd attempt (dropped connections and restarts usually clear within seconds). */
+export const RETRY_DELAYS_MS = [1_000, 3_000];
 
 /** Error envelope: `{"error": {type, code, message, param, request_id}}`. */
 export class ApiError extends Error {
@@ -27,6 +33,8 @@ export interface ClientOptions {
   fetch?: Fetch;
   /** cg_cli_ token, kept in memory only. */
   token?: string;
+  /** Waits between attempts (tests pass a no-op). */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export function userAgent(): string {
@@ -53,17 +61,32 @@ export class ApiClient {
     };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (this.token) headers.Authorization = `Bearer ${this.token}`;
-    let res: Response;
-    try {
-      res = await this.fetchImpl(this.opts.baseUrl + path, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(30_000),
-      });
-    } catch (e) {
-      throw new NetworkError(`Can't reach ${this.opts.baseUrl} (${(e as Error).message})`);
+    // One key for every attempt: a retried POST/PATCH that already reached Clikgate is replayed, never applied twice
+    if (method === 'POST' || method === 'PATCH') headers['Idempotency-Key'] = randomUUID();
+    const sleep = this.opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+    let res: Response | undefined;
+    for (let attempt = 0; ; attempt++) {
+      const last = attempt >= RETRY_DELAYS_MS.length;
+      try {
+        res = await this.fetchImpl(this.opts.baseUrl + path, {
+          method,
+          headers,
+          body: body === undefined ? undefined : JSON.stringify(body),
+          signal: AbortSignal.timeout(30_000),
+        });
+      } catch (e) {
+        if (last) throw new NetworkError(`Can't reach ${this.opts.baseUrl} (${(e as Error).message}). Check your connection and try again.`);
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      if (!last && RETRY_STATUSES.has(res.status)) {
+        await res.text().catch(() => undefined);
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      break;
     }
+    res = res!;
     const text = await res.text();
     let json: unknown = undefined;
     if (text) {

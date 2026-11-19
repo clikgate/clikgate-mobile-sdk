@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import { SHARED_DOMAIN_FIX, SHARED_PLATFORM_DOMAINS, isTestHost } from '../constants';
-import { addAppLinks, addDebugAppLinks, allLinkHosts, newDebugManifest } from '../edit/androidManifest';
+import { addAppLinks, addDebugAppLinks, addSchemeFilter, allLinkHosts, newDebugManifest } from '../edit/androidManifest';
 import {
   FULL_BACKUP_ATTR,
   addDataExtractionExcludes,
@@ -11,7 +11,7 @@ import {
   newFullBackupContent,
 } from '../edit/backupRules';
 import { setBuildSetting } from '../edit/pbxproj';
-import { APS_ENVIRONMENT, addApplinks, addBoolIfMissing, applinksHosts, newEntitlements, setString } from '../edit/plistEdit';
+import { APS_ENVIRONMENT, addApplinks, addBoolIfMissing, addUrlScheme, applinksHosts, newEntitlements, setString } from '../edit/plistEdit';
 import { rel } from '../fsutil';
 import type { PlanBuilder } from '../plan';
 import { isDebugSourceSet, type AndroidModule } from '../project/android';
@@ -319,6 +319,41 @@ export function planIosLinks(pb: PlanBuilder, ios: IosProject, domains: LinkDoma
         const a = addBoolIfMissing(t, 'FlutterDeepLinkingEnabled', false);
         if (a !== t) pb.change(pRel, a, "let Clikgate handle links (Flutter's deep linking off)");
       }
+    }
+  }
+}
+
+/**
+ * The app's URI scheme (`<scheme>://`), so the link page's "Open in app" button can open the app when Universal
+ * Links / App Links don't: a VIEW intent filter on the launcher activity, and a CFBundleURLTypes entry in every
+ * Info.plist the app target uses. Existing schemes are kept; nothing is removed.
+ */
+export function planUriScheme(pb: PlanBuilder, ctx: { android?: AndroidModule; ios?: IosProject }, scheme: string, urlName: string): void {
+  const root = pb.root;
+  if (ctx.android) {
+    const mainRel = rel(root, ctx.android.mainManifest);
+    const activity = ctx.android.launcherActivity;
+    if (!activity) {
+      pb.manual('Android URI scheme', `${mainRel} has no launcher activity. Add an intent filter with <data android:scheme="${scheme}" /> (VIEW, DEFAULT, BROWSABLE) to the activity that opens links.`);
+    } else {
+      const edit = addSchemeFilter(pb.current(mainRel)!, activity, scheme);
+      if (edit.changed) pb.change(mainRel, edit.text, `URI scheme ${scheme}:// for "Open in app"`);
+      else pb.done(`Android: URI scheme ${scheme}://`);
+    }
+  }
+  if (ctx.ios) {
+    const ios = ctx.ios;
+    const files = [...new Set(ios.configs.map((c) => c.infoPlist).filter((f): f is string => Boolean(f)))];
+    if (!files.length) {
+      pb.manual('iOS URI scheme', `No Info.plist found for ${ios.target}. In Xcode: ${ios.target} › Info › URL Types › add "${scheme}" under URL Schemes.`);
+    }
+    for (const f of files) {
+      const fRel = rel(root, path.join(ios.srcRoot, f));
+      const t = pb.current(fRel);
+      if (t === null) continue;
+      const a = addUrlScheme(t, scheme, urlName);
+      if (a !== t) pb.change(fRel, a, `URI scheme ${scheme}:// for "Open in app"`);
+      else pb.done(`iOS: URI scheme ${scheme}:// (${fRel})`);
     }
   }
 }

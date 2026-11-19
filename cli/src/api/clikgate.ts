@@ -21,6 +21,10 @@ export interface App {
   link_hostnames?: { live: string; test: string } | null;
   /** The hosts to write: release = the app subdomain + active custom domains, debug = the test subdomain. Empty while unconfirmed; never a shared domain. */
   app_link_domains?: { release: string[]; debug: string[] } | null;
+  /** `<scheme>://` for the link page's "Open in app" button. */
+  uri_scheme?: string | null;
+  ios_app_store_id?: string | null;
+  store_url?: string | null;
 }
 
 export interface SubdomainAvailability {

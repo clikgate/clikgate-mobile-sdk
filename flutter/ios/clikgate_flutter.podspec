@@ -6,7 +6,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'clikgate_flutter'
-  s.version          = '2.1.3'
+  s.version          = '2.1.4'
   s.summary          = 'Clikgate deep linking, install attribution, referrals and uninstall tracking for Flutter (iOS).'
   s.description      = <<-DESC
 Flutter plugin bridging to the Clikgate iOS SDK: Universal Links, deferred deep links,

@@ -96,6 +96,47 @@ function filterBlock(indent: string, unit: string, hosts: string[], comment: str
   return lines.join('\n');
 }
 
+/** Custom URL schemes (not http/https) of the VIEW intent filters, in manifest order. */
+export function customSchemes(text: string): string[] {
+  const root = parseXml(text);
+  const out: string[] = [];
+  for (const a of activities(root)) {
+    for (const f of children(a, 'intent-filter')) {
+      if (!actions(f).includes(VIEW)) continue;
+      for (const s of dataAttr(f, 'android:scheme')) if (!/^https?$/i.test(s) && !out.includes(s)) out.push(s);
+    }
+  }
+  return out;
+}
+
+/**
+ * Lets `<scheme>://` open the activity: a VIEW/BROWSABLE intent filter (no autoVerify; custom schemes can't be
+ * verified). Unchanged when any filter already declares the scheme.
+ */
+export function addSchemeFilter(text: string, activityName: string, scheme: string): ManifestEdit {
+  if (customSchemes(text).some((s) => s.toLowerCase() === scheme.toLowerCase())) return { text, added: [], changed: false };
+  const root = parseXml(text);
+  const activity = activities(root).find((a) => a.attrs['android:name'] === activityName);
+  if (!activity) throw new Error(`Activity ${activityName} not found`);
+  const unit = indentUnit(text);
+  const indent = childIndent(text, activity);
+  const i1 = indent + unit;
+  const block = [
+    `${indent}<!-- ${MARKER_START} -->`,
+    `${indent}<!-- Clikgate: "Open in app" on the link page uses this URI scheme -->`,
+    `${indent}<intent-filter>`,
+    `${i1}<action android:name="${VIEW}" />`,
+    `${i1}<category android:name="android.intent.category.DEFAULT" />`,
+    `${i1}<category android:name="android.intent.category.BROWSABLE" />`,
+    `${i1}<data android:scheme="${scheme}" />`,
+    `${indent}</intent-filter>`,
+    `${indent}<!-- ${MARKER_END} -->`,
+  ].join('\n');
+  const out = applySplices(text, [appendChildSplice(text, activity, block)]);
+  parseXml(out);
+  return { text: out, added: [scheme], changed: true };
+}
+
 /** A Clikgate-marked verified filter inside the activity, to extend instead of adding another. */
 function markedFilter(text: string, activity: XmlElement): XmlElement | undefined {
   return children(activity, 'intent-filter').find((f) => {

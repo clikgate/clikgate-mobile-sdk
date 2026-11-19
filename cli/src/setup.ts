@@ -31,6 +31,7 @@ import { debugFingerprint, defaultDebugKeystore, normaliseFingerprint } from './
 import { changes, renderDiffs, renderPlan, type Plan } from './plan';
 import { buildPlan } from './platforms';
 import { loadProject, needsPlatforms, type Project } from './project/load';
+import { chooseUriScheme, fillAppStoreId, saveUriScheme, type SchemeChoice } from './storeAndScheme';
 import { paint, type UI } from './ui';
 
 export interface Deps {
@@ -97,7 +98,7 @@ interface OnlineResult {
 }
 
 async function connect(opts: Options, deps: Deps, project: Project): Promise<{ clikgate: Clikgate; organization: string }> {
-  const api = new ApiClient({ baseUrl: opts.apiUrl ?? DEFAULT_API_URL, fetch: deps.fetch });
+  const api = new ApiClient({ baseUrl: opts.apiUrl ?? DEFAULT_API_URL, fetch: deps.fetch, sleep: deps.sleep });
   try {
     const session = await signIn(api, project.candidate.platform, {
       print: (l) => deps.ui.out(l),
@@ -377,6 +378,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   let testDomain: string | undefined;
   let sdkKey: string;
   let sdkKeyIos: string | undefined;
+  let schemeChoice: SchemeChoice | undefined;
   if (offline) {
     codeDomains = opts.domains!.filter((d) => !isTestHost(d));
     linkDomains = [...codeDomains];
@@ -392,7 +394,9 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     const { clikgate, organization } = await connect(opts, deps, project);
     const apps = await pickApps(opts, deps, project, clikgate, manual);
     await sendSigningDetails(opts, deps, project, clikgate, apps, manual);
+    apps.ios = await fillAppStoreId(deps.ui, opts.yes, opts.dryRun, deps.fetch ?? fetch, clikgate, apps.ios, manual);
     const d = await chooseDomains(opts, deps, clikgate, apps, manual);
+    schemeChoice = await chooseUriScheme(deps.ui, opts.yes, project, apps, manual);
     codeDomains = d.code;
     linkDomains = d.links;
     perPlatform = d.perPlatform;
@@ -424,12 +428,16 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
           }
         : undefined,
     install: opts.install,
+    uriScheme: schemeChoice ? { scheme: schemeChoice.scheme, urlName: project.iosBundleId ?? project.androidAppId ?? schemeChoice.scheme } : undefined,
   });
   for (const m of manual) plan.steps.push({ kind: 'manual', label: m.label, detail: m.detail });
 
   const reviewed = await reviewAndApply(opts, deps, plan, tree);
   if ('exit' in reviewed) return reviewed.exit;
   const applied = reviewed.applied;
+  // Saved only once the project registers the scheme (written now, or already there), so "Open in app" never fails
+  const schemePending = plan.steps.some((st) => st.kind === 'change' && st.summary.includes('URI scheme'));
+  if (online && schemeChoice?.update.length && !opts.dryRun && (applied || !schemePending)) await saveUriScheme(ui, online.clikgate, schemeChoice);
 
   // Verify.
   ui.out('');

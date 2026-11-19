@@ -27,7 +27,7 @@ import { exists, read, rel } from '../fsutil';
 import { PlanBuilder, type Plan } from '../plan';
 import { findClassFile, type AndroidModule } from '../project/android';
 import { targetSwiftFiles, type IosProject } from '../project/ios';
-import { planAndroidBackup, planAndroidLinks, planIosLinks, planIosPushEntitlements, type LinkDomains } from './native';
+import { planAndroidBackup, planAndroidLinks, planIosLinks, planIosPushEntitlements, planUriScheme, type LinkDomains } from './native';
 import { which } from '../which';
 import { versionAtLeast } from '../doctor';
 
@@ -51,6 +51,8 @@ export interface PlanContext {
   /** Expo: identifiers to write into app.json when missing (asked during app matching). */
   expoIds?: { androidPackage?: string; iosBundleId?: string };
   install: boolean;
+  /** The app's URI scheme for "Open in app" (written to Info.plist / AndroidManifest / app.json), and the URL name. */
+  uriScheme?: { scheme: string; urlName: string };
 }
 
 function source(pb: PlanBuilder, file: string, result: SourceResult, summary: string, doneLabel: string): void {
@@ -110,6 +112,10 @@ function rnIosForwarding(pb: PlanBuilder, ios: IosProject): void {
   }
 }
 
+function uriScheme(pb: PlanBuilder, ctx: PlanContext): void {
+  if (ctx.uriScheme) planUriScheme(pb, { android: ctx.android, ios: ctx.ios }, ctx.uriScheme.scheme, ctx.uriScheme.urlName);
+}
+
 function nativeLinks(pb: PlanBuilder, ctx: PlanContext, flutter: boolean): void {
   const hasAny = ctx.links.live.length > 0 || Boolean(ctx.links.test);
   if (ctx.android && hasAny) planAndroidLinks(pb, ctx.android, ctx.links, { flutter });
@@ -161,6 +167,7 @@ function planFlutter(pb: PlanBuilder, ctx: PlanContext): void {
     outdated(pb, SDK.flutter.package, existing, SDK.flutter.constraint, SDK.flutter.minimum, 'pubspec.yaml');
   } else pb.change('pubspec.yaml', addPubDependency(pubspec, SDK.flutter.package, SDK.flutter.constraint), `add ${SDK.flutter.package} ${SDK.flutter.constraint}`);
   nativeLinks(pb, ctx, true);
+  uriScheme(pb, ctx);
   const mainRel = 'lib/main.dart';
   const main = pb.current(mainRel);
   if (main === null) pb.manual('Start Clikgate', 'lib/main.dart not found. Call Clikgate.configure before runApp.', editDartMain('void main() {\n  runApp(const MyApp());\n}\n', ctx.startup).kind === 'change' ? undefined : undefined);
@@ -181,6 +188,7 @@ function jsRootFile(root: string, candidates: string[]): string | undefined {
 function planReactNative(pb: PlanBuilder, ctx: PlanContext): void {
   addJsDependency(pb);
   nativeLinks(pb, ctx, false);
+  uriScheme(pb, ctx);
   if (ctx.ios) rnIosForwarding(pb, ctx.ios);
   if (ctx.ios) planIosPushForward(pb, ctx.ios, 'react-native');
   const file = jsRootFile(ctx.root, ['App.tsx', 'App.jsx', 'App.js', 'src/App.tsx', 'src/App.js']);
@@ -203,6 +211,8 @@ function planExpo(pb: PlanBuilder, ctx: PlanContext): void {
     text = addExpoPlugin(text, pluginProps);
     if (ctx.expoIds?.androidPackage) text = setExpoValueIfMissing(text, ['android', 'package'], ctx.expoIds.androidPackage);
     if (ctx.expoIds?.iosBundleId) text = setExpoValueIfMissing(text, ['ios', 'bundleIdentifier'], ctx.expoIds.iosBundleId);
+    // Expo writes `scheme` into Info.plist and AndroidManifest on prebuild
+    if (ctx.uriScheme) text = setExpoValueIfMissing(text, ['scheme'], ctx.uriScheme.scheme);
     if (text !== before) pb.change('app.json', text, found ? 'complete the Clikgate config plugin' : `Clikgate config plugin: ${pluginProps.linkDomains.join(', ')}${pluginProps.testLinkDomain ? `; ${pluginProps.testLinkDomain} in development/preview builds only` : ''}`);
     else pb.done('Expo: Clikgate config plugin in app.json');
   } else {
@@ -213,6 +223,7 @@ function planExpo(pb: PlanBuilder, ctx: PlanContext): void {
     );
   }
   if (ctx.android || ctx.ios) nativeLinks(pb, ctx, false);
+  uriScheme(pb, ctx);
   if (ctx.ios) rnIosForwarding(pb, ctx.ios);
   // ios/ checked in: edit it like bare React Native (the config plugin does the same on prebuild).
   if (ctx.ios) planIosPushForward(pb, ctx.ios, 'react-native');
@@ -246,6 +257,7 @@ function planAndroid(pb: PlanBuilder, ctx: PlanContext): void {
     pb.change(buildRel, addGradleDependency(build, dependencyLine(mod.kotlinDsl, false)), `add ${SDK.android.group}:${SDK.android.artifact}:${SDK.android.version}`);
   }
   nativeLinks(pb, ctx, false);
+  uriScheme(pb, ctx);
 
   // Application class: extend it, or create ClikgateApplication.kt and register it.
   const manifestRel = rel(ctx.root, mod.mainManifest);
@@ -313,6 +325,7 @@ function planIos(pb: PlanBuilder, ctx: PlanContext): void {
       );
   }
   nativeLinks(pb, ctx, false);
+  uriScheme(pb, ctx);
 
   const swift = targetSwiftFiles(ios);
   const swiftUI = swift.find((f) => /@main\s+struct\s+\w+\s*:\s*(SwiftUI\.)?App\b/.test(read(f)));
