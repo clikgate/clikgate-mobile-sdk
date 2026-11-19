@@ -16,6 +16,8 @@ export interface MockApp {
   bundle_id?: string | null;
   team_id?: string | null;
   sha256_cert_fingerprints: string[];
+  uri_scheme?: string | null;
+  store_url?: string | null;
   sdk_key_test: string;
   sdk_settings: { shared_domain_app_links: boolean; test_domain_app_links: boolean };
   link_subdomain?: string;
@@ -162,6 +164,9 @@ export async function startMockServer(opts: MockOptions = {}): Promise<MockServe
         if (req.method === 'PATCH') {
           if (body.sha256_cert_fingerprints) app.sha256_cert_fingerprints = Array.from(new Set([...app.sha256_cert_fingerprints, ...body.sha256_cert_fingerprints]));
           if (body.team_id) app.team_id = body.team_id;
+          // As clikgate_api's CLI allow-list: uri_scheme and store_url are set; ios_app_store_id is ignored
+          if (body.uri_scheme !== undefined) app.uri_scheme = body.uri_scheme;
+          if (body.store_url !== undefined) app.store_url = body.store_url;
           if (body.link_subdomain !== undefined) {
             const reason = available(body.link_subdomain, app.id);
             if (reason) return error(res, 422, 'link_subdomain_unavailable', 'This link subdomain is not available.', { param: 'link_subdomain', reason });

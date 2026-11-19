@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.4
+
+- **URI scheme, set up for you.** Setup finds the app's scheme (in Clikgate or the project) or suggests one from the link subdomain, adds it to Info.plist and AndroidManifest.xml (Expo: `scheme` in app.json), and saves it on the Clikgate apps after the files are written. The link page can then offer "Open in app".
+- **App Store ID, filled in for you.** For an iOS app on the App Store, setup finds it by bundle ID and saves the App Store link, so visitors without the app go to the App Store. Not published yet: a manual step says what to do later.
+- **Dropped connections are retried.** Requests to Clikgate are retried twice (after 1 and 3 seconds) when the connection drops or Cloudflare reports the origin unreachable, with one `Idempotency-Key` per request so a retry is never applied twice.
+- Installs `clikgate_flutter` ^2.1.4 (the other SDKs stay 2.1.3).
+
 ## 2.1.3
 
 - Installs the 2.1.3 SDKs (constraints `^2.1.3` / `~> 2.1`).

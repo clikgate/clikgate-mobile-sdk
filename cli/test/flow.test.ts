@@ -99,7 +99,7 @@ describe('offline mode', () => {
 describe('existing dependencies', () => {
   // `dart run clikgate_flutter` needs the package in pubspec.yaml first (`flutter pub add clikgate_flutter`,
   // which writes it in sorted order): setup reports the step as already done and leaves pubspec.yaml alone.
-  it.each(['^2.1.3', '^2.3.0'])('clikgate_flutter %s added by `flutter pub add` is already set up, pubspec.yaml unchanged', async (constraint) => {
+  it.each(['^2.1.4', '^2.3.0'])('clikgate_flutter %s added by `flutter pub add` is already set up, pubspec.yaml unchanged', async (constraint) => {
     const dir = copyFixture('flutter');
     const pub = path.join(dir, 'pubspec.yaml');
     const added = fs.readFileSync(pub, 'utf8').replace('dependencies:\n  flutter:\n    sdk: flutter\n', `dependencies:\n  clikgate_flutter: ${constraint}\n  flutter:\n    sdk: flutter\n`);
@@ -120,7 +120,7 @@ describe('existing dependencies', () => {
     const ui = new ScriptedUI();
     expect(await main(['--cwd', dir, ...OFFLINE], { ui })).toBe(0);
     expect(fs.readFileSync(pub, 'utf8')).toContain('clikgate_flutter: ^1.3.0');
-    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.1.3 or newer. Change it to ^2.1.3 and reinstall.');
+    expect(ui.text).toContain('pubspec.yaml has clikgate_flutter ^1.3.0; this setup needs 2.1.4 or newer. Change it to ^2.1.4 and reinstall.');
   });
 });
 

@@ -1,3 +1,7 @@
+## 2.1.4: Setup command 2.1.4
+
+- `dart run clikgate_flutter:setup` runs setup command 2.1.4: it sets up the URI scheme and the App Store ID for you, and retries dropped connections to Clikgate. The plugin itself is unchanged (native SDKs 2.1.3).
+
 ## 2.1.3: Package contact
 
 - The package contact is now dev@clikgate.com. Code comments tidied. No behaviour change (native SDKs 2.1.3).

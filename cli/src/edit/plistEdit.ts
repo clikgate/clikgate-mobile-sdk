@@ -134,3 +134,50 @@ export function newEntitlements(hosts: string[]): string {
     '',
   ].join('\n');
 }
+
+const URL_TYPES = 'CFBundleURLTypes';
+
+/** Every custom URL scheme the Info.plist registers (CFBundleURLTypes › CFBundleURLSchemes). */
+export function urlSchemes(text: string): string[] {
+  const types = readPlist(text)[URL_TYPES];
+  if (!Array.isArray(types)) return [];
+  return types.flatMap((t) => {
+    const s = (t as Record<string, unknown> | null)?.CFBundleURLSchemes;
+    return Array.isArray(s) ? s.filter((x): x is string => typeof x === 'string') : [];
+  });
+}
+
+/**
+ * Registers a URL scheme in Info.plist (a new CFBundleURLTypes entry), keeping every existing entry and the
+ * file's formatting. Unchanged when the scheme is already registered.
+ */
+export function addUrlScheme(text: string, scheme: string, urlName: string): string {
+  if (urlSchemes(text).some((s) => s.toLowerCase() === scheme.toLowerCase())) return text;
+  const root = parseXml(text);
+  const dict = rootDict(root);
+  const types = valueFor(text, dict, URL_TYPES);
+  const unit = indentUnit(text);
+  const entry = (indent: string) =>
+    [
+      `${indent}<dict>`,
+      `${indent}${unit}<key>CFBundleURLName</key>`,
+      `${indent}${unit}<string>${escapeText(urlName)}</string>`,
+      `${indent}${unit}<key>CFBundleURLSchemes</key>`,
+      `${indent}${unit}<array>`,
+      `${indent}${unit}${unit}<string>${escapeText(scheme)}</string>`,
+      `${indent}${unit}</array>`,
+      `${indent}</dict>`,
+    ].join('\n');
+  let out: string;
+  if (types && types.name === 'array') {
+    const indent = types.children.length ? lineIndent(text, types.children[0].start) : childIndent(text, types);
+    out = applySplices(text, [appendChildSplice(text, types, entry(indent))]);
+  } else if (types) {
+    throw new Error(`${URL_TYPES} isn't an array`);
+  } else {
+    const indent = dictChildIndent(text, dict);
+    out = applySplices(text, [appendChildSplice(text, dict, [`${indent}<key>${URL_TYPES}</key>`, `${indent}<array>`, entry(indent + unit), `${indent}</array>`].join('\n'))]);
+  }
+  readPlist(out); // still a valid plist
+  return out;
+}
