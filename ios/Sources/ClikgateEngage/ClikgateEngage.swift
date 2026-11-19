@@ -26,7 +26,7 @@ import Foundation
 /// errors are ``ClikgateError``s. Engage has no UI components.
 public enum ClikgateEngage {
     /// Version of the Engage features (the SDK version).
-    public static var version: String { "2.1.2" }
+    public static var version: String { "2.1.3" }
 
     /// The user's referral link and stats (feature `referrals`).
     public static let referrals = ClikgateEngageReferrals(client: .live)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.3
+
+- Installs the 2.1.3 SDKs (constraints `^2.1.3` / `~> 2.1`).
+- The Play App Signing fingerprint is now found under Play Console › Protected with Play › Play Store protection ›
+  Manage Play app signing (Google renamed the page). The setup prompt and `doctor`'s `wrong_fingerprint` fix say so.
+
 ## 2.1.2
 
 - Installs the 2.1.2 SDKs. Free plan apps get `yourapp.ciz.ng` (was `yourapp.clk.ng`) as their link domain, and

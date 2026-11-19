@@ -851,7 +851,7 @@ FIXTURES: dict[str, dict] = {
     "install_request_android": {
         "installation_id": "6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11",
         "app_version": "3.4.1",
-        "sdk_version": "2.1.2",
+        "sdk_version": "2.1.3",
         "platform": "android",
         "os_version": "14",
         "device_model": "Pixel 8",
@@ -887,7 +887,7 @@ FIXTURES: dict[str, dict] = {
         "installation_id": "b8c2d4e6-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
         "keychain_previous_installation_id": None,
         "app_version": "3.4.1",
-        "sdk_version": "2.1.2",
+        "sdk_version": "2.1.3",
         "platform": "ios",
         "os_version": "18.1",
         "device_model": "iPhone15,2",
@@ -1152,7 +1152,7 @@ FIXTURES["install_request_ios_signals"] = {
 FIXTURES["install_request_opted_out"] = {
     "installation_id": FIXTURES["install_request_android"]["installation_id"],
     "app_version": "3.4.1",
-    "sdk_version": "2.1.2",
+    "sdk_version": "2.1.3",
     "platform": "android",
     "consent": {
         "analytics": "denied",
@@ -1238,7 +1238,7 @@ FIXTURES["consent_response"] = {"ok": True}
 FIXTURES["install_ping_request"] = {
     "platform": "android",
     "app_version": "3.4.1",
-    "sdk_version": "2.1.2",
+    "sdk_version": "2.1.3",
     "consent": {"analytics": "unknown", "attribution": "denied", "ad_user_data": "denied", "ad_personalization": "denied", "region": "DE", "updated_at": "2026-10-20T10:05:00Z"},
 }
 FIXTURES["install_ping_response"] = {"ok": True}
@@ -1373,7 +1373,7 @@ FIXTURE_SCHEMA = {
 # ---- existing-user fixtures ----
 FIXTURES["install_request_android_existing"] = {
     **FIXTURES["install_request_android"],
-    "sdk_version": "2.1.2",
+    "sdk_version": "2.1.3",
     "install_channel": "store",
     "debuggable": False,
     "preinstalled": False,
@@ -1388,7 +1388,7 @@ FIXTURES["install_request_android_existing"] = {
 }
 FIXTURES["install_request_ios_existing"] = {
     **{k: v for k, v in FIXTURES["install_request_ios"].items() if k not in ("pasteboard_token", "pasteboard_outcome")},
-    "sdk_version": "2.1.2",
+    "sdk_version": "2.1.3",
     "keychain_previous_installation_id": "0f6b8a2c-3d4e-4f5a-8b6c-7d8e9f0a1b2c",
     "keychain_restored_from_other_device": True,
     "install_channel": "app_store",
@@ -1399,7 +1399,7 @@ FIXTURES["install_request_ios_existing"] = {
 # Tracking consent denied: no dates, only whether the app was installed before the start date.
 FIXTURES["install_request_android_consent_denied"] = {
     **FIXTURES["install_request_opted_out"],
-    "sdk_version": "2.1.2",
+    "sdk_version": "2.1.3",
     "install_channel": "store",
     "installer_package": "com.android.vending",
     "debuggable": False,
