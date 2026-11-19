@@ -77,6 +77,9 @@ jobs:
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64 -Pclikgate.linkDomain=inv.example.com
 
   ios:
+    # RELEASE_WITHOUT_MACOS=true skips this job when GitHub has no macOS runners; the iOS build is then checked on a
+    # Mac before tagging (ios/scripts: tests, check_api.sh, check_size.sh). Unset it again afterwards.
+    if: vars.RELEASE_WITHOUT_MACOS != 'true'
     runs-on: macos-15 # has Xcode 26.x (selected below); macos-26 runners got no capacity in Nov 2026
     timeout-minutes: 60
     steps:
@@ -116,7 +119,10 @@ jobs:
   # GitHub Actions, repository clikgate/clikgate-mobile-sdk, workflow react-native.yml, environment npm.
   # No token. Release com.clikgate:clikgate-android and the Clikgate pod with the matching version first.
   release:
-    if: vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/react-native-v')
+    if: >-
+      !cancelled() && vars.PUBLIC_SDK_RELEASES_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/react-native-v')
+      && needs.js.result == 'success'
+      && (needs.ios.result == 'success' || (needs.ios.result == 'skipped' && vars.RELEASE_WITHOUT_MACOS == 'true'))
     needs: [js, ios] # the Android example build runs inside js
     runs-on: ubuntu-latest
     environment: npm
