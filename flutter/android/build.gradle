@@ -1,5 +1,5 @@
 group = "com.clikgate.clikgate_flutter"
-version = "2.1.4"
+version = "2.1.5"
 
 buildscript {
     ext.kotlin_version = "2.1.0"

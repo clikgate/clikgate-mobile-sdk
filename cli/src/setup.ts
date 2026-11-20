@@ -24,6 +24,8 @@ import {
   isTestHost,
 } from './constants';
 import { detect, detectPackageManager, type Candidate } from './detect';
+import { chooseWebsite, describeDownloadLink, ensureDownloadLinks, saveWebsite } from './downloadLink';
+import type { DownloadLink } from './api/clikgate';
 import { runLocalChecks, serverChecks, waitForFirstEvent, type Check } from './doctor';
 import { exists, read, rel } from './fsutil';
 import { backupFiles, treeState } from './git';
@@ -397,6 +399,8 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     apps.ios = await fillAppStoreId(deps.ui, opts.yes, opts.dryRun, deps.fetch ?? fetch, clikgate, apps.ios, manual);
     const d = await chooseDomains(opts, deps, clikgate, apps, manual);
     schemeChoice = await chooseUriScheme(deps.ui, opts.yes, project, apps, manual);
+    const website = await chooseWebsite(deps.ui, opts.yes, apps);
+    if (website && !opts.dryRun) await saveWebsite(deps.ui, clikgate, website, manual);
     codeDomains = d.code;
     linkDomains = d.links;
     perPlatform = d.perPlatform;
@@ -438,6 +442,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   // Saved only once the project registers the scheme (written now, or already there), so "Open in app" never fails
   const schemePending = plan.steps.some((st) => st.kind === 'change' && st.summary.includes('URI scheme'));
   if (online && schemeChoice?.update.length && !opts.dryRun && (applied || !schemePending)) await saveUriScheme(ui, online.clikgate, schemeChoice);
+  const downloadLinks: DownloadLink[] = online && !opts.dryRun ? await ensureDownloadLinks(ui, online.clikgate, online.apps) : [];
 
   // Verify.
   ui.out('');
@@ -481,7 +486,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   }
 
   // Summary.
-  printSummary(ui, plan, applied, checks, next, { sdkKey, root, online, testDomain, platform: project.candidate.platform });
+  printSummary(ui, plan, applied, checks, next, { sdkKey, root, online, testDomain, platform: project.candidate.platform, downloadLinks });
   ui.out('');
   ui.out(paint(ui, 'bold', SUCCESS_LINE));
   return EXIT.OK;
@@ -594,7 +599,7 @@ function printSummary(
   applied: { written: string[]; created: string[]; commandsRun: string[]; commandsSkipped: string[] } | undefined,
   checks: Check[],
   next: { message: string; doc_url: string | null }[],
-  ctx: { sdkKey: string; root: string; online?: OnlineResult; testDomain?: string; platform: Platform }
+  ctx: { sdkKey: string; root: string; online?: OnlineResult; testDomain?: string; platform: Platform; downloadLinks?: DownloadLink[] }
 ): void {
   ui.out('');
   ui.out(paint(ui, 'bold', 'Summary'));
@@ -617,6 +622,12 @@ function printSummary(
     ui.out('');
     ui.out(paint(ui, 'bold', 'Reminders:'));
     for (const r of plan.reminders) ui.out(`  • ${r}`);
+  }
+  if (ctx.downloadLinks?.length) {
+    const has = { ios: Boolean(ctx.online?.apps.ios), android: Boolean(ctx.online?.apps.android) };
+    ui.out('');
+    ui.out(paint(ui, 'bold', ctx.downloadLinks.length > 1 ? 'Your download links (share them anywhere):' : 'Your download link (share it anywhere):'));
+    for (const link of ctx.downloadLinks) for (const line of describeDownloadLink(ui, link, has)) ui.out(line);
   }
   ui.out('');
   ui.out(paint(ui, 'bold', 'Next steps:'));

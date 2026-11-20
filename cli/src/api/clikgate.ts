@@ -25,6 +25,21 @@ export interface App {
   uri_scheme?: string | null;
   ios_app_store_id?: string | null;
   store_url?: string | null;
+  /** Where the download link sends computer visitors (the company website). */
+  website_url?: string | null;
+}
+
+/** `https://<link subdomain>/download`: the app if installed, else the store; computers go to the website. */
+export interface DownloadLink {
+  url: string;
+  link_id?: string;
+  slug?: string;
+  destination_url?: string;
+  computer_destination?: 'website' | 'store_page';
+  ios_store_ready?: boolean;
+  android_ready?: boolean;
+  /** `active` unless someone paused or archived it in the dashboard (setup never undoes that). */
+  status?: string;
 }
 
 export interface SubdomainAvailability {
@@ -118,6 +133,10 @@ export class Clikgate {
   }
   listDomains(): Promise<Domain[]> {
     return this.api.list<Domain>('/v1/domains');
+  }
+  /** Creates the app's download link, or brings it up to date (same link every time). */
+  ensureDownloadLink(appId: string): Promise<DownloadLink> {
+    return this.api.post<DownloadLink>(`/v1/apps/${encodeURIComponent(appId)}/download-link`, {});
   }
   setupCheck(appId: string): Promise<SetupCheck> {
     return this.api.get<SetupCheck>(`/v1/cli/setup-check?app_id=${encodeURIComponent(appId)}`);

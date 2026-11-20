@@ -1,3 +1,7 @@
+## 2.1.5: Setup command 2.1.5
+
+- `dart run clikgate_flutter:setup` runs setup command 2.1.5: it asks for your website and prints your app's download link (`https://<your link subdomain>/download`). The plugin itself is unchanged (native SDKs 2.1.3).
+
 ## 2.1.4: Setup command 2.1.4
 
 - `dart run clikgate_flutter:setup` runs setup command 2.1.4: it sets up the URI scheme and the App Store ID for you, and retries dropped connections to Clikgate. The plugin itself is unchanged (native SDKs 2.1.3).

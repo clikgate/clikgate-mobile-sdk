@@ -12,9 +12,9 @@ Clikgate SDK API (`/v1/sdk/*` on `sdk.clikgate.com`).
 |---|---|---|---|---|
 | Android SDK (Kotlin, minSdk 21) | [`android/`](android) | Maven Central `com.clikgate:clikgate-android` | 2.1.3 | [docs/android.md](docs/android.md) |
 | iOS SDK (Swift, iOS 13+) | [`ios/`](ios) | Swift Package Manager, CocoaPods `Clikgate`, XCFramework | 2.1.3 | [docs/ios.md](docs/ios.md) |
-| Flutter plugin | [`flutter/`](flutter) | pub.dev `clikgate_flutter` | 2.1.4 | [docs/flutter.md](docs/flutter.md), [iOS setup](docs/flutter_ios_setup.md) |
+| Flutter plugin | [`flutter/`](flutter) | pub.dev `clikgate_flutter` | 2.1.5 | [docs/flutter.md](docs/flutter.md), [iOS setup](docs/flutter_ios_setup.md) |
 | React Native | [`react-native/`](react-native) | npm `@clikgate/react-native` (+ Expo config plugin) | 2.1.3 | [docs/react-native.md](docs/react-native.md) |
-| Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | 2.1.4 | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
+| Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | 2.1.5 | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
 
 These are the **core SDKs**: only what must happen on the device (deep links, attribution,
 goals, identifyUser and the installation ID, apply code / referred-by, push token / uninstall checks, feature switches). The
