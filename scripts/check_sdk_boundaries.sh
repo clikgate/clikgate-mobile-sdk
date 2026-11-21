@@ -58,6 +58,14 @@ no_identify_check() { python3 "$ROOT/scripts/check_no_identify.py"; }
 scan() { python3 "$ROOT/scripts/scan_release_packages.py" "$@"; }
 
 # ------------------------------------------------------------------ Android
+# A new git worktree has no local.properties (it's ignored): point Gradle at the SDK's default place.
+android_sdk() {
+  [ -n "${ANDROID_HOME:-}${ANDROID_SDK_ROOT:-}" ] || [ -f "$ROOT/android/local.properties" ] && return 0
+  local d
+  for d in "$HOME/Library/Android/sdk" "$HOME/Android/Sdk"; do
+    if [ -d "$d" ]; then export ANDROID_HOME="$d"; return 0; fi
+  done
+}
 android_api() {
   cd "$ROOT/android"
   if [ $UPDATE = 1 ]; then
@@ -92,6 +100,7 @@ rn_api() {
 [ $UPDATE = 1 ] || step "share targets: generated ShareApp and share tables match shared/share_targets.json" share_targets_check
 [ $UPDATE = 1 ] || step "docs: no identify() left (identifyUser() replaced it)" no_identify_check
 if want android; then
+  android_sdk
   step "android: API snapshots + no Engage in core + dependency check" android_api
   [ $SIZE = 1 ] && [ $UPDATE = 0 ] && step "android: size budgets" android_size
   android_stop

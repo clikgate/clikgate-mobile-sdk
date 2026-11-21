@@ -13,12 +13,16 @@
 # The budget is enforced on the R8 number.
 #
 # Usage: android/scripts/check_size.sh [--no-build]
-# Env: ANDROID_HOME / ANDROID_SDK_ROOT (else local.properties sdk.dir), BUILD_TOOLS (version dir).
+# Env: ANDROID_HOME / ANDROID_SDK_ROOT (else local.properties sdk.dir, else the SDK's default place on macOS or Linux),
+#      BUILD_TOOLS (version dir). The d8/R8 figures depend on the R8 version (Engage moves by ~1.7 KB between
+#      build-tools 35 and 36.1), so the default is the build-tools of the Android Gradle Plugin this build uses
+#      (AGP_BUILD_TOOLS below; Gradle installs it for the build), not whichever is newest on the machine.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 CORE_BUDGET_KB=150
 ENGAGE_BUDGET_KB=44
+AGP_BUILD_TOOLS=35.0.0 # AGP 8.9's default; update together with agp in gradle/libs.versions.toml
 
 if [ "${1:-}" != "--no-build" ]; then
   ./gradlew :clikgate:assembleRelease -q --console=plain
@@ -26,8 +30,13 @@ fi
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [ -z "$SDK" ] && [ -f local.properties ]; then SDK="$(grep '^sdk.dir=' local.properties | cut -d= -f2-)"; fi
+if [ -z "$SDK" ]; then
+  for d in "$HOME/Library/Android/sdk" "$HOME/Android/Sdk"; do [ -d "$d" ] && SDK="$d" && break; done
+fi
 [ -n "$SDK" ] || { echo "Android SDK not found (set ANDROID_HOME)"; exit 2; }
-BT="$SDK/build-tools/${BUILD_TOOLS:-$(ls "$SDK/build-tools" | sort -V | tail -1)}"
+BT="$SDK/build-tools/${BUILD_TOOLS:-$AGP_BUILD_TOOLS}"
+[ -d "$BT" ] || { echo "build-tools ${BUILD_TOOLS:-$AGP_BUILD_TOOLS} not installed in $SDK (run the build once, or set BUILD_TOOLS)"; exit 2; }
+echo "Measuring with $(basename "$BT")/lib/d8.jar"
 D8JAR="$BT/lib/d8.jar"
 ANDROID_JAR="$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)/android.jar"
 [ -f "$D8JAR" ] || { echo "d8.jar not found in $BT"; exit 2; }
