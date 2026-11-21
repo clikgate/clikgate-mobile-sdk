@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -420,3 +421,18 @@ class Clikgate {
     _hub = DeepLinkHub();
   }
 }
+
+/// Internal (`package:clikgate_flutter/testing.dart`): a fresh deep link hub, so the next listener
+/// subscribes to the (then mocked) `com.clikgate/deep_links` channel. Not exported.
+@internal
+void resetDeepLinkHubForTesting() {
+  final old = Clikgate._hub;
+  Clikgate._hub = DeepLinkHub();
+  unawaited(old.dispose());
+}
+
+/// Internal (`package:clikgate_flutter/testing.dart`): delivers a deep link event map (the native
+/// event channel's shape) to [Clikgate.onDeepLink] / [Clikgate.onBrowserHandoff]. Not exported.
+@internal
+void deliverDeepLinkEventForTesting(Map<String, Object?> event) =>
+    Clikgate._hub.deliverForTesting(event);

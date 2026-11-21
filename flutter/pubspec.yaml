@@ -23,12 +23,15 @@ dependencies:
   # dart run clikgate_flutter:setup verifies the downloaded setup command (SHA-256).
   crypto: ^3.0.3
   meta: ^1.15.0
+  # Only for package:clikgate_flutter/testing.dart (the test fake). The plugin's main libraries never
+  # import it, so nothing from flutter_test reaches an app build. Apps already have flutter_test as a
+  # dev dependency, so it adds no new version constraints either.
+  flutter_test:
+    sdk: flutter
   # No share_plus / url_launcher: share.system and share.whatsApp use this plugin's own native side
   # (com.clikgate/engage channel), so apps pick any share_plus / url_launcher version they like.
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_lints: ^5.0.0
   # Public-API snapshot test (syntactic parse only).
   analyzer: '>=7.4.0 <9.0.0'

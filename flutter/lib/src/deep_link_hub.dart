@@ -72,6 +72,11 @@ class DeepLinkHub {
     );
   }
 
+  /// Internal (`package:clikgate_flutter/testing.dart`): handles [event] as if it came from the
+  /// native event channel, without the platform message round trip (so widget tests need no real
+  /// async to see it).
+  void deliverForTesting(Object? event) => _onEvent(event);
+
   void _onEvent(dynamic event) {
     if (event is! Map) return;
     final map = asStringMap(event);
