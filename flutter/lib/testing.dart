@@ -335,26 +335,34 @@ class ClikgateFake {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
   void _install() {
-    resetDeepLinkHubForTesting();
     _messenger.setMockMethodCallHandler(_sdk, _onSdk);
     _messenger.setMockMethodCallHandler(_engage, _onEngage);
     _messenger.setMockStreamHandler(
         _deepLinks,
-        // The SDK listens to the channel; events are delivered straight to it (_emit).
-        MockStreamHandler.inline(onListen: (_, __) {}));
+        // The SDK listens to the channel (and cancels when its deep link hub is disposed); events
+        // are delivered straight to it (_emit).
+        MockStreamHandler.inline(onListen: (_, __) {}, onCancel: (_) {}));
     engageHttpClientOverride = () => http_testing.MockClient(_onHttp);
+    // After the mocks: the old hub's `cancel` reaches this fake, and the next listener gets a hub
+    // of its own.
+    resetDeepLinkHubForTesting();
     _installed = true;
   }
 
   /// Removes the fake (done for you when the test ends).
+  ///
+  /// Safe at any point, also after or before the app cancels its `Clikgate.onDeepLink`
+  /// subscriptions: those get their done event and never see a later test's links.
   void uninstall() {
     if (!_installed) return;
     _installed = false;
+    // First, while the channel mocks are still in place: disposing the deep link hub cancels its
+    // `com.clikgate/deep_links` subscription, and that `cancel` must reach this fake's handler.
+    resetDeepLinkHubForTesting();
     _messenger.setMockMethodCallHandler(_sdk, null);
     _messenger.setMockMethodCallHandler(_engage, null);
     _messenger.setMockStreamHandler(_deepLinks, null);
     engageHttpClientOverride = null;
-    resetDeepLinkHubForTesting();
   }
 
   // Straight to the SDK's deep link hub, not through the event channel: a platform message reaches

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:clikgate_flutter/clikgate_flutter.dart';
@@ -231,6 +232,97 @@ void main() {
       expect(fake.shares[3].message, 'Hi');
       expect(fake.shares.last.text, 'Plain');
     });
+  });
+
+  // Awaiting `cancel()` on a broadcast subscription inside `testWidgets` used to hang the widget
+  // tester at the next pump or teardown. Each case must finish well within its timeout.
+  group('cancelling onDeepLink subscriptions', () {
+    const short = Timeout(Duration(seconds: 10));
+    const url = 'https://yourapp.dev.ciz.to/products/42';
+
+    testWidgets('in the test body', (tester) async {
+      final fake = ClikgateFake.install();
+      final links = <ClikgateDeepLink>[];
+      final sub = Clikgate.onDeepLink.listen(links.add);
+      fake.pushDeepLink(url);
+      await tester.pump();
+      expect(links.single.path, '/products/42');
+      await sub.cancel();
+      await tester.pump();
+      fake.pushDeepLink('https://yourapp.dev.ciz.to/later');
+      await tester.pump();
+      expect(links, hasLength(1));
+    }, timeout: short);
+
+    testWidgets('then uninstall', (tester) async {
+      final fake = ClikgateFake.install();
+      final sub = Clikgate.onDeepLink.listen((_) {});
+      await tester.pump();
+      await sub.cancel();
+      fake.uninstall();
+      await tester.pump();
+    }, timeout: short);
+
+    testWidgets('after uninstall: the subscription gets its done event first', (tester) async {
+      final fake = ClikgateFake.install();
+      var done = false;
+      final sub = Clikgate.onDeepLink.listen((_) {}, onDone: () => done = true);
+      await tester.pump();
+      fake.uninstall();
+      await tester.pump();
+      expect(done, isTrue);
+      await sub.cancel();
+      await tester.pump();
+    }, timeout: short);
+
+    testWidgets('in a tear-down that runs before the fake removes itself', (tester) async {
+      ClikgateFake.install();
+      final sub = Clikgate.onDeepLink.listen((_) {});
+      addTearDown(sub.cancel);
+      await tester.pump();
+    }, timeout: short);
+
+    StreamSubscription<ClikgateDeepLink>? openSub;
+    tearDown(() async {
+      await openSub?.cancel();
+      openSub = null;
+    });
+
+    testWidgets('in tearDown, after the fake removed itself', (tester) async {
+      ClikgateFake.install();
+      openSub = Clikgate.onDeepLink.listen((_) {});
+      await tester.pump();
+    }, timeout: short);
+
+    final leftOpen = <ClikgateDeepLink>[];
+    var leftOpenDone = false;
+    testWidgets('never cancelled', (tester) async {
+      final fake = ClikgateFake.install();
+      Clikgate.onDeepLink.listen(leftOpen.add, onDone: () => leftOpenDone = true);
+      fake.pushDeepLink(url);
+      await tester.pump();
+      expect(leftOpen, hasLength(1));
+    }, timeout: short);
+
+    test('in a plain test(), before and after uninstall; old subscriptions see no later links',
+        () async {
+      expect(leftOpenDone, isTrue, reason: 'the previous test\'s subscription is done');
+      final fake = ClikgateFake.install();
+      final links = <ClikgateDeepLink>[];
+      final sub = Clikgate.onDeepLink.listen(links.add);
+      fake.pushDeepLink(url);
+      await pumpEventQueue();
+      expect(links, hasLength(1));
+      expect(leftOpen, hasLength(1));
+      await sub.cancel();
+
+      var done = false;
+      final sub2 = Clikgate.onDeepLink.listen((_) {}, onDone: () => done = true);
+      fake.uninstall();
+      await pumpEventQueue();
+      expect(done, isTrue);
+      await sub2.cancel();
+    }, timeout: short);
   });
 
   test('testing.dart stays out of the plugin: no other library imports it or flutter_test', () {

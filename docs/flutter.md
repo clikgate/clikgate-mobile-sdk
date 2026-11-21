@@ -688,6 +688,9 @@ void main() {
 `testing.dart` is for tests only: import it from `test/`, never from `lib/`. It uses `flutter_test`, which the
 plugin depends on only for this library; your app's code never imports it, so nothing of it is in your builds.
 `pumpAndSettle` is enough: Clikgate calls (Engage's HTTP calls included) need no `tester.runAsync`.
+Cancel `onDeepLink` / `onBrowserHandoff` subscriptions wherever suits your code (in a widget's `dispose`, in the
+test body, before or after `clikgate.uninstall()`, or in `tearDown`) and await the cancel if you like. When the fake
+removes itself, subscriptions still open get their done event and never see a later test's links.
 
 What the fake answers (change any of it on the fake, at any time):
 
