@@ -333,7 +333,7 @@ several apps, on the server only) and returns it in the sign-in response and the
 already calls at open. The app passes the newest token:
 
 ```swift
-Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateToken)  // after sign-in, and at app open
+Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateIdentityToken)  // after sign-in, and at app open
 Clikgate.shared.identifyUser(label: "Ada (VIP)")      // just the label (the customer ID is kept; Growth and up)
 Clikgate.shared.identifyUser(customerId: nil)         // sign-out
 Clikgate.shared.setTrackingEnabled(false)             // stops everything; tells Clikgate to erase device data

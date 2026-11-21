@@ -36,7 +36,7 @@ Clikgate.shared.goal("purchase", reference: "T123456", provider: .paystack) { re
 }
 
 // Identify signed-in users: Path A with a token from your server, or Path B with the installation ID.
-Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateToken)
+Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateIdentityToken)
 let installationId: String? = try await Clikgate.shared.installationId()   // send it with your sign-in request
 Clikgate.shared.identifyUser(customerId: nil)                              // sign-out
 ```

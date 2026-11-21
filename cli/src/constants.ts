@@ -83,11 +83,11 @@ export const GOAL_SNIPPET: Record<Platform, string> = {
  */
 export const IDENTIFY_GUIDE_URL = 'https://clikgate.com/docs/identify-users';
 export const IDENTIFY_SNIPPET: Record<Platform, string> = {
-  android: 'Clikgate.identifyUser(customerId = user.id, identityToken = response.clikgateToken)',
-  ios: 'Clikgate.shared.identifyUser(customerId: user.id, identityToken: response.clikgateToken)',
-  flutter: 'Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateToken)',
-  'react-native': 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateToken })',
-  expo: 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateToken })',
+  android: 'Clikgate.identifyUser(customerId = user.id, identityToken = response.clikgateIdentityToken)',
+  ios: 'Clikgate.shared.identifyUser(customerId: user.id, identityToken: response.clikgateIdentityToken)',
+  flutter: 'Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateIdentityToken)',
+  'react-native': 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateIdentityToken })',
+  expo: 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateIdentityToken })',
 };
 export const INSTALLATION_ID_SNIPPET: Record<Platform, string> = {
   android: 'Clikgate.getInstallationId()',

@@ -164,7 +164,7 @@ already calls at open. The app passes the newest token:
 ```ts
 import { Clikgate } from '@clikgate/react-native';
 
-await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateToken }); // after sign-in, and at app open
+await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateIdentityToken }); // after sign-in, and at app open
 await Clikgate.identifyUser({ label: 'Ada (VIP)' });  // just the label (the customer ID is kept; Growth and up)
 await Clikgate.identifyUser({ customerId: null });    // sign-out
 await Clikgate.setTrackingEnabled(false);             // opt-out

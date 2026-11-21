@@ -163,7 +163,7 @@ describe('signed-in setup (Flutter fixture)', () => {
     expect(ui.text).not.toContain('payment(');
     // Identity Path A by default, Path B mentioned, the guide linked; never track().
     expect(ui.text).toContain("4. Identify signed-in users (optional): return a token from your server's createIdentityToken(user.id)");
-    expect(ui.text).toContain('Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateToken)');
+    expect(ui.text).toContain('Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateIdentityToken)');
     expect(ui.text).toContain('await Clikgate.getInstallationId()');
     expect(ui.text).toContain('https://clikgate.com/docs/identify-users');
     expect(ui.text).not.toMatch(/\.track\(/);

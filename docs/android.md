@@ -243,7 +243,7 @@ several apps, on the server only) and returns it in the sign-in response and the
 already calls at open. The app passes the newest token:
 
 ```kotlin
-Clikgate.identifyUser(customerId = user.id, identityToken = me.clikgateToken)   // after sign-in, and at app open
+Clikgate.identifyUser(customerId = user.id, identityToken = me.clikgateIdentityToken)   // after sign-in, and at app open
 Clikgate.identifyUser(label = "Ada (VIP)")                   // just the label (the customer ID is kept; Growth and up)
 Clikgate.identifyUser(customerId = null)                     // sign-out
 ```

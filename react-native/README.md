@@ -20,7 +20,7 @@ const r = await Clikgate.goal('account_opened', { value: '2000000', currency: 'N
 // provider or server confirms it, with the real amount (a value sent from the app is ignored).
 await Clikgate.goal('purchase', { reference: 'T123456', provider: ClikgateProvider.Paystack });
 // Identify signed-in users: Path A with a token from your server, or Path B with the installation ID.
-await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateToken });
+await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateIdentityToken });
 const installationId = await Clikgate.getInstallationId(); // string | null: send it with your sign-in request
 await Clikgate.identifyUser({ customerId: null });          // sign-out
 await Clikgate.referrals.applyCode({ programId: 'rpg_...', code: 'ADA42' });
