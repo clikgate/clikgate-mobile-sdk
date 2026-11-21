@@ -78,4 +78,4 @@ attribution is included in all of them. `goal` does nothing only when app attrib
    `isClikgateMessage` checks in your FCM handlers, and any `ClikgateRN` calls in the AppDelegate.
 5. In the Clikgate dashboard, mark the app as no longer tracked (and switch off uninstall
    tracking) so Clikgate stops sending silent check pushes and your reports show the cut-off.
-   Leaving Clikgate entirely: export your data first (Settings › Leave Clikgate).
+   Leaving Clikgate entirely: export your data first (Settings › Leaving Clikgate).

@@ -667,14 +667,14 @@ async function askServer(opts: Options, ui: UI): Promise<KeepServer | 'none' | '
 async function chooseWebKey(opts: Options, ui: UI): Promise<{ key: string; placeholder: boolean }> {
   const check = (k: string) => {
     if (SDK_KEY_ANY.test(k) || /^cg_(live|test)_/.test(k)) {
-      throw new Exit(EXIT.PROBLEMS, "That's not a web key. Use your publishable web key (cgw_test_… or cgw_live_…, from Developers › SDKs › Website); never put an API key or SDK key in a page.");
+      throw new Exit(EXIT.PROBLEMS, "That's not a web key. Use your publishable web key (cgw_test_… or cgw_live_…, from Developers › SDKs › Website: web keys); never put an API key or SDK key in a page.");
     }
-    if (!WEB_KEY.test(k)) throw new Exit(EXIT.PROBLEMS, '--web-key must be a publishable web key (cgw_test_… or cgw_live_…), from Developers › SDKs › Website.');
+    if (!WEB_KEY.test(k)) throw new Exit(EXIT.PROBLEMS, '--web-key must be a publishable web key (cgw_test_… or cgw_live_…), from Developers › SDKs › Website: web keys.');
     return k;
   };
   if (opts.webKey !== undefined) return { key: check(opts.webKey), placeholder: false };
   if (!opts.yes && ui.interactive) {
-    const typed = await ui.ask('Your web key (cgw_test_… while setting up; Developers › SDKs › Website), or Enter to add it later:');
+    const typed = await ui.ask('Your web key (cgw_test_… while setting up; Developers › SDKs › Website: web keys), or Enter to add it later:');
     if (typed) return { key: check(typed), placeholder: false };
   }
   return { key: WEB_KEY_PLACEHOLDER, placeholder: true };
@@ -727,7 +727,7 @@ export async function runWebsite(opts: Options, deps: Deps): Promise<number> {
   }
   planScriptTag(pb, { server: server === 'other' ? 'none' : server, endpoint, webKey: key.key, existing });
   if (key.placeholder && !existing.length) {
-    pb.manual('Web key', `Replace ${WEB_KEY_PLACEHOLDER} with your publishable web key (Developers › SDKs › Website). A web key isn't secret and isn't an API key.`);
+    pb.manual('Web key', `Replace ${WEB_KEY_PLACEHOLDER} with your publishable web key (Developers › SDKs › Website: web keys). A web key isn't secret and isn't an API key.`);
   }
   const plan = pb.build();
 

@@ -142,7 +142,7 @@ export async function chooseUriScheme(
   if (!scheme) {
     manual.push({
       label: 'URI scheme',
-      detail: 'Skipped. To add it later, run setup again, or register a scheme in Xcode (target › Info › URL Types) and AndroidManifest.xml, then set it in the dashboard: Apps › your app › Identifiers and store links › URI scheme.',
+      detail: 'Skipped. To add it later, run setup again, or register a scheme in Xcode (target › Info › URL Types) and AndroidManifest.xml, then set it in the dashboard: Connect › Apps › your app › Identifiers and store links › URI scheme.',
     });
     return undefined;
   }
@@ -156,7 +156,7 @@ export async function saveUriScheme(ui: UI, clikgate: Clikgate, choice: SchemeCh
       await clikgate.updateApp(app.id, { uri_scheme: choice.scheme });
       ui.out(`${paint(ui, 'green', '✓')} URI scheme ${choice.scheme}:// saved on the ${app.platform === 'ios' ? 'iOS' : 'Android'} app in Clikgate`);
     } catch (e) {
-      ui.out(paint(ui, 'yellow', `! Couldn't save the URI scheme on the ${app.platform} app (${(e as Error).message}). Set it in the dashboard: Apps › your app › Identifiers and store links › URI scheme.`));
+      ui.out(paint(ui, 'yellow', `! Couldn't save the URI scheme on the ${app.platform} app (${(e as Error).message}). Set it in the dashboard: Connect › Apps › your app › Identifiers and store links › URI scheme.`));
     }
   }
 }
@@ -206,7 +206,7 @@ export async function fillAppStoreId(
   const later = {
     label: 'App Store ID',
     detail:
-      'Your iOS app isn\'t on the App Store yet, so visitors without the app see the link\'s web page. Once it\'s published, run setup again (it finds the ID by itself), or add it in the dashboard: Apps › your iOS app › Identifiers and store links › App Store ID.',
+      'Your iOS app isn\'t on the App Store yet, so visitors without the app see the link\'s web page. Once it\'s published, run setup again (it finds the ID by itself), or add it in the dashboard: Connect › Apps › your iOS app › Identifiers and store links › App Store ID.',
   };
   if (!bundle) {
     manual.push(later);
@@ -219,7 +219,7 @@ export async function fillAppStoreId(
   }
   const ok = yes || (await ui.confirm(`Found "${found.name}" on the App Store (id${found.id}). Send visitors without the app there?`, true));
   if (!ok) {
-    manual.push({ label: 'App Store ID', detail: `Not set. Add it in the dashboard when you're ready: Apps › your iOS app › Identifiers and store links › App Store ID (${found.id}).` });
+    manual.push({ label: 'App Store ID', detail: `Not set. Add it in the dashboard when you're ready: Connect › Apps › your iOS app › Identifiers and store links › App Store ID (${found.id}).` });
     return app;
   }
   if (dryRun) {
@@ -231,7 +231,7 @@ export async function fillAppStoreId(
     ui.out(`${paint(ui, 'green', '✓')} App Store ID ${found.id} saved: visitors without the app go to "${found.name}" on the App Store`);
     return updated;
   } catch (e) {
-    manual.push({ label: 'App Store ID', detail: `Couldn't save it (${(e as Error).message}). Add it in the dashboard: Apps › your iOS app › Identifiers and store links › App Store ID (${found.id}).` });
+    manual.push({ label: 'App Store ID', detail: `Couldn't save it (${(e as Error).message}). Add it in the dashboard: Connect › Apps › your iOS app › Identifiers and store links › App Store ID (${found.id}).` });
     return app;
   }
 }

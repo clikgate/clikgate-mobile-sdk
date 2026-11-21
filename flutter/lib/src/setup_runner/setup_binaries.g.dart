@@ -8,18 +8,18 @@ const String setupVersion = '2.1.6';
 /// SHA-256 of each binary `clikgate-setup-<setupVersion>-<platform>[.exe]`, by platform (checked after
 /// unpacking, and again before a cached copy is reused).
 const Map<String, String> setupBinarySha256 = {
-  'darwin-arm64': '200d1a3558397257eb56381343674e65fd462fc7a532ffcc57b0312a4d6c2b5b',
-  'darwin-x64': '5a918a3159e98f343af7c620e198526ab2224819cfc1651de1ee0f7cb9884b39',
-  'linux-arm64': 'c88a4c61ac24f3de62945d8d801dc4cbea43326c0b5bdffdc81398d1b529213c',
-  'linux-x64': '94d19a5c286d9e17938bbfea2fa02be2f3846eeaec3bd62d760d8eca9588911d',
-  'windows-x64': '9fe1751cdcf8e071a45f059312090d9f58438e142033bee8d052502fbfc51669',
+  'darwin-arm64': '4f55a1cbb6e164ecfa922bfd584038590d9bc812293dc843f33cb272af53a12e',
+  'darwin-x64': '251a32dfcf56d6cd86eab1dc00c16cceb26f749061c29999a1c3088a9eb88e70',
+  'linux-arm64': 'e7138a273bb57747e028969ca07e78f6d70e6f1f2dc735d468990239abbc58e9',
+  'linux-x64': 'bfec0e11df5650b47bf3cb3ba0268c873b0349d9188987662f2b7f5904397189',
+  'windows-x64': '3b4d2de5bf6d3c3651fddd62c9bc9e3a8f86129c7c92658c1bc1f57e650c77b6',
 };
 
 /// SHA-256 of each release asset `clikgate-setup-<setupVersion>-<platform>[.exe].gz` (checked before unpacking).
 const Map<String, String> setupArchiveSha256 = {
-  'darwin-arm64': 'c3f7b0c5ff1ea1ddfec4eafe9de3148fbd878e4afac4497af555020a9fb4d86c',
-  'darwin-x64': '906bef94267c20ab7eb7df7ca9bf6321c61f71cd333bb3ae418bc921de930699',
-  'linux-arm64': 'be30b106ec898b761a5b103a53f73e92df107990a87178c5c086f50c86a52544',
-  'linux-x64': '48204d9ed4478a3817e047599fd4c286a7660cd048a49bf75640be983e294770',
-  'windows-x64': '9384d5f1a626cf7bd351992fb85a7596363ca90320b01c72d2116f5a41dd3a95',
+  'darwin-arm64': '375ccb0c62f4d547b04c1f18b360a351df54f99bd5d56bd4475534ed289151a2',
+  'darwin-x64': '3816853192abaa14cb7abb44aad71007875f496c9230b8d68ef4853f3f1a246c',
+  'linux-arm64': 'c9dce40fb1751e6ccba023fefc2142631d0eb06d54c9a18bc914f6d12a7e988b',
+  'linux-x64': '9846f20ee5849b193f666286fee431461f882e669311ea4e8e392d40d3226ba2',
+  'windows-x64': '91ac86ab45089d8250a8a2d1ce7f86828868e7236697b28bcd1f2a054dbcfc4b',
 };

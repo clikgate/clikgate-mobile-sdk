@@ -74,7 +74,7 @@ export async function saveWebsite(ui: UI, clikgate: Clikgate, choice: WebsiteCho
     } catch (e) {
       manual.push({
         label: 'Website',
-        detail: `Couldn't save your website (${(e as Error).message}). Add it in the dashboard: Apps › your app › Identifiers and store links › Website.`,
+        detail: `Couldn't save your website (${(e as Error).message}). Add it in the dashboard: Connect › Apps › your app › Identifiers and store links › Website.`,
       });
       return;
     }

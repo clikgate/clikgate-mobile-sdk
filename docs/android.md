@@ -150,7 +150,7 @@ Clikgate.onDeepLink { link ->
   (`if (link.blockMessage != null) { showNotice(link.blockMessage); return@onDeepLink }`).
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
@@ -227,7 +227,7 @@ Clikgate.handleIntent(this, intent)
 
 Then remove the `firebase-dynamic-links` dependency and the `page.link` intent filter, and add your Clikgate link
 domains to the `autoVerify` intent filter (section 3). Firebase Analytics, Crashlytics and Messaging are unaffected.
-Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
+Test with "See it live" in the dashboard (Developers › SDKs › Test your app) and a `cg_sdk_test_…` key.
 
 ## 5. Identify your users
 
@@ -336,7 +336,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `BigDecimal` (never a `Double`), sent as a decimal string. Whether a value is allowed or required, and how many decimal
@@ -485,7 +485,8 @@ Rules:
 
 ## 7. Push token and uninstall tracking
 
-Turn on uninstall tracking in the dashboard and upload your FCM credentials. If the app ships
+Turn on uninstall tracking in the dashboard (Settings › Features) and upload your FCM credentials
+(Connect › Apps › your app › Push credentials). If the app ships
 Firebase Cloud Messaging, that is all: on each launch the SDK reads the FCM token itself
 (`FirebaseMessaging.getInstance().getToken()`, by reflection; the SDK still has no Firebase
 dependency) and sends it when it changed, which also picks up rotated tokens. Users don't have to
@@ -692,7 +693,8 @@ For the recommended backend path (invite link, stats and leaderboards from your 
 4. Remove push-token forwarding (`Clikgate.setPushToken`) and the `Clikgate.isClikgateMessage` check in
    your `FirebaseMessagingService` (uninstall tracking).
 5. Update your Play Data safety answers and privacy policy once the release without the SDK ships.
-6. In the Clikgate dashboard, mark the app as no longer tracked (and remove its FCM credentials) so
+6. In the Clikgate dashboard (Connect › Apps › your app), switch off **SDK enabled** (and remove its FCM
+   credentials under **Push credentials**) so
    Clikgate stops uninstall checks and doesn't warn that the SDK is missing.
 
 The SDK's prefs (`clikgate.prefs`) and event database are deleted with the app; an update without the

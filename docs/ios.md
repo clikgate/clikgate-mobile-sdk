@@ -115,7 +115,7 @@ A URL counts as a Clikgate link when its host is in the link domains, or when it
 schemes and carries `cg_click_id`. Other URLs return `false` without a network call.
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
@@ -211,7 +211,7 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 Scene and SwiftUI apps forward the same two calls (section 3). Then remove the `FirebaseDynamicLinks` package or
 pod, the `applinks:….page.link` Associated Domains entry and `FirebaseDynamicLinksCustomDomains` from Info.plist,
 and add `applinks:` entries for your Clikgate link domains. Firebase Analytics, Crashlytics and Messaging are
-unaffected. Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
+unaffected. Test with "See it live" in the dashboard (Developers › SDKs › Test your app) and a `cg_sdk_test_…` key.
 
 ## 4. Attribution
 
@@ -394,7 +394,7 @@ postback copies, add to `Info.plist`:
 ## 6a. Send goals: one `goal()` method
 
 `goal()` is the one method for every goal, Standard or Payment. Each goal's **kind** is set in the dashboard
-(Settings › Goals), never in the call:
+(Grow › Goals), never in the call:
 
 - **Standard** goals (sign-ups, bookings, leads, accounts opened) count when they're sent.
 - **Payment** goals (anything involving money) count only when your payment provider or your server confirms
@@ -442,7 +442,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional, Standard goals): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `Decimal` (never a `Double`: build it from a string or an integer literal), sent as a decimal string. Whether a value is allowed or required, and how many decimal
@@ -673,7 +673,8 @@ pod lib lint Clikgate.podspec --allow-warnings
 4. Remove push-token forwarding (`setPushToken`) and the `handleRemoteNotification` check (uninstall
    tracking); keep `registerForRemoteNotifications` only if your app needs it.
 5. Remove Clikgate from your privacy policy and App Store privacy answers once the release without it ships.
-6. In the Clikgate dashboard, mark the app as no longer tracked (and remove its APNs key) so Clikgate stops
+6. In the Clikgate dashboard (Connect › Apps › your app), switch off **SDK enabled** (and remove its APNs key
+   under **Push credentials**) so Clikgate stops
    uninstall checks and shows no "SDK missing" warnings.
 
 The Keychain items `com.clikgate.installation-id.<bundle ID>` (`com.clikgate.installation-id` before 2.1.6) and

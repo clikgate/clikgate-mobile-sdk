@@ -72,7 +72,7 @@ root component's `useEffect` is fine. For URLs from elsewhere (QR codes): `await
 App Links / Universal Links / custom-scheme opens are forwarded to the SDK by the platform setup below.
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
@@ -145,7 +145,7 @@ useEffect(
 
 Then remove `@react-native-firebase/dynamic-links`, the `page.link` intent filter (Android) and Associated Domains
 entry (iOS), and add your Clikgate link domains (sections 7 to 9; the Expo config plugin writes them). Firebase
-Analytics, Crashlytics and Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs)
+Analytics, Crashlytics and Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs › Test your app)
 and a `cg_sdk_test_…` key.
 
 ## 4. Identify your users, opt-out
@@ -234,7 +234,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `number` or a numeric `string` (pass a string for exact amounts: it reaches the native SDK as a decimal string, never a double; numbers JavaScript prints with an exponent are rejected). Whether a value is allowed or required, and how many decimal
@@ -259,7 +259,7 @@ for the event (application number, order id, transaction reference).
 ## 4b. Payment goals
 
 One method, `goal()`, sends every goal. Whether a goal is a **Standard goal** or a **Payment goal** is set in the
-dashboard (Settings › Goals), never in the call. For a Payment goal, pass the payment provider and the
+dashboard (Grow › Goals), never in the call. For a Payment goal, pass the payment provider and the
 reference your checkout returned:
 
 ```ts

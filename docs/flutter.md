@@ -84,7 +84,7 @@ automatically (platform setup below). For URLs from elsewhere (QR codes):
 `await Clikgate.handleUrl(url)`.
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
@@ -152,7 +152,7 @@ Clikgate.onDeepLink.listen((link) {
 
 Then remove `firebase_dynamic_links` from `pubspec.yaml`, the `page.link` intent filter (Android) and Associated
 Domains entry (iOS), and add your Clikgate link domains (sections 7 and 8). Firebase Analytics, Crashlytics and
-Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
+Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs › Test your app) and a `cg_sdk_test_…` key.
 
 ## 4. Identify your users, opt-out
 
@@ -181,7 +181,7 @@ always made on your server, never in the app. It lasts 30 days by default; no fo
 device, and the native SDK sends them in the background (queued, retried, and sent after the install is
 recorded), so there is no answer to wait for. When a token doesn't verify, debug builds log the reason in one
 line (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`); the customer ID is kept,
-unverified. To check a token, use **Test a token** in **Apps › your app › Identity secret**, or Path B.
+unverified. To check a token, use **Test a token** on the identity page (**Developers › SDKs** › your app › **Set up identity**), or Path B.
 
 | Platform | `identifyUser` returns |
 |---|---|
@@ -244,7 +244,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; an `int`, a `double` or a numeric `String` (pass a string for exact amounts: it reaches the native SDK as a decimal string, never a double; doubles Dart prints with an exponent are rejected). Whether a value is allowed or required, and how many decimal
@@ -269,7 +269,7 @@ for the event (application number, order id, transaction reference).
 ## 4b. Payment goals
 
 One method, `goal()`, sends every goal. Whether a goal is a **Standard goal** or a **Payment goal** is set in the
-dashboard (Settings › Goals), never in the call. For a Payment goal, pass the payment provider and the
+dashboard (Grow › Goals), never in the call. For a Payment goal, pass the payment provider and the
 reference your checkout returned:
 
 ```dart

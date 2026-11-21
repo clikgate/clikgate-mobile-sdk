@@ -163,7 +163,7 @@ async function pickApps(opts: Options, deps: Deps, project: Project, clikgate: C
       }
       const create = opts.dryRun ? false : await ui.confirm(`No Clikgate ${label} app uses ${id}. Create "${project.name}" (${label}, ${id})?`, true);
       if (!create) {
-        if (!opts.dryRun) manual.push({ label: `${label} app`, detail: `No Clikgate ${label} app for ${id}. Create one in the dashboard (Apps › Add app), then run setup again.` });
+        if (!opts.dryRun) manual.push({ label: `${label} app`, detail: `No Clikgate ${label} app for ${id}. Create one in the dashboard (Connect › Apps › Add app), then run setup again.` });
         else ui.out(`${paint(ui, 'dim', '·')} ${label}: no Clikgate app uses ${id} (a real run offers to create it)`);
         continue;
       }
@@ -185,7 +185,7 @@ async function pickApps(opts: Options, deps: Deps, project: Project, clikgate: C
         let team = project.iosTeamId;
         if (!team) team = (await ui.ask('Your Apple Team ID (10 characters, from developer.apple.com › Membership), or Enter to skip:')).toUpperCase() || undefined;
         if (!team || !/^[A-Z0-9]{10}$/.test(team)) {
-          manual.push({ label: 'iOS app', detail: 'Clikgate needs the Apple Team ID to create the iOS app. Create it in the dashboard (Apps › Add app), then run setup again.' });
+          manual.push({ label: 'iOS app', detail: 'Clikgate needs the Apple Team ID to create the iOS app. Create it in the dashboard (Connect › Apps › Add app), then run setup again.' });
           continue;
         }
         body.bundle_id = id;
@@ -211,7 +211,7 @@ async function sendSigningDetails(opts: Options, deps: Deps, project: Project, c
     ui.out('Production App Links need the Play App Signing SHA-256 (Play Console › Protected with Play › Play Store protection › Manage Play app signing).');
     const play = opts.yes ? undefined : await askFingerprint(ui, 'Paste it now, or press Enter to add it later:');
     if (play && !have.has(play)) add.push(play);
-    if (!play) manual.push({ label: 'Play App Signing fingerprint', detail: 'Add the Play App Signing SHA-256 to the Android app in the dashboard (Apps › your app › Signing). Without it, App Links open the browser in Play Store installs.' });
+    if (!play) manual.push({ label: 'Play App Signing fingerprint', detail: 'Add the Play App Signing SHA-256 to the Android app in the dashboard (Connect › Apps › your app › Identifiers and store links › SHA-256 certificate fingerprints). Without it, App Links open the browser in Play Store installs.' });
     if (add.length && !opts.dryRun) {
       apps.android = await clikgate.updateApp(android.id, { sha256_cert_fingerprints: [...(android.sha256_cert_fingerprints ?? []), ...add] });
       ui.out(`${paint(ui, 'green', '✓')} Sent ${add.length} signing fingerprint${add.length > 1 ? 's' : ''} to Clikgate`);
@@ -288,7 +288,7 @@ async function confirmSubdomain(opts: Options, deps: Deps, clikgate: Clikgate, p
       throw e;
     }
   }
-  manual.push({ label: `${label} link subdomain`, detail: `Confirm your ${label} app's link subdomain in the dashboard (Apps › your app › Link subdomain), then run setup again. Until then its links can't open the app.` });
+  manual.push({ label: `${label} link subdomain`, detail: `Confirm your ${label} app's link subdomain in the dashboard (Connect › Apps › your app › Link subdomain), then run setup again. Until then its links can't open the app.` });
   return undefined;
 }
 
@@ -355,13 +355,13 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   const offline = opts.sdkKey !== undefined;
   if (offline) {
     if (SDK_KEY_LIVE.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, 'Use the test key; switch to live for release builds.');
-    if (!SDK_KEY_TEST.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, '--sdk-key must be a test SDK key (cg_sdk_test_…), from Dashboard › Apps › your app › SDK keys.');
+    if (!SDK_KEY_TEST.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, '--sdk-key must be a test SDK key (cg_sdk_test_…), from Developers › SDKs › your app › SDK key, in Test mode.');
     if (!opts.domains?.length) throw new Exit(EXIT.PROBLEMS, "Offline mode needs --domain <host>[,<host>] (your app's link subdomain and custom domains, e.g. yourapp.ciz.to,go.acme.com; on the Free plan yourapp.ciz.ng).");
     const shared = opts.domains.filter(isSharedPlatformDomain);
     if (shared.length) {
       throw new Exit(
         EXIT.PROBLEMS,
-        `${shared.join(', ')}: ${SHARED_DOMAIN_FIX}. Pass your app's link subdomain instead (Dashboard › Apps › your app, e.g. --domain yourapp.ciz.to, or yourapp.ciz.ng on the Free plan), plus any custom domains.`
+        `${shared.join(', ')}: ${SHARED_DOMAIN_FIX}. Pass your app's link subdomain instead (Connect › Apps › your app › Link subdomain, e.g. --domain yourapp.ciz.to, or yourapp.ciz.ng on the Free plan), plus any custom domains.`
       );
     }
   }
@@ -411,7 +411,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     sdkKey = androidKey ?? iosKey ?? 'cg_sdk_test_REPLACE_ME';
     sdkKeyIos = androidKey && iosKey && androidKey !== iosKey ? iosKey : undefined;
     if (!androidKey && !iosKey) manual.push({ label: 'SDK key', detail: 'No Clikgate app was chosen, so the start-up code has a placeholder key: replace cg_sdk_test_REPLACE_ME with your app\'s test SDK key.' });
-    if (codeDomains.length === 0 && Object.keys(apps).length) manual.push({ label: 'Link domains', detail: "No app link domain yet: confirm your app's link subdomain in the dashboard (Apps › your app › Link subdomain), then run setup again." });
+    if (codeDomains.length === 0 && Object.keys(apps).length) manual.push({ label: 'Link domains', detail: "No app link domain yet: confirm your app's link subdomain in the dashboard (Connect › Apps › your app › Link subdomain), then run setup again." });
   }
 
   // Plan.
