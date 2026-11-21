@@ -51,6 +51,8 @@ FORBIDDEN_TEXT = [
         "internal document",
         re.compile(
             r"DECISIONS\.md|PROGRESS\.md|RELEASING\.md|SERVER_SDKS\.md|AI_GUIDES_QA|ai-qa-runs|docs/spec"
+            # and their bare names: "(see DECISIONS)" (capitals only; the word "decisions" is fine)
+            r"|\b(DECISIONS|PROGRESS|RELEASING)\b"
             r"|API_CONTRACT|SDK_BEHAVIOUR|PLATFORM_CHANNEL"
         ),
     ),
@@ -110,11 +112,13 @@ def self_test() -> int:
         ("per R.24 and KC.6", "internal requirement code"),
         ("C3-A1 says", "internal spec id"),
         ("see DECISIONS.md", "internal document"),
+        ("budget 40 → 44 KB (DECISIONS)", "internal document"),
         ("an owner decision", "internal process note"),
         ("../clikgate_api/docs", "private repository"),
     ]
     must_not = [
         "this changes 10 lines",
+        "the app's decisions stay on the phone",
         "Breaking changes: 2.1.6 adds getInstallationHeader",
         "no changes in 2.1.5",
         "It changes 3 files and 12 tests",  # numbers not joined as a list
