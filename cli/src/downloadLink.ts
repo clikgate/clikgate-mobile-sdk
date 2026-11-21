@@ -26,7 +26,7 @@ export function normaliseWebsite(input: string): string | undefined {
   }
   if (url.protocol !== 'https:' || url.username || url.password) return undefined;
   const host = url.hostname.toLowerCase();
-  if (!host.includes('.') || host.endsWith('.') || /^[\d.]+$/.test(host) || host === 'localhost') return undefined;
+  if (!host.includes('.') || host.endsWith('.') || /^[\d.]+$/.test(host)) return undefined; // refuses machine names (no dot), trailing dots and IP addresses
   // A Clikgate link domain would send computers in a circle
   if (SHARED_PLATFORM_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`))) return undefined;
   return url.toString();
