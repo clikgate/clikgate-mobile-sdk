@@ -124,6 +124,9 @@ class ClikgateFlutterPlugin :
                 "getAttribution" -> Clikgate.attribution { result.success(attributionMap(it)) }
                 "goal" -> goal(call, result)
                 "getInstallationId" -> Clikgate.getInstallationId { result.success(it) }
+                "getInstallationHeader" -> Clikgate.getInstallationHeader { h ->
+                    result.success(h?.let { mapOf("name" to it.name, "value" to it.value) })
+                }
                 "identifyUser" -> {
                     val label = call.argument<String>("label")
                     val token = call.argument<String>("identityToken")

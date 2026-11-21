@@ -190,6 +190,27 @@ seconds at most; offline it answers at once). A reinstall gets a new ID. It retu
 (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or deep-link-only mode): your
 server then skips `identifyUser`.
 
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```dart
+// dio: add the header to requests to your own API only
+dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) async {
+  final h = await Clikgate.getInstallationHeader();
+  if (h != null) options.headers[h.name] = h.value;
+  handler.next(options);
+}));
+```
+
+`getInstallationHeader()` is `null` in exactly the cases where `getInstallationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws: `null` before `configure` and when the plugin is missing. Leave the header out when it's
+`null`.
+
 Fraud signals (`is_emulator`, `is_rooted`, the Play install-referrer times) are collected by the
 native SDKs on `/install` (native 1.1.0+); there is nothing to call or configure from Dart. See
 [android.md §8](android.md#8-privacy-and-opt-out) and [ios.md §9](ios.md#9-privacy).

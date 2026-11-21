@@ -47,6 +47,15 @@ calls `identifyUser({appId, installationId, customerId, label?})`. The installat
 (opt-out, consent denied or not given yet where required, deep-link-only mode). The customer ID is your own user ID,
 never an email or phone number. Guide: https://clikgate.com/docs/identify-users
 
+Send the `Clikgate-Installation` header (2.1.6) with the sign-in request and with signed-in requests to your own
+server, so it knows which Clikgate app is calling; send it only to your own backend, over HTTPS, never to third
+parties. It is `null` when the installation ID is, or while the app ID isn't known yet, and never throws:
+
+```ts
+const h = await Clikgate.getInstallationHeader();
+const res = await fetch('https://api.example.com/sign-in', { method: 'POST', headers: h ? { [h.name]: h.value } : {}, body });
+```
+
 ## Deep links on every plan
 
 Deep links work on every plan, Free included (deferred deep links: 1,000 a month on Free, 10,000 on Starter). On

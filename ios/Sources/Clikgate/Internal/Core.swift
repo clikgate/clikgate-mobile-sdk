@@ -780,15 +780,23 @@ actor ClikgateCore {
     /// calls `identifyUser({appId, installationId, customerId})`). Nil when tracking is off: opted out, consent denied
     /// or not given yet where it's required, or deep-link-only mode. On a first launch it waits for the first config
     /// answer (at most about 5 s; offline it answers at once) so the consent and attribution switches are known.
-    func installationIdForApp() async -> String? {
+    func installationIdForApp(untilStarted: Bool = false) async -> String? {
         ensureInstallationId()
         var waited = 0
-        while isActive && state.config == nil && configFetching && waited < 50 {
+        while isActive && state.config == nil && (configFetching || untilStarted && !started) && waited < 50 {
             await deps.clock.sleep(seconds: 0.1)
             waited += 1
         }
         guard isActive, gate == .allowed, features.isEnabled(ClikgateFeatures.appAttribution) else { return nil }
         return state.installationId
+    }
+
+    /// `Clikgate-Installation: <app ID>:<installation ID>` for the app's own server. Nil when
+    /// ``installationIdForApp()`` is, or when no config (fresh or cached) has given the app ID yet. Waits for the
+    /// first config like ``installationIdForApp()``, also when called before the first launch's work began.
+    func installationHeaderForApp() async -> (name: String, value: String)? {
+        guard let id = await installationIdForApp(untilStarted: true), let app = state.config?.appId, !app.isEmpty else { return nil }
+        return ("Clikgate-Installation", app + ":" + id)
     }
 
     // MARK: - Goals

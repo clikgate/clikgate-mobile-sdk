@@ -12,6 +12,7 @@ import {
   type ClikgateConsent,
   type ClikgateConsentUpdate,
   type ClikgateFirebaseForwardingOptions,
+  type ClikgateInstallationHeader,
   consentFromMap,
   isConsentState,
   stringMapFromMap,
@@ -231,6 +232,37 @@ export const Clikgate = {
       installationId?: unknown;
     } | null;
     return typeof m?.installationId === 'string' ? m.installationId : null;
+  },
+
+  /**
+   * The header that tells your own server which Clikgate installation is calling, so the server
+   * needn't map platforms to Clikgate app IDs: name `Clikgate-Installation`, value
+   * `<app ID>:<installation ID>` (the app ID from Clikgate's config, the ID `getInstallationId()`
+   * returns). Send it with the sign-in request and with signed-in requests to your own server,
+   * only over HTTPS and never to third parties; the server SDK reads it.
+   *
+   * ```ts
+   * const h = await Clikgate.getInstallationHeader();
+   * if (h) headers[h.name] = h.value;
+   * ```
+   *
+   * Resolves `null` whenever `getInstallationId()` does (tracking off, consent denied or not given
+   * yet where it's required, deep-link-only mode), when the app ID isn't known yet (an offline
+   * first launch), before `configure`, and when the native module is missing. Waits a few seconds
+   * at most for the first config; offline it uses the cached one. Never rejects.
+   */
+  async getInstallationHeader(): Promise<ClikgateInstallationHeader | null> {
+    try {
+      const m = (await invoke<unknown>('getInstallationHeader', {})) as {
+        name?: unknown;
+        value?: unknown;
+      } | null;
+      return typeof m?.name === 'string' && typeof m.value === 'string'
+        ? { name: m.name, value: m.value }
+        : null;
+    } catch {
+      return null;
+    }
   },
 
   /** Opt-out switch: `false` stops all processing for this installation. */

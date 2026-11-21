@@ -61,6 +61,17 @@ export const GoalKind = {
 } as const;
 export type GoalKind = (typeof GoalKind)[keyof typeof GoalKind];
 
+/**
+ * The header that tells your own server which Clikgate installation is calling: `name` is
+ * `Clikgate-Installation`, `value` is `<app ID>:<installation ID>`. From
+ * `Clikgate.getInstallationHeader()`. Send it only to your own server, over HTTPS, never to third
+ * parties.
+ */
+export interface ClikgateInstallationHeader {
+  name: string;
+  value: string;
+}
+
 /** The result of `Clikgate.goal`. */
 export interface GoalResult {
   status: GoalStatus;

@@ -3,23 +3,23 @@
 // files are present, these hashes against them.
 
 /// Version of the setup command (cli/package.json) that `dart run clikgate_flutter` runs.
-const String setupVersion = '2.1.5';
+const String setupVersion = '2.1.6';
 
 /// SHA-256 of each binary `clikgate-setup-<setupVersion>-<platform>[.exe]`, by platform (checked after
 /// unpacking, and again before a cached copy is reused).
 const Map<String, String> setupBinarySha256 = {
-  'darwin-arm64': 'deaf21e08bf7503e5cd4c219f9b16f4f1bb150170d5ebb123618e3bfb99a800b',
-  'darwin-x64': '16349c79d79d6a6903bfe1258d4a138d06a62b2e089455b8ac20b8b83700847e',
-  'linux-arm64': '649e191feba947d623e5925f60405621e056a7ee57a2427024e2ca77ff6c032c',
-  'linux-x64': '07124db7b8cf6d80b29f90a5b2a68b2839f2ad5804241b5cd52244f8c121dc2d',
-  'windows-x64': '76ae85342ba04f86dbfb59e05e705adb3f70c1418c89f2c381cac4c8402fb18d',
+  'darwin-arm64': '36d4b241cd08f7d4a6bd1db9834ec258033203d96d63dd200b0e01e86e8cf43f',
+  'darwin-x64': 'ba722fd14e1ff280098839ac833d717cea0e74060f5e5a0e6a647555b88ff6cb',
+  'linux-arm64': 'b9bd785ea205d3c7350b93628c023cb3831ffd5cf787956751bc6e3f507106ab',
+  'linux-x64': '98700b30f6e18fa63ce67a7b927a07954a6e129d38a8b987d029805c6c6b11a8',
+  'windows-x64': '4345f705c56f7e8b8fee7e8778a1568143886577fa7d1bb7c865ad36fde31bb3',
 };
 
 /// SHA-256 of each release asset `clikgate-setup-<setupVersion>-<platform>[.exe].gz` (checked before unpacking).
 const Map<String, String> setupArchiveSha256 = {
-  'darwin-arm64': '7cdd0cf6101c75c2e7ea4d57df14ff5ef8b479ddf307a80b6a7b80e43369efea',
-  'darwin-x64': '516777bde09a4e0a19c22e89a1fb5f24b63f1791d659eedfc2d9e40d477d3a2c',
-  'linux-arm64': 'cec8dc677ad0a129366bd7a7714cbeadd55e127fbd4e324ff1129d5aba73507e',
-  'linux-x64': '5413434a226e5aadedac68b89e1c8560e32cfcfbf0aa62cbaf080cb3b162f9ef',
-  'windows-x64': 'f1aace3d5e89ef00ff83c311fb7aa66d4f9c2e2f06412d931a5e8394a6dfda79',
+  'darwin-arm64': '9703e3ae80da732a628f06001d824caf7cce5279b48fae2920fd8dddf13d2466',
+  'darwin-x64': '405329a12695f4d8b5893a439f940aa8ec1bbfa45dd68da40ecbff46260eeab0',
+  'linux-arm64': '8a4adfe2f42ac8560766de3c27fe64faf868f8f3e207d112d7486b93f3daea72',
+  'linux-x64': '50219aeff5195ac9827b9215bb882df3ef1b440de78504ff6b5fbbefbf230e39',
+  'windows-x64': '32e1f91ee4467d4832d80d653040e853c2907780b00e90765c2cf338ffaf4173',
 };

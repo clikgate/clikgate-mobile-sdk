@@ -266,6 +266,30 @@ at most; offline it answers at once) and never blocks the main thread. A reinsta
 when tracking is off (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or
 deep-link-only mode): your server then skips `identifyUser`.
 
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```kotlin
+// OkHttp: add the header to calls to your own API only
+class ClikgateInstallationInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val header = runBlocking { Clikgate.getInstallationHeader() }   // OkHttp runs this off the main thread
+        val request = chain.request().newBuilder().apply { header?.let { header(it.name, it.value) } }.build()
+        return chain.proceed(request)
+    }
+}
+// Java: Clikgate.getInstallationHeader(header -> { if (header != null) builder.header(header.getName(), header.getValue()); });
+```
+
+`getInstallationHeader()` is `null` in exactly the cases where `getInstallationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws; before `configure` it waits until `configure` runs. Leave the header out when it's
+`null`.
+
 ## 5b. Send goals
 
 One method for every goal, `Clikgate.goal(...)`:
@@ -687,6 +711,7 @@ SDK leaves them unused in the app's data directory (delete them on first launch 
 | `Clikgate.onBrowserHandoff(listener?)` | 1.4.0; another organisation's shared-domain link opened in Custom Tabs |
 | `Clikgate.identifyUser(label?, customerId?, identityToken?)` | customer ID dropped in private mode, label only when allowed; [identify-users](https://clikgate.com/docs/identify-users) |
 | `Clikgate.getInstallationId(): String?` (suspend) / `getInstallationId(listener)` | identity Path B; null when tracking is off |
+| `Clikgate.getInstallationHeader(): ClikgateInstallationHeader?` (suspend) / `getInstallationHeader(listener)` | 2.1.6; `Clikgate-Installation` header for your own server; null when tracking is off or the app ID isn't known yet |
 | `Clikgate.setTrackingEnabled(Boolean)` | |
 | `Clikgate.setPushToken(token, PushProvider)` / `isClikgateMessage(data)` | |
 | `Clikgate.referrals.applyCode / referredBy` | callbacks + `awaitApplyCode` / `awaitReferredBy` |

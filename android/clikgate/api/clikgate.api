@@ -36,6 +36,8 @@ public final class com/clikgate/Clikgate {
 	public static final fun enableFirebaseForwarding (Lcom/clikgate/FirebaseForwardingOptions;)V
 	public static synthetic fun enableFirebaseForwarding$default (Lcom/clikgate/FirebaseForwardingOptions;ILjava/lang/Object;)V
 	public static final fun getConsent ()Lcom/clikgate/ClikgateConsent;
+	public static final fun getInstallationHeader (Lcom/clikgate/InstallationHeaderListener;)V
+	public static final fun getInstallationHeader (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun getInstallationId (Lcom/clikgate/InstallationIdListener;)V
 	public static final fun getInstallationId (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun getReferrals ()Lcom/clikgate/ClikgateReferrals;
@@ -224,6 +226,20 @@ public final class com/clikgate/ClikgateFeatures {
 	public static final field SKAN_POSTBACKS Ljava/lang/String;
 	public static final field UNINSTALL_TRACKING Ljava/lang/String;
 	public static final field WHATSAPP_ATTRIBUTION Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateInstallationHeader {
+	public static final field Companion Lcom/clikgate/ClikgateInstallationHeader$Companion;
+	public static final field NAME Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/clikgate/ClikgateInstallationHeader$Companion {
 }
 
 public abstract interface annotation class com/clikgate/ClikgateInternalApi : java/lang/annotation/Annotation {
@@ -435,6 +451,10 @@ public final class com/clikgate/GoalStatus : java/lang/Enum {
 	public final fun getValue ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lcom/clikgate/GoalStatus;
 	public static fun values ()[Lcom/clikgate/GoalStatus;
+}
+
+public abstract interface class com/clikgate/InstallationHeaderListener {
+	public abstract fun onInstallationHeader (Lcom/clikgate/ClikgateInstallationHeader;)V
 }
 
 public abstract interface class com/clikgate/InstallationIdListener {

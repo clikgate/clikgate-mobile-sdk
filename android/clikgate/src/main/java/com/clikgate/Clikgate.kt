@@ -387,6 +387,31 @@ public object Clikgate {
     }
 
     /**
+     * The header that tells your own server which Clikgate installation is calling, so the server needn't map
+     * platforms to Clikgate app IDs: name `Clikgate-Installation`, value `<app ID>:<installation ID>` (the app ID
+     * from Clikgate's config, the ID [getInstallationId] returns). Send it with the sign-in request and with
+     * signed-in requests to your own server, only over HTTPS and never to third parties; the server SDK reads it.
+     *
+     * The listener runs on the main thread and never blocks it. Null whenever [getInstallationId] is null
+     * (tracking off, consent denied or not given yet where it's required, deep-link-only mode), and when the app
+     * ID isn't known yet (an offline first launch). Right after [configure] it waits for the first config answer
+     * (a few seconds at most); offline it uses the config cached by an earlier launch. Never throws.
+     */
+    @JvmStatic
+    public fun getInstallationHeader(listener: InstallationHeaderListener) {
+        withCore { c -> c.installationHeaderForApp { listener.onInstallationHeader(it) } }
+    }
+
+    /**
+     * Suspending [getInstallationHeader]:
+     * `Clikgate.getInstallationHeader()?.let { request.header(it.name, it.value) }`. Null when tracking is off.
+     */
+    @JvmStatic
+    public suspend fun getInstallationHeader(): ClikgateInstallationHeader? = suspendCoroutine { cont ->
+        getInstallationHeader { cont.resume(it) }
+    }
+
+    /**
      * Opt-out switch. `false` clears queued goals, tells Clikgate to stop processing and erase
      * device data for this installation, and stops all other calls; `true` resumes.
      */

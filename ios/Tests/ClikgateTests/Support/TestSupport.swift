@@ -274,6 +274,8 @@ final class Harness: @unchecked Sendable {
     let dir: URL
     let clock = FakeClock()
     let keychain: FakeKeychain
+    /// Replaces `keychain` in the dependencies (the real Keychain, for the per-app item tests).
+    var keychainStore: KeychainStoring?
     let pasteboard: FakePasteboard
     let attest: FakeAppAttest
     let tracking: FakeTracking
@@ -313,7 +315,7 @@ final class Harness: @unchecked Sendable {
     func deps() -> ClikgateDependencies {
         ClikgateDependencies(
             transport: URLSessionTransport(session: StubURLProtocol.session()),
-            clock: clock, keychain: keychain, pasteboard: pasteboard, device: device,
+            clock: clock, keychain: keychainStore ?? keychain, pasteboard: pasteboard, device: device,
             tracking: tracking, searchAds: searchAds,
             appAttest: attest, background: ImmediateBackground(),
             apnsEnvironment: { "sandbox" }, appURLSchemes: ["myapp"], storageDirectory: dir,

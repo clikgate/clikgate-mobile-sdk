@@ -34,6 +34,8 @@ internal data class SdkConfig(
     /** `allow_labels` (absent = on): false in private mode without "Allow labels in private mode". */
     val allowLabels: Boolean = true,
     // ---- existing users ----
+    /** `app_id`: this app's Clikgate app ID (for the `Clikgate-Installation` header), null when the server sent none. */
+    val appId: String? = null,
     /** `environment` (`production` / `sandbox`), null when the server sent none. */
     val environment: String? = null,
     /** `existing_users.start_at` in ms: the app's Clikgate start date for this platform. */
@@ -106,6 +108,7 @@ internal data class SdkConfig(
                 firebase = FirebaseConfig.parse(o.optJSONObject("firebase_forwarding")),
                 privateMode = o.optBoolean("private_mode", false),
                 allowLabels = o.optBoolean("allow_labels", true),
+                appId = o.optString("app_id", "").ifEmpty { null },
                 environment = o.optString("environment", "").ifEmpty { null },
                 sdkStartAtMs = o.optJSONObject("existing_users")?.let { e ->
                     if (e.isNull("start_at")) null else ExistingUserFields.parseTime(e.optString("start_at"))

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import com.clikgate.ClikgateAttribution
+import com.clikgate.ClikgateInstallationHeader
 import com.clikgate.ClikgateBrowserHandoff
 import com.clikgate.ClikgateDeepLink
 import com.clikgate.ClikgateError
@@ -1498,14 +1499,27 @@ internal class Core(
      * mode. On a first launch it waits for the first config answer (one attempt, so offline it answers at once;
      * at most [INSTALLATION_ID_WAIT_MS]) so the consent and attribution switches are known. Never logged in full.
      */
-    fun installationIdForApp(cb: (String?) -> Unit) = runSerial {
+    fun installationIdForApp(cb: (String?) -> Unit) = installationForApp { id, _ -> cb(id) }
+
+    /**
+     * The `Clikgate-Installation` header (`<app ID>:<installation ID>`) for the app's own server, on the main thread.
+     * Null whenever [installationIdForApp] is null, and when no config (fetched or cached) has given the app ID yet.
+     * Waits for the first config the same way.
+     */
+    fun installationHeaderForApp(cb: (ClikgateInstallationHeader?) -> Unit) = installationForApp { id, appId ->
+        cb(if (id != null && appId != null) ClikgateInstallationHeader(ClikgateInstallationHeader.NAME, "$appId:$id") else null)
+    }
+
+    /** [cb] gets the installation ID (null when tracking is off) and the app ID of the newest config. */
+    private fun installationForApp(cb: (String?, String?) -> Unit) = runSerial {
         fun answer() {
             val id = if (!storage.trackingEnabled || !isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION) || gate() != Gate.ALLOWED) {
                 null
             } else {
                 installationId
             }
-            main.post { cb(id) }
+            val appId = featureConfig.appId
+            main.post { cb(id, appId) }
         }
         if (configReady || !storage.trackingEnabled) return@runSerial answer()
         val w = Waiter<Unit> { answer() }

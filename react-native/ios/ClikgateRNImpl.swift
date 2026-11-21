@@ -114,6 +114,14 @@ public final class ClikgateRNImpl: NSObject {
         }
     }
 
+    /// Resolves `{name, value}` for the app's own server, or null (tracking off, not configured, or no app ID yet).
+    @objc public func getInstallationHeader(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
+        Task { @MainActor in   // the wait happens in the SDK's actor, never on the main thread
+            let h = await Clikgate.shared.installationHeader()
+            resolve(h.map { ["name": $0.name, "value": $0.value] })
+        }
+    }
+
     /// The value arrives as a decimal string; resolves with the goal's result.
     @objc public func goal(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
         guard let key = args["key"] as? String else { Self.invalid(reject, "key is required", param: "goal"); return }

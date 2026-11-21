@@ -1,6 +1,16 @@
 # Changelog — Clikgate Android SDK
 
 
+## 2.1.6: Installation header
+
+- New `Clikgate.getInstallationHeader()` (suspend) and `getInstallationHeader(listener)` (Java, main thread): the
+  `Clikgate-Installation` header for your own server, value `<app ID>:<installation ID>`, so the server knows which
+  Clikgate app is calling without mapping platforms to app IDs. Send it with the sign-in request and signed-in
+  requests to your own server only, over HTTPS. `null` in the same cases as `getInstallationId()` (tracking off,
+  consent denied or not given yet where required, deep-link-only mode) and while the app ID isn't known yet; waits a
+  few seconds at most for the first config, offline uses the cached one. New types `ClikgateInstallationHeader` and
+  `InstallationHeaderListener`. Nothing removed or renamed.
+
 ## 2.1.3: Package contact
 
 - The package contact is now dev@clikgate.com. Code comments tidied. No behaviour change.

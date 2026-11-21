@@ -48,4 +48,12 @@ calls `identifyUser({appId, installationId, customerId, label?})`. The installat
 (opt-out, consent denied or not given yet where required, deep-link-only mode). The customer ID is your own user ID,
 never an email or phone number. Guide: https://clikgate.com/docs/identify-users
 
+Send the `Clikgate-Installation` header (2.1.6) with the sign-in request and with signed-in requests to your own
+server, so it knows which Clikgate app is calling; send it only to your own backend, over HTTPS, never to third
+parties. It is `nil` when the installation ID is, or while the app ID isn't known yet, and never throws:
+
+```swift
+if let h = await Clikgate.shared.installationHeader() { request.setValue(h.value, forHTTPHeaderField: h.name) }
+```
+
 The full guide is at https://clikgate.com/docs/sdks/ios. Licence: Apache 2.0 (`LICENSE`).

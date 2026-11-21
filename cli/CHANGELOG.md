@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.6
+
+- Installs the 2.1.6 SDKs (`clikgate-android` 2.1.6, `Clikgate` 2.1.6, `clikgate_flutter` ^2.1.6, `@clikgate/react-native` ^2.1.6): they add the installation header for your own server, and on iOS each app has its own installation ID.
+
 ## 2.1.5
 
 - **Your app's download link.** After the files are written, setup has Clikgate make one link to share anywhere, `https://<your link subdomain>/download`: phones open the app, or the App Store / Google Play when it isn't installed; computers go to your website, or to a page with your store buttons. Setup prints it at the end. It's an ordinary link you can edit in the dashboard (Links), and running setup again never undoes your edits.

@@ -129,6 +129,41 @@ class GoalResult {
       'GoalResult(status: ${status.name}, reason: $reason, goalKind: ${goalKind?.name}, valueIgnored: $valueIgnored)';
 }
 
+/// The header that tells your own server which Clikgate installation is
+/// calling: [name] `Clikgate-Installation`, [value]
+/// `<app ID>:<installation ID>`. From `Clikgate.getInstallationHeader()`.
+/// Send it only to your own server, over HTTPS, never to third parties.
+@immutable
+class ClikgateInstallationHeader {
+  const ClikgateInstallationHeader({required this.name, required this.value});
+
+  /// `Clikgate-Installation`.
+  static const headerName = 'Clikgate-Installation';
+
+  /// Decodes the platform channel's `{name, value}` map; null for anything else.
+  static ClikgateInstallationHeader? fromMap(Object? m) {
+    if (m is! Map) return null;
+    final name = m['name'], value = m['value'];
+    if (name is! String || value is! String) return null;
+    return ClikgateInstallationHeader(name: name, value: value);
+  }
+
+  final String name;
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ClikgateInstallationHeader &&
+      other.name == name &&
+      other.value == value;
+
+  @override
+  int get hashCode => Object.hash(name, value);
+
+  @override
+  String toString() => 'ClikgateInstallationHeader(name: $name)';
+}
+
 /// The Clikgate link behind a deep link or attribution.
 @immutable
 class ClikgateLink {

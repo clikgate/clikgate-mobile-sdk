@@ -1,6 +1,21 @@
 # Changelog — Clikgate iOS SDK
 
 
+## 2.1.6: Installation header, one installation ID per app
+
+- New `Clikgate.shared.installationHeader()` (async, never throws): the `Clikgate-Installation` header for your own
+  server, value `<app ID>:<installation ID>`, so the server knows which Clikgate app is calling without mapping
+  platforms to app IDs. Send it with the sign-in request and signed-in requests to your own server only, over HTTPS.
+  `nil` in the same cases as `installationId()` (tracking off, consent denied or not given yet where required,
+  deep-link-only mode), while the app ID isn't known yet, and before `configure`. Waits a few seconds at most for the
+  first config, never on the main thread; offline it uses the cached one.
+- The Keychain items are now named after the bundle identifier (`com.clikgate.installation-id.<bundle ID>`). Two apps
+  of the same team that share a Keychain access group could read the same item before and so get the same
+  installation ID; now each app has its own. The item without a bundle identifier written by earlier versions is
+  ignored and left in place (apps with an earlier SDK keep using it). Still kept after the app is deleted
+  (reinstall detection), AfterFirstUnlock and never synchronised to iCloud; the device marker stays ThisDeviceOnly.
+- Nothing removed or renamed.
+
 ## 2.1.3: Package contact
 
 - The package contact is now dev@clikgate.com. Code comments tidied. No behaviour change.

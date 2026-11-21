@@ -189,6 +189,28 @@ seconds at most; offline it answers at once). A reinstall gets a new ID. It retu
 server then skips `identifyUser`.
 On iOS these calls reject with `not_configured` before `configure`; on Android they are queued until `configure`.
 
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```ts
+// fetch: add the header to requests to your own API only
+async function apiFetch(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  const h = await Clikgate.getInstallationHeader();
+  if (h) headers.set(h.name, h.value);
+  return fetch(`https://api.example.com${path}`, { ...init, headers });
+}
+```
+
+`getInstallationHeader()` is `null` in exactly the cases where `getInstallationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws (it resolves `null` before `configure` on iOS and when the native module is missing). Leave the header out when it's
+`null`.
+
 Fraud signals (`is_emulator`, `is_rooted`, the Play install-referrer times) are collected by the
 native SDKs on `/install` (native 1.1.0+; from 1.2.0 the iOS SDK no longer sends `is_rooted`, and uses
 App Attest / DeviceCheck instead); there is nothing to call or configure from JavaScript. See

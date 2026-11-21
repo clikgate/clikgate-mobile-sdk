@@ -21,7 +21,7 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.swift_version = "5.9"
 
-  s.dependency "Clikgate", "~> 2.1.3"
+  s.dependency "Clikgate", "~> 2.1.6"
 
   install_modules_dependencies(s)
 end

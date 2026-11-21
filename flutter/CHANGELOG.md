@@ -1,3 +1,8 @@
+## 2.1.6: Installation header
+
+- New `Clikgate.getInstallationHeader()` (never throws): the `Clikgate-Installation` header for your own server, value `<app ID>:<installation ID>`, as a `ClikgateInstallationHeader` (`name`, `value`), or `null` in the same cases as `getInstallationId()` and while the app ID isn't known yet. Send it with the sign-in request and signed-in requests to your own server only, over HTTPS. Native SDKs 2.1.6, where on iOS each app now has its own Keychain item, so two apps of one team never share an installation ID.
+- `dart run clikgate_flutter:setup` runs setup command 2.1.6. Nothing removed or renamed.
+
 ## 2.1.5: Setup command 2.1.5
 
 - `dart run clikgate_flutter:setup` runs setup command 2.1.5: it asks for your website and prints your app's download link (`https://<your link subdomain>/download`). The plugin itself is unchanged (native SDKs 2.1.3).

@@ -154,6 +154,12 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
                 }
             }
 
+        case "getInstallationHeader":   // {name, value} for the app's own server; nil when tracking is off
+            Task { @MainActor in   // the wait happens in the SDK's actor, never on the main thread
+                let h = await sdk.installationHeader()
+                result(h.map { ["name": $0.name, "value": $0.value] })
+            }
+
         case "goal":   // the value arrives as a decimal string; answers with the goal's result
             guard let key = args["key"] as? String else { result(Self.invalidArgument("key is required", param: "goal")); return }
             sdk.goal(key, decimalString: args["value"] as? String, currency: args["currency"] as? String,

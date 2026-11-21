@@ -358,6 +358,32 @@ answer (a few seconds at most; offline it answers at once) and never blocks the 
 (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or deep-link-only mode): your
 server then skips `identifyUser`. It throws `not_configured` before `configure`.
 
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```swift
+// URLSession: add the header to requests to your own API only
+var request = URLRequest(url: URL(string: "https://api.example.com/sign-in")!)
+if let h = await Clikgate.shared.installationHeader() {
+    request.setValue(h.value, forHTTPHeaderField: h.name)
+}
+```
+
+`installationHeader()` is `nil` in exactly the cases where `installationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws: `nil` before `configure`. Leave the header out when it's
+`nil`.
+
+**One installation ID per app.** The Keychain items are named after the bundle identifier
+(`com.clikgate.installation-id.<bundle ID>`), so two apps of the same team never share an installation ID, even when
+they share a Keychain access group (an item saved without an access group goes to the app's first Keychain access
+group, and a search without one looks in all of them). The item without a bundle identifier written by SDKs before
+2.1.6 is ignored and left in place.
+
 **No SKAdNetwork / AdAttributionKit updates from goals.** The SDK doesn't set postback conversion values. To get
 postback copies, add to `Info.plist`:
 - AdAttributionKit: the `AdAttributionKit` dictionary with `AttributionCopyEndpoint` = `https://<your Clikgate domain>`.
@@ -650,8 +676,9 @@ pod lib lint Clikgate.podspec --allow-warnings
 6. In the Clikgate dashboard, mark the app as no longer tracked (and remove its APNs key) so Clikgate stops
    uninstall checks and shows no "SDK missing" warnings.
 
-The Keychain item `com.clikgate.installation-id` and `Application Support/Clikgate` stay on devices that had
-the SDK; they are deleted with the app.
+The Keychain items `com.clikgate.installation-id.<bundle ID>` (`com.clikgate.installation-id` before 2.1.6) and
+`Application Support/Clikgate` stay on devices that had the SDK; `Application Support/Clikgate` is deleted with the
+app.
 
 ## Existing users (2.1.1)
 

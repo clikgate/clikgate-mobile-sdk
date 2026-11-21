@@ -1,6 +1,14 @@
 # Changelog
 
 
+## 2.1.6: Installation header
+
+- New `Clikgate.getInstallationHeader()` (never rejects): the `Clikgate-Installation` header for your own server,
+  `{ name, value }` with value `<app ID>:<installation ID>`, or `null` in the same cases as `getInstallationId()`
+  and while the app ID isn't known yet. Send it with the sign-in request and signed-in requests to your own server
+  only, over HTTPS. New type `ClikgateInstallationHeader`. Native SDKs 2.1.6, where on iOS each app now has its own
+  Keychain item, so two apps of one team never share an installation ID. Nothing removed or renamed.
+
 ## 2.1.3: Package contact
 
 - The package contact is now dev@clikgate.com. Code comments tidied. No behaviour change (native SDKs 2.1.3).

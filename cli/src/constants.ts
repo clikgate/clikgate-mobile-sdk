@@ -5,7 +5,7 @@
 
 import type { Platform } from './args';
 
-export const CLI_VERSION = '2.1.5';
+export const CLI_VERSION = '2.1.6';
 
 export const DEFAULT_API_URL = 'https://api.clikgate.com';
 export const DASHBOARD_URL = 'https://app.clikgate.com';
@@ -58,10 +58,10 @@ export const MARKER_START = 'clikgate-setup:start';
 export const MARKER_END = 'clikgate-setup:end';
 
 export const SDK = {
-  flutter: { package: 'clikgate_flutter', constraint: '^2.1.5', minimum: '2.1.5' },
-  reactNative: { package: '@clikgate/react-native', constraint: '^2.1.3', minimum: '2.1.3' },
-  android: { group: 'com.clikgate', artifact: 'clikgate-android', version: '2.1.3' },
-  ios: { pod: 'Clikgate', podConstraint: '~> 2.1', spm: 'https://github.com/clikgate/clikgate-ios-sdk', version: '2.1.3' },
+  flutter: { package: 'clikgate_flutter', constraint: '^2.1.6', minimum: '2.1.6' },
+  reactNative: { package: '@clikgate/react-native', constraint: '^2.1.6', minimum: '2.1.6' },
+  android: { group: 'com.clikgate', artifact: 'clikgate-android', version: '2.1.6' },
+  ios: { pod: 'Clikgate', podConstraint: '~> 2.1', spm: 'https://github.com/clikgate/clikgate-ios-sdk', version: '2.1.6' },
 } as const;
 
 /**

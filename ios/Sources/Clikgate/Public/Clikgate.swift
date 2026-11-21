@@ -12,7 +12,7 @@ import UIKit
 @objc(Clikgate)
 public final class Clikgate: NSObject, @unchecked Sendable {
     /// The native SDK version.
-    public static let sdkVersion = "2.1.3"
+    public static let sdkVersion = "2.1.6"
 
     @objc public static let shared = Clikgate()
 
@@ -341,6 +341,22 @@ public final class Clikgate: NSObject, @unchecked Sendable {
     public func installationId() async throws -> String? {
         guard let c = currentCore else { throw ClikgateError.notConfiguredError() }
         return await c.installationIdForApp()
+    }
+
+    /// The header that tells your own server which Clikgate installation is calling, so it needn't map platforms
+    /// to Clikgate app IDs: name `Clikgate-Installation`, value `<app ID>:<installation ID>` (the app ID from
+    /// Clikgate's config, the ID ``installationId()`` returns). Send it with the sign-in request and with signed-in
+    /// requests to your server; the server SDK reads it.
+    ///
+    /// ```swift
+    /// if let h = await Clikgate.shared.installationHeader() { request.setValue(h.value, forHTTPHeaderField: h.name) }
+    /// ```
+    /// Nil whenever ``installationId()`` is, and when the app ID isn't known yet (first launch, offline, before the
+    /// first config). Waits a few seconds at most for the first config, off the main thread; offline it uses the
+    /// cached one. Never throws: nil before `configure` too. Send it only to your own server, over HTTPS, never to
+    /// third parties.
+    public func installationHeader() async -> (name: String, value: String)? {
+        await currentCore?.installationHeaderForApp()
     }
 
     /// Completion form of ``installationId()`` (main queue), for the Flutter and React Native wrappers.
