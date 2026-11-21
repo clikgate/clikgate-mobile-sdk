@@ -1,0 +1,31 @@
+# The Flutter end-to-end sample app (examples/flutter-end-to-end): analyze and widget tests against the plugin in
+# this repository. The tests fake the plugin's platform channels and the backend, so no device or network is used.
+name: Flutter end-to-end sample
+
+on:
+  push:
+    branches: [main]
+    paths: ["examples/flutter-end-to-end/**", "flutter/**", ".github/workflows/flutter-end-to-end-sample.yml"]
+  pull_request:
+    paths: ["examples/flutter-end-to-end/**", "flutter/**", ".github/workflows/flutter-end-to-end-sample.yml"]
+
+concurrency:
+  group: flutter-end-to-end-sample-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: examples/flutter-end-to-end
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.4" # the same as .fvmrc and flutter.yml
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
