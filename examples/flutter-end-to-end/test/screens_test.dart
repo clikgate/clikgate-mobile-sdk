@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:clikgate_end_to_end/src/app.dart';
 import 'package:clikgate_end_to_end/src/auth_service.dart';
@@ -8,58 +7,37 @@ import 'package:clikgate_end_to_end/src/screens/product_screen.dart';
 import 'package:clikgate_end_to_end/src/session_store.dart';
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:clikgate_flutter/engage.dart';
+import 'package:clikgate_flutter/testing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_backend.dart';
-import 'support/fake_platform.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late FakeClikgatePlatform platform;
+  // The SDK's own test fake answers every Clikgate call (and the Engage API) without a phone or the network.
+  late ClikgateFake clikgate;
   late FakeBackend backend;
-  late StreamController<ClikgateDeepLink> deepLinks;
-  late List<http.Request> engageRequests;
 
   setUp(() {
-    platform = FakeClikgatePlatform();
+    clikgate = ClikgateFake.install()
+      ..referralCode = 'ADA42'
+      ..linkDomain = 'inv.myapp.test';
     backend = FakeBackend();
-    deepLinks = StreamController<ClikgateDeepLink>.broadcast();
-    engageRequests = [];
-  });
-  tearDown(() {
-    platform.dispose();
-    deepLinks.close();
   });
 
-  /// Clikgate's Engage API, answered locally.
-  ClikgateEngage engage() => ClikgateEngage(
-        httpClient: MockClient((request) async {
-          engageRequests.add(request);
-          final link = {
-            'referrer_id': 'rfr_1',
-            'program_id': 'rpg_test',
-            'code': 'ADA42',
-            'url': 'https://inv.myapp.test/r/ADA42',
-            'short_url': 'https://inv.myapp.test/r/ADA42',
-          };
-          return http.Response(jsonEncode(link), 200, headers: {'content-type': 'application/json'});
-        }),
-      );
-
-  Future<void> pumpApp(WidgetTester tester, {bool signedIn = true}) async {
+  /// [deepLinks] replaces `Clikgate.onDeepLink` when a test needs a link the fake can't deliver.
+  Future<void> pumpApp(WidgetTester tester, {bool signedIn = true, Stream<ClikgateDeepLink>? deepLinks}) async {
     SharedPreferences.setMockInitialValues(signedIn ? {'access_token': 'session-1', 'used_app_before': true} : {});
     final session = await SessionStore.open();
     final api = backend.api(session);
     await tester.pumpWidget(SampleApp(
       auth: AuthService(api, session),
       backend: api,
-      engage: engage(),
+      engage: ClikgateEngage(),
       referralProgramId: 'rpg_test',
-      deepLinks: deepLinks.stream,
+      deepLinks: deepLinks,
     ));
     await settle(tester);
   }
@@ -82,15 +60,15 @@ void main() {
     await tester.tap(find.text('Buy for ₦7,500'));
     await settle(tester);
 
-    final goals = platform.callsTo('goal').map((c) => c.arguments as Map).toList();
-    expect(goals[0]['key'], 'profile_completed');
-    expect(goals[0]['reference'], isNull); // no customer data in goal calls
-    expect(goals[1]['key'], 'order_paid');
-    expect(goals[1]['provider'], 'paystack');
-    expect(goals[1]['value'], isNull); // the amount comes from the backend's confirmation, never the app
+    final goals = clikgate.goals;
+    expect(goals[0].key, 'profile_completed');
+    expect(goals[0].reference, isNull); // no customer data in goal calls
+    expect(goals[1].key, 'order_paid');
+    expect(goals[1].provider, ClikgateProvider.paystack);
+    expect(goals[1].value, isNull); // the amount comes from the backend's confirmation, never the app
     final confirm = backend.requests.last;
     expect(confirm.path, '/payments/paystack/confirm');
-    expect((confirm.data as Map)['reference'], goals[1]['reference']);
+    expect((confirm.data as Map)['reference'], goals[1].reference);
   });
 
   testWidgets('the referral screen shows the Engage link, shares it, and applies a code', (tester) async {
@@ -99,20 +77,23 @@ void main() {
     await settle(tester);
 
     expect(find.text('Your code: ADA42'), findsOneWidget);
-    expect(engageRequests.single.url.path, '/v1/sdk/referrals/link');
+    expect(clikgate.engageRequests.single.path, '/v1/sdk/referrals/link');
     await tester.tap(find.text('Share'));
     await settle(tester);
-    expect((platform.callsTo('shareLink').single.arguments as Map)['code'], 'ADA42');
+    expect(clikgate.shares.single.code, 'ADA42');
 
+    clikgate.applyCodeError = 'code_not_found';
     await tester.enterText(find.byType(TextField), 'NOPE');
     await tester.tap(find.text('Apply code'));
     await settle(tester);
     expect(find.textContaining('code_not_found'), findsOneWidget);
 
+    clikgate.applyCodeError = null;
     await tester.enterText(find.byType(TextField), 'ADA42');
     await tester.tap(find.text('Apply code'));
     await settle(tester);
     expect(find.text('Code applied. Thanks!'), findsOneWidget);
+    expect(clikgate.appliedCodes.map((c) => c.code), ['NOPE', 'ADA42']);
   });
 
   testWidgets('sign-out returns to the sign-in screen', (tester) async {
@@ -122,15 +103,21 @@ void main() {
     expect(find.text('Sign in'), findsOneWidget);
   });
 
-  testWidgets('a deep link opens its screen; a blocked link only shows its message', (tester) async {
+  testWidgets('a deep link from Clikgate.onDeepLink opens its screen', (tester) async {
     await pumpApp(tester);
-    deepLinks.add(const ClikgateDeepLink(path: '/product/42', isDeferred: true));
+    clikgate.pushDeepLink('https://inv.myapp.test/product/42', isDeferred: true);
     await settle(tester);
     expect(find.text('Product 42'), findsOneWidget);
+  });
 
+  testWidgets('a blocked link only shows its message', (tester) async {
+    final deepLinks = StreamController<ClikgateDeepLink>.broadcast();
+    addTearDown(deepLinks.close);
+    await pumpApp(tester, deepLinks: deepLinks.stream);
     deepLinks.add(const ClikgateDeepLink(blockMessage: 'Not available in your country'));
     await settle(tester);
     expect(find.text('Not available in your country'), findsOneWidget);
+    expect(find.text('Product 42'), findsNothing);
   });
 
   test('pageFor maps paths to screens', () {

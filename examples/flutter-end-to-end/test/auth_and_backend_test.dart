@@ -2,11 +2,11 @@ import 'package:clikgate_end_to_end/src/auth_service.dart';
 import 'package:clikgate_end_to_end/src/clikgate_setup.dart';
 import 'package:clikgate_end_to_end/src/config.dart';
 import 'package:clikgate_end_to_end/src/session_store.dart';
+import 'package:clikgate_flutter/testing.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_backend.dart';
-import 'support/fake_platform.dart';
 
 const config = AppConfig(
   sdkKey: 'cg_sdk_test_sample',
@@ -17,14 +17,14 @@ const config = AppConfig(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late FakeClikgatePlatform platform;
+  // The SDK's own test fake answers every Clikgate call without a phone or the network.
+  late ClikgateFake clikgate;
   late FakeBackend backend;
 
   setUp(() {
-    platform = FakeClikgatePlatform();
+    clikgate = ClikgateFake.install();
     backend = FakeBackend();
   });
-  tearDown(() => platform.dispose());
 
   Future<SessionStore> session([Map<String, Object> saved = const {}]) async {
     SharedPreferences.setMockInitialValues(saved);
@@ -35,7 +35,7 @@ void main() {
     await startClikgate(config, await session());
     await startClikgate(config, await session({'used_app_before': true}));
 
-    final configures = platform.callsTo('configure').map((c) => c.arguments as Map).toList();
+    final configures = clikgate.callsTo('configure').map((c) => c.arguments as Map).toList();
     expect(configures[0]['linkDomains'], ['inv.myapp.test']);
     expect(configures[0]['existingUser'], isFalse);
     expect(configures[1]['existingUser'], isTrue);
@@ -45,9 +45,9 @@ void main() {
     final store = await session();
     await AuthService(backend.api(store), store).signUp('ada@example.com', 'correct horse');
 
-    final identify = platform.callsTo('identifyUser').single.arguments as Map;
-    expect(identify['customerId'], 'user_42');
-    expect(identify['identityToken'], 'token-1');
+    final identify = clikgate.identifyCalls.single;
+    expect(identify.customerId, 'user_42');
+    expect(identify.identityToken, 'token-1');
     expect(store.accessToken, 'session-1');
     expect(store.hasUsedAppBefore, isTrue);
   });
@@ -55,11 +55,11 @@ void main() {
   test('every backend request carries the installation header (the no-token option)', () async {
     final store = await session();
     await AuthService(backend.api(store), store).signIn('ada@example.com', 'correct horse');
-    expect(backend.requests.single.headers['Clikgate-Installation'], installationHeaderValue);
+    expect(backend.requests.single.headers['Clikgate-Installation'], '${clikgate.appId}:${clikgate.installationId}');
   });
 
   test('no installation header while tracking is off', () async {
-    platform.installationHeader = null;
+    clikgate.installationId = null; // what the SDK answers while tracking is off
     final store = await session();
     await AuthService(backend.api(store), store).signIn('ada@example.com', 'correct horse');
     expect(backend.requests.single.headers.containsKey('Clikgate-Installation'), isFalse);
@@ -73,7 +73,7 @@ void main() {
     expect(backend.requests.single.path, '/me');
     expect(backend.requests.single.headers['Authorization'], 'Bearer session-1');
     expect(auth.user?.id, 'user_42');
-    expect((platform.callsTo('identifyUser').single.arguments as Map)['identityToken'], 'token-from-me');
+    expect(clikgate.identifyCalls.single.identityToken, 'token-from-me');
   });
 
   test('sign-out clears the session and the customer on this phone', () async {
@@ -81,9 +81,7 @@ void main() {
     final auth = AuthService(backend.api(store), store);
     await auth.signOut();
 
-    final identify = platform.callsTo('identifyUser').single.arguments as Map;
-    expect(identify.containsKey('customerId'), isTrue);
-    expect(identify['customerId'], isNull);
+    expect(clikgate.identifyCalls.single.isSignOut, isTrue);
     expect(store.accessToken, isNull);
     expect(store.hasUsedAppBefore, isTrue); // they have still used the app
   });
@@ -93,7 +91,7 @@ void main() {
     final store = await session();
     final auth = AuthService(backend.api(store), store);
     await expectLater(auth.signIn('ada@example.com', 'nope'), throwsA(anything));
-    expect(platform.callsTo('identifyUser'), isEmpty);
+    expect(clikgate.identifyCalls, isEmpty);
     expect(auth.user, isNull);
   });
 }

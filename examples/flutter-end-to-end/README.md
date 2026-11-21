@@ -12,7 +12,7 @@ Every sample backend answers the same routes, so pick the language you use.
 | `lib/src/backend/interceptors.dart` | The no-token option: a dio interceptor that adds `Clikgate.getInstallationHeader()` to requests to your backend |
 | `lib/src/screens/home_screen.dart` | An app goal, and a Payment goal with `provider: ClikgateProvider.paystack` that the backend then confirms |
 | `lib/src/screens/referral_screen.dart` | Engage `referrals.createLink(programId:)` and `share.referralLink`, plus "Have a code?" with `referrals.applyCode` |
-| `test/` | Widget and unit tests with a fake platform channel and a fake backend |
+| `test/` | Widget and unit tests with the SDK's test fake (`package:clikgate_flutter/testing.dart`) and a fake backend |
 
 ## Run it
 
