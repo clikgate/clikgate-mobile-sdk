@@ -156,7 +156,7 @@ builds only) and your verified custom domains. Declare those, and never a shared
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
-**Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
+**Deep links and basic attribution on every plan.** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
