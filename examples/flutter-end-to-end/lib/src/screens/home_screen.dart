@@ -21,9 +21,10 @@ class HomeScreen extends StatelessWidget {
   final ClikgateEngage engage;
   final String referralProgramId;
 
-  /// A goal that happens in the app. Your own reference makes a resend count once; never put customer data in it.
+  /// A goal that happens in the app. It needs no reference. Never put customer data (a user ID, email or phone) in a
+  /// goal call: Clikgate already knows the person from identifyUser.
   Future<void> _completeProfile(BuildContext context) async {
-    final result = await Clikgate.goal('profile_completed', reference: 'profile-${auth.user!.id}');
+    final result = await Clikgate.goal('profile_completed');
     if (context.mounted) _say(context, 'Goal: ${result.status.name}');
   }
 

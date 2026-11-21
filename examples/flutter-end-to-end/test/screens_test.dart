@@ -84,6 +84,7 @@ void main() {
 
     final goals = platform.callsTo('goal').map((c) => c.arguments as Map).toList();
     expect(goals[0]['key'], 'profile_completed');
+    expect(goals[0]['reference'], isNull); // no customer data in goal calls
     expect(goals[1]['key'], 'order_paid');
     expect(goals[1]['provider'], 'paystack');
     expect(goals[1]['value'], isNull); // the amount comes from the backend's confirmation, never the app
