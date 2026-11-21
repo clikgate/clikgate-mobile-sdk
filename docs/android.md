@@ -150,13 +150,13 @@ Clikgate.onDeepLink { link ->
   (`if (link.blockMessage != null) { showNotice(link.blockMessage); return@onDeepLink }`).
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
-**Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
+**Deep links and basic attribution on every plan.** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
@@ -227,7 +227,7 @@ Clikgate.handleIntent(this, intent)
 
 Then remove the `firebase-dynamic-links` dependency and the `page.link` intent filter, and add your Clikgate link
 domains to the `autoVerify` intent filter (section 3). Firebase Analytics, Crashlytics and Messaging are unaffected.
-Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
+Test with "See it live" in the dashboard (Developers › SDKs › Test your app) and a `cg_sdk_test_…` key.
 
 ## 5. Identify your users
 
@@ -243,7 +243,7 @@ several apps, on the server only) and returns it in the sign-in response and the
 already calls at open. The app passes the newest token:
 
 ```kotlin
-Clikgate.identifyUser(customerId = user.id, identityToken = me.clikgateToken)   // after sign-in, and at app open
+Clikgate.identifyUser(customerId = user.id, identityToken = me.clikgateIdentityToken)   // after sign-in, and at app open
 Clikgate.identifyUser(label = "Ada (VIP)")                   // just the label (the customer ID is kept; Growth and up)
 Clikgate.identifyUser(customerId = null)                     // sign-out
 ```
@@ -265,6 +265,30 @@ data; allowed in private mode). Right after `configure` it waits for the first l
 at most; offline it answers at once) and never blocks the main thread. A reinstall gets a new ID. It returns `null`
 when tracking is off (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or
 deep-link-only mode): your server then skips `identifyUser`.
+
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```kotlin
+// OkHttp: add the header to calls to your own API only
+class ClikgateInstallationInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val header = runBlocking { Clikgate.getInstallationHeader() }   // OkHttp runs this off the main thread
+        val request = chain.request().newBuilder().apply { header?.let { header(it.name, it.value) } }.build()
+        return chain.proceed(request)
+    }
+}
+// Java: Clikgate.getInstallationHeader(header -> { if (header != null) builder.header(header.getName(), header.getValue()); });
+```
+
+`getInstallationHeader()` is `null` in exactly the cases where `getInstallationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws; before `configure` it waits until `configure` runs. Leave the header out when it's
+`null`.
 
 ## 5b. Send goals
 
@@ -312,7 +336,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `BigDecimal` (never a `Double`), sent as a decimal string. Whether a value is allowed or required, and how many decimal
@@ -461,7 +485,8 @@ Rules:
 
 ## 7. Push token and uninstall tracking
 
-Turn on uninstall tracking in the dashboard and upload your FCM credentials. If the app ships
+Turn on uninstall tracking in the dashboard (Settings › Features) and upload your FCM credentials
+(Connect › Apps › your app › Push credentials). If the app ships
 Firebase Cloud Messaging, that is all: on each launch the SDK reads the FCM token itself
 (`FirebaseMessaging.getInstance().getToken()`, by reflection; the SDK still has no Firebase
 dependency) and sends it when it changed, which also picks up rotated tokens. Users don't have to
@@ -668,7 +693,8 @@ For the recommended backend path (invite link, stats and leaderboards from your 
 4. Remove push-token forwarding (`Clikgate.setPushToken`) and the `Clikgate.isClikgateMessage` check in
    your `FirebaseMessagingService` (uninstall tracking).
 5. Update your Play Data safety answers and privacy policy once the release without the SDK ships.
-6. In the Clikgate dashboard, mark the app as no longer tracked (and remove its FCM credentials) so
+6. In the Clikgate dashboard (Connect › Apps › your app), switch off **SDK enabled** (and remove its FCM
+   credentials under **Push credentials**) so
    Clikgate stops uninstall checks and doesn't warn that the SDK is missing.
 
 The SDK's prefs (`clikgate.prefs`) and event database are deleted with the app; an update without the
@@ -687,6 +713,7 @@ SDK leaves them unused in the app's data directory (delete them on first launch 
 | `Clikgate.onBrowserHandoff(listener?)` | 1.4.0; another organisation's shared-domain link opened in Custom Tabs |
 | `Clikgate.identifyUser(label?, customerId?, identityToken?)` | customer ID dropped in private mode, label only when allowed; [identify-users](https://clikgate.com/docs/identify-users) |
 | `Clikgate.getInstallationId(): String?` (suspend) / `getInstallationId(listener)` | identity Path B; null when tracking is off |
+| `Clikgate.getInstallationHeader(): ClikgateInstallationHeader?` (suspend) / `getInstallationHeader(listener)` | 2.1.6; `Clikgate-Installation` header for your own server; null when tracking is off or the app ID isn't known yet |
 | `Clikgate.setTrackingEnabled(Boolean)` | |
 | `Clikgate.setPushToken(token, PushProvider)` / `isClikgateMessage(data)` | |
 | `Clikgate.referrals.applyCode / referredBy` | callbacks + `awaitApplyCode` / `awaitReferredBy` |

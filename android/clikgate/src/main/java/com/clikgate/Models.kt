@@ -327,3 +327,24 @@ public class ClikgateRequestContext(
 public fun interface InstallationIdListener {
     public fun onInstallationId(installationId: String?)
 }
+
+/**
+ * The header that tells your own server which Clikgate installation is calling: [name] `Clikgate-Installation`,
+ * [value] `<app ID>:<installation ID>`. From [Clikgate.getInstallationHeader]. Send it only to your own server,
+ * over HTTPS, never to third parties.
+ */
+public class ClikgateInstallationHeader(public val name: String, public val value: String) {
+    override fun equals(other: Any?): Boolean = other is ClikgateInstallationHeader && other.name == name && other.value == value
+    override fun hashCode(): Int = 31 * name.hashCode() + value.hashCode()
+    override fun toString(): String = "ClikgateInstallationHeader(name=$name)"
+
+    public companion object {
+        /** `Clikgate-Installation`. */
+        public const val NAME: String = "Clikgate-Installation"
+    }
+}
+
+/** Receives [Clikgate.getInstallationHeader]'s answer on the main thread: the header, or null (see there). */
+public fun interface InstallationHeaderListener {
+    public fun onInstallationHeader(header: ClikgateInstallationHeader?)
+}

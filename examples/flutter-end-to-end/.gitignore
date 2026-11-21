@@ -1,0 +1,10 @@
+# Local tooling and build output
+.fvm/
+.dart_tool/
+build/
+pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+# Platform folders are generated locally (see README.md)
+/android/
+/ios/

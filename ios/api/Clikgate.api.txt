@@ -12,6 +12,7 @@ Clikgate.goal(_:value:currency:reference:provider:isFirst:label:completion:): fu
 Clikgate.handle(url:): @discardableResult @objc(handleURL:) func handle(url: URL) -> Bool
 Clikgate.handleRemoteNotification(_:): @objc(handleRemoteNotification:) func handleRemoteNotification(_ userInfo: [AnyHashable : Any]) -> Bool
 Clikgate.identifyUser(label:customerId:identityToken:): func identifyUser(label: String? = nil, customerId: String? = "\u{0}", identityToken: String? = nil)
+Clikgate.installationHeader(): func installationHeader() async -> (name: String, value: String)?
 Clikgate.installationId(): func installationId() async throws -> String?
 Clikgate.installationId(completion:): func installationId(completion: @escaping @MainActor (Result<String?, ClikgateError>) -> Void)
 Clikgate.isClikgateMessage(_:): @objc static func isClikgateMessage(_ userInfo: [AnyHashable : Any]) -> Bool

@@ -133,6 +133,13 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  /** Resolves `{name, value}` for the app's own server, or null (tracking off, or no app ID yet). */
+  override fun getInstallationHeader(args: ReadableMap, promise: Promise) = guard(promise) {
+    Clikgate.getInstallationHeader { h ->
+      promise.resolve(h?.let { Arguments.createMap().apply { putString("name", it.name); putString("value", it.value) } })
+    }
+  }
+
   /** The value arrives as a decimal string and becomes a BigDecimal natively; resolves with the goal's result. */
   @OptIn(ClikgateInternalApi::class)
   override fun goal(args: ReadableMap, promise: Promise) = guard(promise) {

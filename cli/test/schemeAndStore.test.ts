@@ -187,7 +187,7 @@ describe('setup fills the URI scheme and the App Store ID', () => {
     });
     expect(code, ui.text).toBe(0);
     expect(ui.text).toContain("Your iOS app isn't on the App Store yet");
-    expect(ui.text).toContain('Apps › your app › Identifiers and store links › URI scheme');
+    expect(ui.text).toContain('Connect › Apps › your app › Identifiers and store links › URI scheme');
     expect(urlSchemes(fs.readFileSync(path.join(dir, 'ios/Runner/Info.plist'), 'utf8'))).not.toContain('flutterapp');
     expect(server.requests.some((r) => (r.body as { uri_scheme?: string } | undefined)?.uri_scheme)).toBe(false);
   });

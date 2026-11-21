@@ -10,11 +10,11 @@ Clikgate SDK API (`/v1/sdk/*` on `sdk.clikgate.com`).
 
 | Package | Path | Distribution | Current version | Guide |
 |---|---|---|---|---|
-| Android SDK (Kotlin, minSdk 21) | [`android/`](android) | Maven Central `com.clikgate:clikgate-android` | 2.1.3 | [docs/android.md](docs/android.md) |
-| iOS SDK (Swift, iOS 13+) | [`ios/`](ios) | Swift Package Manager, CocoaPods `Clikgate`, XCFramework | 2.1.3 | [docs/ios.md](docs/ios.md) |
-| Flutter plugin | [`flutter/`](flutter) | pub.dev `clikgate_flutter` | 2.1.4 | [docs/flutter.md](docs/flutter.md), [iOS setup](docs/flutter_ios_setup.md) |
-| React Native | [`react-native/`](react-native) | npm `@clikgate/react-native` (+ Expo config plugin) | 2.1.3 | [docs/react-native.md](docs/react-native.md) |
-| Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | 2.1.4 | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
+| Android SDK (Kotlin, minSdk 21) | [`android/`](android) | Maven Central `com.clikgate:clikgate-android` | 2.1.6 | [docs/android.md](docs/android.md) |
+| iOS SDK (Swift, iOS 13+) | [`ios/`](ios) | Swift Package Manager, CocoaPods `Clikgate`, XCFramework | 2.1.6 | [docs/ios.md](docs/ios.md) |
+| Flutter plugin | [`flutter/`](flutter) | pub.dev `clikgate_flutter` | 2.1.6 | [docs/flutter.md](docs/flutter.md), [iOS setup](docs/flutter_ios_setup.md) |
+| React Native | [`react-native/`](react-native) | npm `@clikgate/react-native` (+ Expo config plugin) | 2.1.6 | [docs/react-native.md](docs/react-native.md) |
+| Setup command (TypeScript, Node 18+, **MIT**) | [`cli/`](cli) | npm `@clikgate/setup` (`npx @clikgate/setup`, bin `clikgate-setup`) | 2.1.6 | [docs/SETUP_COMMAND.md](docs/SETUP_COMMAND.md) |
 
 These are the **core SDKs**: only what must happen on the device (deep links, attribution,
 goals, identifyUser and the installation ID, apply code / referred-by, push token / uninstall checks, feature switches). The
@@ -140,6 +140,23 @@ The value is the random UUID the SDK created at first launch and sends with ever
 in private mode). Right after `configure` it waits for the first launch's config answer (seconds at most; offline it
 answers at once); a reinstall gets a new ID. It is `null` when tracking is off (opt-out, consent denied or not given
 yet where it's required, deep-link-only mode), so the server skips `identifyUser`.
+
+**Installation header (2.1.6).** Send the `Clikgate-Installation` header with the sign-in request and with signed-in
+requests to your own server. Its value is `<app ID>:<installation ID>`, so the server knows which Clikgate app is
+calling without mapping platforms to app IDs; the server SDK reads it. Send it only to your own backend, over HTTPS,
+never to third parties. It is `null` in the same cases as the installation ID, and while the app ID isn't known yet
+(an offline first launch). It never throws and never blocks the main thread.
+
+| Platform | Installation header (name + value) |
+|---|---|
+| Android | `Clikgate.getInstallationHeader()` (suspend) or `Clikgate.getInstallationHeader { header -> }` |
+| iOS | `await Clikgate.shared.installationHeader()` |
+| Flutter | `await Clikgate.getInstallationHeader()` |
+| React Native | `await Clikgate.getInstallationHeader()` |
+
+Each app of an organisation has its own installation ID: on iOS the Keychain items are named after the bundle
+identifier, so apps of one team that share a Keychain access group never share an ID; on Android the ID lives in the
+app's private storage and is left out of backups and device transfers.
 
 ## Password and country-restricted links on app opens
 

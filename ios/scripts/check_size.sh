@@ -44,7 +44,7 @@ build -Osize
 echo "-Osize (budget): core $(kb "$CORE") (< 410 KB), Engage $(kb "$ENGAGE") (< 95 KB)"
 
 fail=0
-[ "$CORE" -lt "$CORE_BUDGET" ] || { echo "error: core iOS SDK is $(kb "$CORE"), budget 410 KB (a hard ceiling: trim, do not raise it; see DECISIONS)" >&2; fail=1; }
+[ "$CORE" -lt "$CORE_BUDGET" ] || { echo "error: core iOS SDK is $(kb "$CORE"), budget 410 KB (a hard ceiling: trim, do not raise it)" >&2; fail=1; }
 [ "$ENGAGE" -lt "$ENGAGE_BUDGET" ] || { echo "error: ClikgateEngage is $(kb "$ENGAGE"), budget 95 KB" >&2; fail=1; }
 [ -z "${GITHUB_STEP_SUMMARY:-}" ] || echo "iOS sizes (-Osize, arm64): core $(kb "$CORE"), Engage $(kb "$ENGAGE")" >> "$GITHUB_STEP_SUMMARY"
 exit $fail

@@ -18,6 +18,8 @@ export interface MockApp {
   sha256_cert_fingerprints: string[];
   uri_scheme?: string | null;
   store_url?: string | null;
+  website_url?: string | null;
+  ios_app_store_id?: string | null;
   sdk_key_test: string;
   sdk_settings: { shared_domain_app_links: boolean; test_domain_app_links: boolean };
   link_subdomain?: string;
@@ -38,6 +40,10 @@ export interface MockOptions {
   setupCheck?: (app: MockApp, polls: number) => unknown;
   /** Parent of the apps' live link subdomain: `ciz.to` (Starter and up, default) or `ciz.ng` (Free). */
   liveParent?: 'ciz.to' | 'ciz.ng';
+  /** false: the API predates download links (the route doesn't exist). */
+  downloadLinks?: boolean;
+  /** Status the download link has (someone paused or archived it in the dashboard). */
+  downloadLinkStatus?: string;
 }
 
 export interface MockServer {
@@ -75,6 +81,7 @@ export async function startMockServer(opts: MockOptions = {}): Promise<MockServe
       link_subdomain: sub ?? null,
       link_subdomain_confirmed: confirmed,
       link_subdomain_editable: true,
+      ...(opts.downloadLinks !== false ? { website_url: a.website_url ?? null } : {}),
       link_hostnames: hostnames,
       app_link_domains: confirmed && hostnames ? { release: [hostnames.live, ...customs()], debug: [hostnames.test] } : { release: [], debug: [] },
     };
@@ -167,6 +174,7 @@ export async function startMockServer(opts: MockOptions = {}): Promise<MockServe
           // As clikgate_api's CLI allow-list: uri_scheme and store_url are set; ios_app_store_id is ignored
           if (body.uri_scheme !== undefined) app.uri_scheme = body.uri_scheme;
           if (body.store_url !== undefined) app.store_url = body.store_url;
+          if (body.website_url !== undefined) app.website_url = body.website_url;
           if (body.link_subdomain !== undefined) {
             const reason = available(body.link_subdomain, app.id);
             if (reason) return error(res, 422, 'link_subdomain_unavailable', 'This link subdomain is not available.', { param: 'link_subdomain', reason });
@@ -175,6 +183,26 @@ export async function startMockServer(opts: MockOptions = {}): Promise<MockServe
           }
           return send(res, 200, view(app));
         }
+      }
+      const dl = /^\/v1\/apps\/([^/]+)\/download-link$/.exec(p);
+      if (dl && req.method === 'POST' && opts.downloadLinks !== false) {
+        const app = apps.find((a) => a.id === dl[1]);
+        if (!app) return error(res, 404, 'not_found');
+        if (!app.link_subdomain || app.link_subdomain_confirmed === false) return error(res, 409, 'link_subdomain_not_confirmed');
+        const host = `${app.link_subdomain}.${parent}`;
+        const pair = apps.filter((a) => a.link_subdomain === app.link_subdomain);
+        const website = pair.map((a) => a.website_url).find(Boolean);
+        const ios = pair.find((a) => a.platform === 'ios');
+        return send(res, 200, {
+          url: `https://${host}/download`,
+          link_id: 'lnk_download',
+          slug: 'download',
+          destination_url: website ?? `https://${host}/_f/download`,
+          computer_destination: website ? 'website' : 'store_page',
+          ios_store_ready: Boolean(ios && (ios.ios_app_store_id || ios.store_url)),
+          android_ready: pair.some((a) => a.platform === 'android'),
+          status: opts.downloadLinkStatus ?? 'active',
+        });
       }
       if (req.method === 'GET' && p === '/v1/domains') return send(res, 200, { object: 'list', data: domains, has_more: false, next_cursor: null });
       if (req.method === 'GET' && p === '/v1/cli/setup-check') {

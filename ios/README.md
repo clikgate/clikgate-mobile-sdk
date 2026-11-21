@@ -36,7 +36,7 @@ Clikgate.shared.goal("purchase", reference: "T123456", provider: .paystack) { re
 }
 
 // Identify signed-in users: Path A with a token from your server, or Path B with the installation ID.
-Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateToken)
+Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateIdentityToken)
 let installationId: String? = try await Clikgate.shared.installationId()   // send it with your sign-in request
 Clikgate.shared.identifyUser(customerId: nil)                              // sign-out
 ```
@@ -47,5 +47,13 @@ it to `identifyUser`. Path B (no token): the app sends its installation ID with 
 calls `identifyUser({appId, installationId, customerId, label?})`. The installation ID is `null` when tracking is off
 (opt-out, consent denied or not given yet where required, deep-link-only mode). The customer ID is your own user ID,
 never an email or phone number. Guide: https://clikgate.com/docs/identify-users
+
+Send the `Clikgate-Installation` header (2.1.6) with the sign-in request and with signed-in requests to your own
+server, so it knows which Clikgate app is calling; send it only to your own backend, over HTTPS, never to third
+parties. It is `nil` when the installation ID is, or while the app ID isn't known yet, and never throws:
+
+```swift
+if let h = await Clikgate.shared.installationHeader() { request.setValue(h.value, forHTTPHeaderField: h.name) }
+```
 
 The full guide is at https://clikgate.com/docs/sdks/ios. Licence: Apache 2.0 (`LICENSE`).

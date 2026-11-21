@@ -43,6 +43,8 @@ export interface Spec extends TurboModule {
   goal(args: UnsafeObject): Promise<UnsafeObject>;
   // Resolves {installationId: string | null} (null when tracking is off).
   getInstallationId(args: UnsafeObject): Promise<UnsafeObject>;
+  // Resolves {name, value} or null (null whenever getInstallationId is, or the app ID isn't known yet).
+  getInstallationHeader(args: UnsafeObject): Promise<UnsafeObject>;
 
   // Engage features (internal)
   getRequestContext(args: UnsafeObject): Promise<UnsafeObject>;

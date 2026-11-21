@@ -20,7 +20,7 @@ const r = await Clikgate.goal('account_opened', { value: '2000000', currency: 'N
 // provider or server confirms it, with the real amount (a value sent from the app is ignored).
 await Clikgate.goal('purchase', { reference: 'T123456', provider: ClikgateProvider.Paystack });
 // Identify signed-in users: Path A with a token from your server, or Path B with the installation ID.
-await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateToken });
+await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateIdentityToken });
 const installationId = await Clikgate.getInstallationId(); // string | null: send it with your sign-in request
 await Clikgate.identifyUser({ customerId: null });          // sign-out
 await Clikgate.referrals.applyCode({ programId: 'rpg_...', code: 'ADA42' });
@@ -47,6 +47,15 @@ calls `identifyUser({appId, installationId, customerId, label?})`. The installat
 (opt-out, consent denied or not given yet where required, deep-link-only mode). The customer ID is your own user ID,
 never an email or phone number. Guide: https://clikgate.com/docs/identify-users
 
+Send the `Clikgate-Installation` header (2.1.6) with the sign-in request and with signed-in requests to your own
+server, so it knows which Clikgate app is calling; send it only to your own backend, over HTTPS, never to third
+parties. It is `null` when the installation ID is, or while the app ID isn't known yet, and never throws:
+
+```ts
+const h = await Clikgate.getInstallationHeader();
+const res = await fetch('https://api.example.com/sign-in', { method: 'POST', headers: h ? { [h.name]: h.value } : {}, body });
+```
+
 ## Deep links on every plan
 
 Deep links work on every plan, Free included (deferred deep links: 1,000 a month on Free, 10,000 on Starter). On
@@ -69,4 +78,4 @@ attribution is included in all of them. `goal` does nothing only when app attrib
    `isClikgateMessage` checks in your FCM handlers, and any `ClikgateRN` calls in the AppDelegate.
 5. In the Clikgate dashboard, mark the app as no longer tracked (and switch off uninstall
    tracking) so Clikgate stops sending silent check pushes and your reports show the cut-off.
-   Leaving Clikgate entirely: export your data first (Settings › Leave Clikgate).
+   Leaving Clikgate entirely: export your data first (Settings › Leaving Clikgate).

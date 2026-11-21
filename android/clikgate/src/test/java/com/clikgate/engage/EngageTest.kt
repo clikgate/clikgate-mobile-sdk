@@ -276,7 +276,7 @@ class EngageTest {
     @Test
     fun oneRetryForNetworkErrorsOnly() {
         // Counted as Engage's own attempts: the JDK / OkHttp URLConnection may itself silently
-        // re-send a GET once on a dropped connection (see DECISIONS).
+        // re-send a GET once on a dropped connection.
         val attempts = ClikgateEngage.client.attempts
         api.on("GET /v1/sdk/leaderboards/$board", MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST), ok(Fixtures.text("leaderboard_page")))
         await<LeaderboardPage> { ClikgateEngage.leaderboards.top(board, callback = it) }.getOrThrow()

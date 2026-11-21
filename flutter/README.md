@@ -8,8 +8,9 @@ Referral links and stats, leaderboards, promo codes and share helpers are the En
 this package (`import 'package:clikgate_flutter/engage.dart'`) for apps without a
 backend; apps with a backend should call the Clikgate API from their server instead (recommended).
 
-A thin bridge over the native Clikgate Android (`com.clikgate:clikgate-android`) and iOS
-SDKs — no attribution or referral logic runs in Dart.
+The core is a thin bridge over the native Clikgate Android (`com.clikgate:clikgate-android`) and iOS
+SDKs: attribution, goals and referee-side referral logic run natively. The Engage features are different: they
+call the Clikgate API from Dart over HTTPS (package `http`), with the installation context from the native SDK.
 
 | | Android | iOS |
 |---|---|---|
@@ -35,7 +36,7 @@ final r = await Clikgate.goal('account_opened', value: '2000000', currency: 'NGN
 // provider or server confirms it, with the real amount (a value sent from the app is ignored).
 await Clikgate.goal('purchase', reference: 'T123456', provider: ClikgateProvider.paystack);
 // Identify signed-in users: Path A with a token from your server, or Path B with the installation ID.
-await Clikgate.identifyUser(customerId: user.id, identityToken: me.clikgateToken);
+await Clikgate.identifyUser(customerId: user.id, identityToken: me.clikgateIdentityToken);
 final String? installationId = await Clikgate.getInstallationId(); // send it with your sign-in request
 await Clikgate.identifyUser(customerId: null); // sign-out
 await Clikgate.setTrackingEnabled(false);
@@ -80,8 +81,52 @@ calls `identifyUser({appId, installationId, customerId, label?})`. The installat
 (opt-out, consent denied or not given yet where required, deep-link-only mode). The customer ID is your own user ID,
 never an email or phone number. Guide: https://clikgate.com/docs/identify-users
 
+Send the `Clikgate-Installation` header (2.1.6) with the sign-in request and with signed-in requests to your own
+server, so it knows which Clikgate app is calling; send it only to your own backend, over HTTPS, never to third
+parties. It is `null` when the installation ID is, or while the app ID isn't known yet, and never throws:
+
+```dart
+dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) async {
+  final h = await Clikgate.getInstallationHeader();
+  if (h != null) options.headers[h.name] = h.value;
+  handler.next(options);
+}));
+```
+
+`identifyUser` returns nothing about the result, on every platform (Android `Unit`, iOS `Void`, Flutter
+`Future<void>`, React Native `Promise<void>`): the native SDK sends the identity in the background, and when a token
+doesn't verify, debug builds log the reason (`expired`, `bad_signature`, ...). The Flutter future completes once the
+native SDK has the call.
+
 Errors are thrown as `ClikgateException(code, message, status, param, feature)` with the backend codes
 (`code_not_found`, `already_referred`, `window_expired`, `self_referral`, `identity_required`, …).
+
+## Testing your app
+
+Without a device every plugin call fails with `ClikgateException(unsupported_platform)`. In widget tests, install
+the fake from `package:clikgate_flutter/testing.dart` (tests only, never from `lib/`): it answers the core plugin
+and the Engage features (their HTTP calls included), records every call, and is removed when the test ends.
+
+```dart
+import 'package:clikgate_flutter/testing.dart';
+
+late ClikgateFake clikgate;
+setUp(() => clikgate = ClikgateFake.install());
+
+testWidgets('checkout sends a Payment goal', (tester) async {
+  await tester.pumpWidget(const MyApp());
+  await tester.tap(find.text('Pay with Paystack'));
+  await tester.pumpAndSettle();
+  expect(clikgate.goals.last.result.status, GoalStatus.waiting);
+});
+```
+
+Defaults: `configure` succeeds; the installation ID and header look like real ones; goals answer `counted`
+(Payment goals `waiting`); `applyCode` succeeds (`clikgate.applyCodeError = 'code_not_found'` makes it throw);
+Engage `createLink` returns a link with a stable code. `clikgate.pushDeepLink(url)` delivers a deep link on
+`onDeepLink`. Recorded: `goals`, `identifyCalls`, `appliedCodes`, `shares`, `engageRequests`, `calls`. As on a
+device, Engage user calls throw `not_identified` until `identifyUser` (or `ClikgateFake.install(customerId: ...)`).
+Everything it answers and how to change it: [Testing your app](https://github.com/clikgate/clikgate-mobile-sdk/blob/main/docs/flutter.md#10-testing-your-app).
 
 ## Setup
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -22,7 +23,7 @@ class Clikgate {
   Clikgate._();
 
   /// Version of this Flutter plugin (reported as `Clikgate-SDK-Version: flutter/<version>`).
-  static const String pluginVersion = '2.1.4';
+  static const String pluginVersion = '2.1.6';
 
   static DeepLinkHub _hub = DeepLinkHub();
 
@@ -250,6 +251,32 @@ class Clikgate {
   static Future<String?> getInstallationId() =>
       ClikgateChannels.invoke<String>('getInstallationId');
 
+  /// The header that tells your own server which Clikgate installation is
+  /// calling, so the server needn't map platforms to Clikgate app IDs: name
+  /// `Clikgate-Installation`, value `<app ID>:<installation ID>` (the app ID
+  /// from Clikgate's config, the ID [getInstallationId] returns). Send it with
+  /// the sign-in request and with signed-in requests to your own server, only
+  /// over HTTPS and never to third parties; the server SDK reads it.
+  ///
+  /// ```dart
+  /// final h = await Clikgate.getInstallationHeader();
+  /// if (h != null) options.headers[h.name] = h.value;
+  /// ```
+  ///
+  /// Null whenever [getInstallationId] is null (tracking off, consent denied
+  /// or not given yet where it's required, deep-link-only mode), when the app
+  /// ID isn't known yet (an offline first launch), and before [configure].
+  /// Waits a few seconds at most for the first config; offline it uses the
+  /// cached one. Never throws.
+  static Future<ClikgateInstallationHeader?> getInstallationHeader() async {
+    try {
+      return ClikgateInstallationHeader.fromMap(
+          await ClikgateChannels.invoke<Object>('getInstallationHeader'));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Opt-out switch: `false` stops all processing for this installation.
   static Future<void> setTrackingEnabled(bool enabled) =>
       ClikgateChannels.invoke<void>('setTrackingEnabled', {'enabled': enabled});
@@ -394,3 +421,18 @@ class Clikgate {
     _hub = DeepLinkHub();
   }
 }
+
+/// Internal (`package:clikgate_flutter/testing.dart`): a fresh deep link hub, so the next listener
+/// subscribes to the (then mocked) `com.clikgate/deep_links` channel. Not exported.
+@internal
+void resetDeepLinkHubForTesting() {
+  final old = Clikgate._hub;
+  Clikgate._hub = DeepLinkHub();
+  unawaited(old.dispose());
+}
+
+/// Internal (`package:clikgate_flutter/testing.dart`): delivers a deep link event map (the native
+/// event channel's shape) to [Clikgate.onDeepLink] / [Clikgate.onBrowserHandoff]. Not exported.
+@internal
+void deliverDeepLinkEventForTesting(Map<String, Object?> event) =>
+    Clikgate._hub.deliverForTesting(event);

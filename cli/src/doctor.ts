@@ -374,8 +374,8 @@ function pushChecks(input: DoctorInput, ios: IosProject, add: (c: Omit<Check, 'g
 
 /** Plain-language fixes for setup-check `problem` codes (the code itself stays in `code`). */
 const PROBLEM_FIXES: Record<string, (host: string, platform: 'android' | 'ios') => string> = {
-  domain_not_active: (h) => `${h} isn't active yet: finish its setup in the dashboard (Domains).`,
-  unreachable: (h) => `Clikgate couldn't reach https://${h}. Check the domain's DNS record and certificate in the dashboard (Domains).`,
+  domain_not_active: (h) => `${h} isn't active yet: finish its setup in the dashboard (Connect › Branded domains).`,
+  unreachable: (h) => `Clikgate couldn't reach https://${h}. Check the domain's DNS record and certificate in the dashboard (Connect › Branded domains).`,
   not_served: (h, p) => `https://${h} doesn't serve the ${p === 'ios' ? 'apple-app-site-association' : 'assetlinks.json'} file yet. Check the domain's status in the dashboard.`,
   redirected: (h) => `https://${h}/.well-known/… redirects; app-links files must be served without redirects. Check the domain's DNS points at Clikgate (not another service).`,
   invalid_json: (h) => `The app-links file on ${h} isn't valid JSON. Contact Clikgate support.`,
@@ -383,7 +383,7 @@ const PROBLEM_FIXES: Record<string, (host: string, platform: 'android' | 'ios') 
   missing_fingerprints: () => 'Add your signing SHA-256 fingerprints (debug and Play App Signing) to the Android app in the dashboard, or rerun `' + setupCommand() + '`.',
   app_not_listed: (h) => `${h}'s app-links file doesn't list this app yet. Check the app's identifiers in the dashboard, then run doctor again in a few minutes.`,
   wrong_fingerprint: () => 'The fingerprints in Clikgate don\'t match your signing certificate. Add the SHA-256 from `keytool` (debug) and Play Console › Protected with Play › Play Store protection › Manage Play app signing (release).',
-  link_subdomain_not_confirmed: () => 'Confirm the app\'s link subdomain in the dashboard (Apps › your app › Link subdomain), or run `' + setupCommand() + '` and confirm it.',
+  link_subdomain_not_confirmed: () => 'Confirm the app\'s link subdomain in the dashboard (Connect › Apps › your app › Link subdomain), or run `' + setupCommand() + '` and confirm it.',
 };
 
 function fileCheck(platform: 'android' | 'ios', d: { aasa?: FileCheck; assetlinks?: FileCheck }): [string, FileCheck | undefined] {
@@ -429,7 +429,7 @@ export function serverChecks(app: { id: string; platform: 'android' | 'ios' }, r
       continue;
     }
     const problem = c.problem ?? (c.served ? 'app_not_listed' : 'not_served');
-    const fix = PROBLEM_FIXES[problem]?.(d.hostname, app.platform) ?? `Clikgate reports: ${problem}. See the dashboard (Domains).`;
+    const fix = PROBLEM_FIXES[problem]?.(d.hostname, app.platform) ?? `Clikgate reports: ${problem}. See the dashboard (Connect › Branded domains).`;
     add({ id, status: 'fail', title: `${d.hostname}: ${fileName} ${c.served ? "doesn't list this app" : 'not served'}`, fix, code: problem });
   }
   for (const w of report.sdk?.warnings ?? []) {

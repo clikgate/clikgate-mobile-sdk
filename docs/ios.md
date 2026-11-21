@@ -115,13 +115,13 @@ A URL counts as a Clikgate link when its host is in the link domains, or when it
 schemes and carries `cg_click_id`. Other URLs return `false` without a network call.
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
-**Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
+**Deep links and basic attribution on every plan.** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
@@ -211,7 +211,7 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 Scene and SwiftUI apps forward the same two calls (section 3). Then remove the `FirebaseDynamicLinks` package or
 pod, the `applinks:….page.link` Associated Domains entry and `FirebaseDynamicLinksCustomDomains` from Info.plist,
 and add `applinks:` entries for your Clikgate link domains. Firebase Analytics, Crashlytics and Messaging are
-unaffected. Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
+unaffected. Test with "See it live" in the dashboard (Developers › SDKs › Test your app) and a `cg_sdk_test_…` key.
 
 ## 4. Attribution
 
@@ -333,7 +333,7 @@ several apps, on the server only) and returns it in the sign-in response and the
 already calls at open. The app passes the newest token:
 
 ```swift
-Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateToken)  // after sign-in, and at app open
+Clikgate.shared.identifyUser(customerId: user.id, identityToken: me.clikgateIdentityToken)  // after sign-in, and at app open
 Clikgate.shared.identifyUser(label: "Ada (VIP)")      // just the label (the customer ID is kept; Growth and up)
 Clikgate.shared.identifyUser(customerId: nil)         // sign-out
 Clikgate.shared.setTrackingEnabled(false)             // stops everything; tells Clikgate to erase device data
@@ -358,6 +358,32 @@ answer (a few seconds at most; offline it answers at once) and never blocks the 
 (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or deep-link-only mode): your
 server then skips `identifyUser`. It throws `not_configured` before `configure`.
 
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```swift
+// URLSession: add the header to requests to your own API only
+var request = URLRequest(url: URL(string: "https://api.example.com/sign-in")!)
+if let h = await Clikgate.shared.installationHeader() {
+    request.setValue(h.value, forHTTPHeaderField: h.name)
+}
+```
+
+`installationHeader()` is `nil` in exactly the cases where `installationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws: `nil` before `configure`. Leave the header out when it's
+`nil`.
+
+**One installation ID per app.** The Keychain items are named after the bundle identifier
+(`com.clikgate.installation-id.<bundle ID>`), so two apps of the same team never share an installation ID, even when
+they share a Keychain access group (an item saved without an access group goes to the app's first Keychain access
+group, and a search without one looks in all of them). The item without a bundle identifier written by SDKs before
+2.1.6 is ignored and left in place.
+
 **No SKAdNetwork / AdAttributionKit updates from goals.** The SDK doesn't set postback conversion values. To get
 postback copies, add to `Info.plist`:
 - AdAttributionKit: the `AdAttributionKit` dictionary with `AttributionCopyEndpoint` = `https://<your Clikgate domain>`.
@@ -368,7 +394,7 @@ postback copies, add to `Info.plist`:
 ## 6a. Send goals: one `goal()` method
 
 `goal()` is the one method for every goal, Standard or Payment. Each goal's **kind** is set in the dashboard
-(Settings › Goals), never in the call:
+(Grow › Goals), never in the call:
 
 - **Standard** goals (sign-ups, bookings, leads, accounts opened) count when they're sent.
 - **Payment** goals (anything involving money) count only when your payment provider or your server confirms
@@ -416,7 +442,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional, Standard goals): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `Decimal` (never a `Double`: build it from a string or an integer literal), sent as a decimal string. Whether a value is allowed or required, and how many decimal
@@ -647,11 +673,13 @@ pod lib lint Clikgate.podspec --allow-warnings
 4. Remove push-token forwarding (`setPushToken`) and the `handleRemoteNotification` check (uninstall
    tracking); keep `registerForRemoteNotifications` only if your app needs it.
 5. Remove Clikgate from your privacy policy and App Store privacy answers once the release without it ships.
-6. In the Clikgate dashboard, mark the app as no longer tracked (and remove its APNs key) so Clikgate stops
+6. In the Clikgate dashboard (Connect › Apps › your app), switch off **SDK enabled** (and remove its APNs key
+   under **Push credentials**) so Clikgate stops
    uninstall checks and shows no "SDK missing" warnings.
 
-The Keychain item `com.clikgate.installation-id` and `Application Support/Clikgate` stay on devices that had
-the SDK; they are deleted with the app.
+The Keychain items `com.clikgate.installation-id.<bundle ID>` (`com.clikgate.installation-id` before 2.1.6) and
+`Application Support/Clikgate` stay on devices that had the SDK; `Application Support/Clikgate` is deleted with the
+app.
 
 ## Existing users (2.1.1)
 

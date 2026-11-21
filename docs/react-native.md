@@ -72,13 +72,13 @@ root component's `useEffect` is fine. For URLs from elsewhere (QR codes): `await
 App Links / Universal Links / custom-scheme opens are forwarded to the SDK by the platform setup below.
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
-**Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
+**Deep links and basic attribution on every plan.** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
@@ -145,7 +145,7 @@ useEffect(
 
 Then remove `@react-native-firebase/dynamic-links`, the `page.link` intent filter (Android) and Associated Domains
 entry (iOS), and add your Clikgate link domains (sections 7 to 9; the Expo config plugin writes them). Firebase
-Analytics, Crashlytics and Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs)
+Analytics, Crashlytics and Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs › Test your app)
 and a `cg_sdk_test_…` key.
 
 ## 4. Identify your users, opt-out
@@ -164,7 +164,7 @@ already calls at open. The app passes the newest token:
 ```ts
 import { Clikgate } from '@clikgate/react-native';
 
-await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateToken }); // after sign-in, and at app open
+await Clikgate.identifyUser({ customerId: user.id, identityToken: me.clikgateIdentityToken }); // after sign-in, and at app open
 await Clikgate.identifyUser({ label: 'Ada (VIP)' });  // just the label (the customer ID is kept; Growth and up)
 await Clikgate.identifyUser({ customerId: null });    // sign-out
 await Clikgate.setTrackingEnabled(false);             // opt-out
@@ -189,6 +189,28 @@ seconds at most; offline it answers at once). A reinstall gets a new ID. It retu
 server then skips `identifyUser`.
 On iOS these calls reject with `not_configured` before `configure`; on Android they are queued until `configure`.
 
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```ts
+// fetch: add the header to requests to your own API only
+async function apiFetch(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  const h = await Clikgate.getInstallationHeader();
+  if (h) headers.set(h.name, h.value);
+  return fetch(`https://api.example.com${path}`, { ...init, headers });
+}
+```
+
+`getInstallationHeader()` is `null` in exactly the cases where `getInstallationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws (it resolves `null` before `configure` on iOS and when the native module is missing). Leave the header out when it's
+`null`.
+
 Fraud signals (`is_emulator`, `is_rooted`, the Play install-referrer times) are collected by the
 native SDKs on `/install` (native 1.1.0+; from 1.2.0 the iOS SDK no longer sends `is_rooted`, and uses
 App Attest / DeviceCheck instead); there is nothing to call or configure from JavaScript. See
@@ -212,7 +234,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `number` or a numeric `string` (pass a string for exact amounts: it reaches the native SDK as a decimal string, never a double; numbers JavaScript prints with an exponent are rejected). Whether a value is allowed or required, and how many decimal
@@ -237,7 +259,7 @@ for the event (application number, order id, transaction reference).
 ## 4b. Payment goals
 
 One method, `goal()`, sends every goal. Whether a goal is a **Standard goal** or a **Payment goal** is set in the
-dashboard (Settings › Goals), never in the call. For a Payment goal, pass the payment provider and the
+dashboard (Grow › Goals), never in the call. For a Payment goal, pass the payment provider and the
 reference your checkout returned:
 
 ```ts

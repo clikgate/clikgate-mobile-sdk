@@ -48,3 +48,46 @@ describe('goal() and the installation ID', () => {
     await expect(Clikgate.getInstallationId()).resolves.toBeNull();
   });
 });
+
+/**
+ * `getInstallationHeader()`: a thin bridge; the native SDKs decide the value (null when tracking
+ * is off, consent is missing, deep-link-only mode, or the app ID isn't known yet).
+ */
+describe('getInstallationHeader()', () => {
+  it('resolves the native name and value', async () => {
+    mockModule.getInstallationHeader.mockResolvedValueOnce({
+      name: 'Clikgate-Installation',
+      value:
+        'app_01JAB3C4D5E6F7G8H9JKMNPQRS:6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11',
+    });
+    await expect(Clikgate.getInstallationHeader()).resolves.toEqual({
+      name: 'Clikgate-Installation',
+      value:
+        'app_01JAB3C4D5E6F7G8H9JKMNPQRS:6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11',
+    });
+    expect(mockModule.getInstallationHeader).toHaveBeenCalledWith({});
+  });
+
+  it('resolves null when the native SDK answers null (tracking off and the like)', async () => {
+    mockModule.getInstallationHeader.mockResolvedValueOnce(
+      null as unknown as object
+    );
+    await expect(Clikgate.getInstallationHeader()).resolves.toBeNull();
+  });
+
+  it('never rejects: a native rejection resolves null', async () => {
+    mockModule.getInstallationHeader.mockRejectedValueOnce(
+      Object.assign(new Error('Call Clikgate.configure first.'), {
+        code: 'not_configured',
+      })
+    );
+    await expect(Clikgate.getInstallationHeader()).resolves.toBeNull();
+  });
+
+  it('an unexpected answer resolves null', async () => {
+    mockModule.getInstallationHeader.mockResolvedValueOnce({
+      name: 'Clikgate-Installation',
+    });
+    await expect(Clikgate.getInstallationHeader()).resolves.toBeNull();
+  });
+});

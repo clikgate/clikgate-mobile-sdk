@@ -16,6 +16,7 @@ Clikgate.enableFirebaseForwarding
 Clikgate.enableGoogleOnDeviceMeasurement
 Clikgate.getAttribution
 Clikgate.getConsent
+Clikgate.getInstallationHeader
 Clikgate.getInstallationId
 Clikgate.getRequestContext
 Clikgate.goal
@@ -60,6 +61,7 @@ type ClikgateEnvironment
 type ClikgateErrorCode
 type ClikgateFeature
 type ClikgateFirebaseForwardingOptions
+type ClikgateInstallationHeader
 type ClikgateLink
 type ClikgateLogLevel
 type ClikgatePasteboardMode

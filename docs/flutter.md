@@ -3,8 +3,10 @@
 `clikgate_flutter` is the **core** plugin: a thin bridge over the native Clikgate Android and
 iOS SDKs for what must happen on the device: deep links (direct and deferred),
 install attribution, goals, `identifyUser`, `getInstallationId`, referee-side referral calls (`applyCode`,
-`referredBy`), push token / uninstall tracking and feature switches. All attribution and
-referral logic runs natively; the Dart API is identical on both platforms.
+`referredBy`), push token / uninstall tracking and feature switches. The core's attribution, goal and
+referee-side referral logic runs natively; the Dart API is identical on both platforms. The Engage features
+(§5d) are different: they call the Clikgate API from Dart over HTTPS (package `http`), with the
+installation context the native SDK hands them. Tests use the fake in §10.
 
 Referral links and stats, leaderboards, promo codes and share helpers are **not** in the core
 plugin. Two ways to build those screens:
@@ -82,13 +84,13 @@ automatically (platform setup below). For URLs from elsewhere (QR codes):
 `await Clikgate.handleUrl(url)`.
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
-shown in the dashboard under Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
+shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
 builds only) and your verified custom domains. Declare those, and never a shared domain (`ciz.to`, `ciz.ng`,
 `dev.ciz.to`): their app-links files list no customer app, so they can't open yours, and
 `npx @clikgate/setup doctor` warns "remove this: shared domains can't open your app". Links on shared domains
 still work through the browser, the store and deferred deep links.
 
-**Deep links and basic attribution on every plan (changes 10, 20, 21).** Deep links into your app are included on
+**Deep links and basic attribution on every plan.** Deep links into your app are included on
 every plan: direct links (App Links / Universal Links / your URI scheme) without a limit, and deferred deep links up to
 your plan's monthly allowance (Pricing; no monthly cap on Growth and up). On Free your app's link subdomain is
 `yourapp.ciz.ng` (release builds); debug builds use `yourapp.dev.ciz.to` on every plan. `yourapp.ciz.ng` is your
@@ -150,7 +152,7 @@ Clikgate.onDeepLink.listen((link) {
 
 Then remove `firebase_dynamic_links` from `pubspec.yaml`, the `page.link` intent filter (Android) and Associated
 Domains entry (iOS), and add your Clikgate link domains (sections 7 and 8). Firebase Analytics, Crashlytics and
-Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs) and a `cg_sdk_test_…` key.
+Messaging are unaffected. Test with "See it live" in the dashboard (Developers › SDKs › Test your app) and a `cg_sdk_test_…` key.
 
 ## 4. Identify your users, opt-out
 
@@ -166,7 +168,7 @@ several apps, on the server only) and returns it in the sign-in response and the
 already calls at open. The app passes the newest token:
 
 ```dart
-await Clikgate.identifyUser(customerId: user.id, identityToken: me.clikgateToken); // after sign-in, and at app open
+await Clikgate.identifyUser(customerId: user.id, identityToken: me.clikgateIdentityToken); // after sign-in, and at app open
 await Clikgate.identifyUser(label: 'Ada (VIP)');   // just the label (the customer ID is kept; Growth and up)
 await Clikgate.identifyUser(customerId: null);     // sign-out
 await Clikgate.setTrackingEnabled(false);          // opt-out
@@ -174,6 +176,19 @@ await Clikgate.setTrackingEnabled(false);          // opt-out
 
 The token is `base64url_nopad(HMAC_SHA256(identity_secret, "<customer_user_id>.<issued_at>")) + "." + issued_at`,
 always made on your server, never in the app. It lasts 30 days by default; no forced refresh.
+
+**What `identifyUser` returns.** Nothing about the result: the call stores the customer ID and token on the
+device, and the native SDK sends them in the background (queued, retried, and sent after the install is
+recorded), so there is no answer to wait for. When a token doesn't verify, debug builds log the reason in one
+line (`expired`, `bad_signature`, `secret_rotated`, `no_secret_set`, `not_yet_valid`); the customer ID is kept,
+unverified. To check a token, use **Test a token** on the identity page (**Developers › SDKs** › your app › **Set up identity**), or Path B.
+
+| Platform | `identifyUser` returns |
+|---|---|
+| Android | `Unit` (fire and forget) |
+| iOS | `Void` (fire and forget) |
+| Flutter | `Future<void>`: completes once the native SDK has the call, not when Clikgate answered |
+| React Native | `Promise<void>`: same as Flutter |
 
 **Path B: installation ID (no secret, no token).** The app sends this installation's ID with the sign-in request
 (and at every signed-in app open); your server calls the server SDK's
@@ -189,6 +204,27 @@ personal data; allowed in private mode). Right after `configure` it waits for th
 seconds at most; offline it answers at once). A reinstall gets a new ID. It returns `null` when tracking is off
 (`setTrackingEnabled(false)`, consent denied or not given yet where it's required, or deep-link-only mode): your
 server then skips `identifyUser`.
+
+**Installation header (2.1.6).** Instead of sending the installation ID in your own field, send the
+`Clikgate-Installation` header with the sign-in request and with signed-in requests to your own server. Its value is
+`<app ID>:<installation ID>`: the Clikgate app ID from the SDK's config and the installation ID above, so your server
+knows which app (and platform) is calling without mapping platforms to Clikgate app IDs; the server SDK reads it.
+Send it only to your own backend, over HTTPS, never to third parties (analytics, ad or other SDK endpoints).
+
+```dart
+// dio: add the header to requests to your own API only
+dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) async {
+  final h = await Clikgate.getInstallationHeader();
+  if (h != null) options.headers[h.name] = h.value;
+  handler.next(options);
+}));
+```
+
+`getInstallationHeader()` is `null` in exactly the cases where `getInstallationId()` is (tracking off, consent denied or not given yet where it's
+required, deep-link-only mode), and also when the app ID isn't known yet (an offline first launch before any config
+was received). Right after `configure` it waits a few seconds at most for the first config, never on the main
+thread; offline it uses the config cached by an earlier launch. It never throws: `null` before `configure` and when the plugin is missing. Leave the header out when it's
+`null`.
 
 Fraud signals (`is_emulator`, `is_rooted`, the Play install-referrer times) are collected by the
 native SDKs on `/install` (native 1.1.0+); there is nothing to call or configure from Dart. See
@@ -208,7 +244,7 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Settings › Goals). An unknown or archived goal is rejected by the server and
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
   dropped.
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; an `int`, a `double` or a numeric `String` (pass a string for exact amounts: it reaches the native SDK as a decimal string, never a double; doubles Dart prints with an exponent are rejected). Whether a value is allowed or required, and how many decimal
@@ -233,7 +269,7 @@ for the event (application number, order id, transaction reference).
 ## 4b. Payment goals
 
 One method, `goal()`, sends every goal. Whether a goal is a **Standard goal** or a **Payment goal** is set in the
-dashboard (Settings › Goals), never in the call. For a Payment goal, pass the payment provider and the
+dashboard (Grow › Goals), never in the call. For a Payment goal, pass the payment provider and the
 reference your checkout returned:
 
 ```dart
@@ -310,11 +346,12 @@ separate `clikgate_engage` package). Import them with
 `import 'package:clikgate_flutter/engage.dart';`. Apps that never import it don't ship it
 (tree-shaking).
 
-Pure Dart (package `http`), apart from the share helpers, which use the plugin's own native side
-(channel `com.clikgate/engage`; no `share_plus` / `url_launcher`, so apps keep any version of them).
-It calls the same `/v1/sdk/*` endpoints with the core plugin's request context
-(installation id, SDK key, environment, base URL, identity token), obtained through the core's
-internal `Clikgate.getRequestContext()`; it keeps no attribution state.
+Unlike the core, Engage runs in Dart: it calls the Clikgate API (`/v1/sdk/*`) itself over HTTPS with
+package `http`, using the core plugin's request context (installation ID, SDK key, environment, base URL,
+identity token), which it gets from the native SDK through the core's internal `Clikgate.getRequestContext()`.
+It keeps no attribution state. Only the share helpers and the saved referral links use the plugin's own
+native side (channel `com.clikgate/engage`; no `share_plus` / `url_launcher`, so apps keep any version of
+them). In widget tests the fake (§10) answers both the HTTP calls and the channel.
 
 ```dart
 final engage = ClikgateEngage();
@@ -605,6 +642,82 @@ Integration tests against a sandbox backend (skipped unless `CLIKGATE_API_BASE_U
 flutter test integration_test --dart-define=CLIKGATE_API_BASE_URL=http://10.0.2.2:8000 \
   --dart-define=CLIKGATE_SDK_KEY=cg_sdk_... --dart-define=CLIKGATE_PROGRAM_ID=rpg_...
 ```
+
+## 10. Testing your app
+
+Without a device, every plugin call fails with `ClikgateException(unsupported_platform)`. In widget and unit
+tests, install the fake from `package:clikgate_flutter/testing.dart` instead: one call answers the core plugin
+and the Engage features, records every call, and removes itself when the test ends.
+
+```dart
+import 'package:clikgate_flutter/clikgate_flutter.dart';
+import 'package:clikgate_flutter/testing.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  late ClikgateFake clikgate;
+  setUp(() => clikgate = ClikgateFake.install());
+
+  testWidgets('sign-in identifies the user; checkout sends a Payment goal', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    expect(clikgate.identifyCalls.single.customerId, 'user_42');
+
+    await tester.tap(find.text('Pay with Paystack'));
+    await tester.pumpAndSettle();
+    final goal = clikgate.goals.last;
+    expect(goal.provider, ClikgateProvider.paystack);
+    expect(goal.result.status, GoalStatus.waiting); // Payment goals wait for their confirmation
+  });
+
+  testWidgets('a typed referral code that does not exist', (tester) async {
+    clikgate.applyCodeError = 'code_not_found'; // applyCode throws ClikgateException('code_not_found')
+    // ...
+  });
+
+  testWidgets('a deep link opens the product screen', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    clikgate.pushDeepLink('https://yourapp.dev.ciz.to/products/42');
+    await tester.pumpAndSettle();
+    expect(find.text('Product 42'), findsOneWidget);
+  });
+}
+```
+
+`testing.dart` is for tests only: import it from `test/`, never from `lib/`. It uses `flutter_test`, which the
+plugin depends on only for this library; your app's code never imports it, so nothing of it is in your builds.
+`pumpAndSettle` is enough: Clikgate calls (Engage's HTTP calls included) need no `tester.runAsync`.
+Cancel `onDeepLink` / `onBrowserHandoff` subscriptions wherever suits your code (in a widget's `dispose`, in the
+test body, before or after `clikgate.uninstall()`, or in `tearDown`) and await the cancel if you like. When the fake
+removes itself, subscriptions still open get their done event and never see a later test's links.
+
+What the fake answers (change any of it on the fake, at any time):
+
+| Call | Default | Change it with |
+|---|---|---|
+| `configure` | succeeds | `clikgate.configureArguments` has what was passed |
+| `getInstallationId` / `getInstallationHeader` | `3f2b8c1e-…` (a UUID) / `Clikgate-Installation: app_01JD8X…:3f2b8c1e-…` | `installationId`, `appId`; `installationId = null` or `setTrackingEnabled(false)` gives `null` |
+| `identifyUser` | recorded in `identifyCalls`; the identity is kept like the native SDK keeps it (`customerId`, `identityToken`) | `ClikgateFake.install(customerId: …, identityToken: …)` starts signed in |
+| `goal` | `counted`; Payment goals (with a `provider`) `waiting` (`waiting_for_confirmation`) | `goalStatus`, `paymentGoalStatus`, or `onGoal: (g) => GoalResult(...)` |
+| `isFeatureEnabled` | `referrals`, `leaderboards`, `offline_codes`, `app_attribution` on, the rest off | `features['referrals'] = false` |
+| `referrals.applyCode` / `referredBy` | succeeds (referrer `Ada`) / not referred | `applyCodeError = 'already_referred'` (`existing_user` throws `ExistingUserException`), `referredBy = Referral(...)` |
+| `getAttribution` | `organic` | `attribution = ClikgateAttribution(...)` |
+| `onDeepLink` / `onBrowserHandoff` | nothing | `pushDeepLink(url, isDeferred: …, data: …)`, `pushBrowserHandoff(url)`; `handleUrl` on `linkDomain` pushes one too |
+| Engage `referrals.createLink` / `myStats` | a link with code `ADA-7Q2ZPX` at `https://yourapp.dev.ciz.to/r/ADA-7Q2ZPX` | `referralCode`, `linkDomain`, `createLinkError` |
+| Engage `codes.redeem`, `leaderboards.*` | a redemption; a three-entry board with you at rank 2 | `redeemError`, or `onEngageRequest: (request) => http.Response(...)` for any request |
+| Engage `share.*` | recorded in `shares`; the asked-for app "opens" | `shareAppInstalled = false` falls back to the share menu |
+
+Recorded: `calls` (every channel call, with `callsTo('setPushToken')`), `goals`, `identifyCalls`, `appliedCodes`,
+`shares`, `engageRequests` (method, path, headers and JSON body of each Engage request), `pushToken`.
+
+As on a device, Engage calls that act for a user throw `ClikgateException(not_identified)` until the app has called
+`identifyUser` (or the fake was installed with `customerId:`). The fake replaces the plugin's channels
+(`com.clikgate/sdk`, `com.clikgate/engage`, `com.clikgate/deep_links`) and the HTTP client Engage creates by itself;
+an `httpClient` you pass to `ClikgateEngage(...)` yourself still wins. The channel messages are the plugin's
+internal protocol and can change in any release, so mock through the fake rather than by hand. Full example:
+[`flutter/test/testing_sample_app_test.dart`](../flutter/test/testing_sample_app_test.dart); the example app's
+[`test/clikgate_fake_test.dart`](../flutter/example/test/clikgate_fake_test.dart) uses it with the example's screens.
 
 ## Existing users (2.1.1)
 

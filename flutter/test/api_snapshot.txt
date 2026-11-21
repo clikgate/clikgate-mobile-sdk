@@ -9,6 +9,7 @@ class Clikgate
   static Future<GoalResult> goal(String key, {Object? value, String? currency, String? reference, ClikgateProvider? provider, bool? isFirst, String? label})
   static Future<void> identifyUser({String? label, String? customerId = _keepCustomerId, String? identityToken})
   static Future<String?> getInstallationId()
+  static Future<ClikgateInstallationHeader?> getInstallationHeader()
   static Future<void> setTrackingEnabled(bool enabled)
   static Future<void> setPushToken(String? token, {required PushProvider provider})
   static bool isClikgateMessage(Map<String, dynamic>? data)
@@ -86,6 +87,15 @@ class GoalResult
   final String? reason
   final GoalKind? goalKind
   final bool valueIgnored
+  bool operator ==(Object other)
+  int get hashCode
+  String toString()
+class ClikgateInstallationHeader
+  const ClikgateInstallationHeader({required this.name, required this.value})
+  static const headerName
+  static ClikgateInstallationHeader? fromMap(Object? m)
+  final String name
+  final String value
   bool operator ==(Object other)
   int get hashCode
   String toString()

@@ -1,7 +1,7 @@
 PODS:
-  - Clikgate (2.1.0)
-  - clikgate_flutter (2.1.0):
-    - Clikgate (~> 2.1.0)
+  - Clikgate (2.1.6)
+  - clikgate_flutter (2.1.6):
+    - Clikgate (~> 2.1.6)
     - Flutter
   - Firebase/CoreOnly (12.2.0):
     - FirebaseCore (~> 12.2.0)
@@ -118,8 +118,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/share_plus/ios"
 
 SPEC CHECKSUMS:
-  Clikgate: 6439eb2a2d74ae7f4dd6d17ff99e7cc688b29aa0
-  clikgate_flutter: ea02403c10c8abb813877f425f8a450be422ee7a
+  Clikgate: cc5312c5fa842e91737b91f1602e6c95ac2f6524
+  clikgate_flutter: 8368f1b8971f47df4f77e265caf143c18baa1c7d
   Firebase: 26f6f8d460603af3df970ad505b16b15f5e2e9a1
   firebase_core: dfc4bd142bee4bc53a5d482397ca322c2dd3165d
   firebase_messaging: 38c66c1184695b0c87abe51d40fc590718abed1a

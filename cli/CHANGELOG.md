@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.6
+
+- Installs the 2.1.6 SDKs (`clikgate-android` 2.1.6, `Clikgate` 2.1.6, `clikgate_flutter` ^2.1.6, `@clikgate/react-native` ^2.1.6): they add the installation header for your own server, and on iOS each app has its own installation ID.
+- The sign-in snippet setup prints passes `response.clikgateIdentityToken` to `identifyUser`, the field name the identity guide uses.
+- Messages name the dashboard pages where they are now: apps, link subdomains and store links under Connect › Apps, branded domains under Connect › Branded domains, SDK keys under Developers › SDKs, and web keys under Developers › SDKs › Website.
+- Includes the 2.1.5 changes below (your app's download link, and your website for computer visitors). 2.1.5 wasn't published on its own.
+
+## 2.1.5
+
+- **Your app's download link.** After the files are written, setup has Clikgate make one link to share anywhere, `https://<your link subdomain>/download`: phones open the app, or the App Store / Google Play when it isn't installed; computers go to your website, or to a page with your store buttons. Setup prints it at the end. It's an ordinary link you can edit in the dashboard (Links), and running setup again never undoes your edits.
+- **Your website, for computer visitors.** Setup asks for the company website once (`acme.com` is enough; Enter skips) and saves it on the apps. Not asked with `--yes`, or when Clikgate already has one.
+- Installs `clikgate_flutter` ^2.1.5 (the other SDKs stay 2.1.3).
+
 ## 2.1.4
 
 - **URI scheme, set up for you.** Setup finds the app's scheme (in Clikgate or the project) or suggests one from the link subdomain, adds it to Info.plist and AndroidManifest.xml (Expo: `scheme` in app.json), and saves it on the Clikgate apps after the files are written. The link page can then offer "Open in app".

@@ -100,6 +100,11 @@ static void (^rejecter(RCTPromiseRejectBlock reject))(NSString *, NSString *, NS
   [_impl getInstallationId:args resolve:resolve reject:rejecter(reject)];
 }
 
+- (void)getInstallationHeader:(NSDictionary *)args resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [_impl getInstallationHeader:args resolve:resolve reject:rejecter(reject)];
+}
+
 - (void)identifyUser:(NSDictionary *)args resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
 {
   [_impl identifyUser:args resolve:resolve reject:rejecter(reject)];

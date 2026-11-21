@@ -5,6 +5,7 @@ import 'dart:io' show SocketException, HandshakeException;
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:http/http.dart' as http;
 
+import '../test_seams.dart';
 import 'errors.dart';
 
 /// What Engage needs from the core plugin: the feature switches, the request
@@ -54,7 +55,7 @@ class EngageClient {
     this.timeout = const Duration(seconds: 10),
     this.retryDelay = const Duration(milliseconds: 500),
     DateTime Function()? clock,
-  })  : _http = httpClient ?? http.Client(),
+  })  : _http = httpClient ?? engageHttpClientOverride?.call() ?? http.Client(),
         _clock = clock ?? DateTime.now;
 
   final EngageCore core;

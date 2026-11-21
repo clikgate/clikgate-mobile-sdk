@@ -3,6 +3,7 @@
 This repository is public. Fails when internal build material is committed: design specs, decision logs, progress
 notes, release runbooks, or references to internal change numbers and those documents. Run from the repository root:
 `python3 scripts/check_public_repo.py`. Scans the files git tracks (or the paths given as arguments).
+`python3 scripts/check_public_repo.py --self-test` proves the text patterns match what they should, and only that.
 """
 
 import re
@@ -31,6 +32,12 @@ FORBIDDEN_PATHS = [
 FORBIDDEN_TEXT = [
     # "Change 26", "change-03", and names built on them: Change26Test, change03_test, withoutChange26
     ("internal change number", re.compile(r"\bchange[ _-]?\d{2}(?!\d)|[a-z_]change[ _-]?\d{2}(?!\d)", re.I)),
+    # Lists of them: "(changes 10, 20, 21)", "changes 3 and 12", "Changes 07-09". A single number after "changes"
+    # is ordinary English ("changes 10 lines"), so only a list or a range counts.
+    (
+        "internal change numbers",
+        re.compile(r"\bchanges[ _-]?\d{1,2}(?:\s*(?:,|&|/|-|–|\band\b|\bor\b|\bto\b)\s*\d{1,2})+(?!\d)", re.I),
+    ),
     ("internal spec id", re.compile(r"\bC\d{1,2}-[A-Z]{1,2}\d")),
     # Requirement and section codes of the internal build kit: KC.6, R.24, X.E15, TS.1, EX.3, RF.1, S.4
     ("internal requirement code", re.compile(r"\b(KC|ST|TS|DB|X|EX|RF|R|S)\.[A-Z]?\d+\b")),
@@ -44,6 +51,8 @@ FORBIDDEN_TEXT = [
         "internal document",
         re.compile(
             r"DECISIONS\.md|PROGRESS\.md|RELEASING\.md|SERVER_SDKS\.md|AI_GUIDES_QA|ai-qa-runs|docs/spec"
+            # and their bare names: "(see DECISIONS)" (capitals only; the word "decisions" is fine)
+            r"|\b(DECISIONS|PROGRESS|RELEASING)\b"
             r"|API_CONTRACT|SDK_BEHAVIOUR|PLATFORM_CHANNEL"
         ),
     ),
@@ -86,12 +95,59 @@ COPIES_OF_BACKEND_FILES = {
 }
 
 
+def problems_in(line: str) -> list[str]:
+    return [label for label, pattern in FORBIDDEN_TEXT if pattern.search(line)]
+
+
+def self_test() -> int:
+    must = [
+        ("(changes 10, 20, 21)", "internal change numbers"),
+        ("see changes 3 and 12", "internal change numbers"),
+        ("Changes 07-09 moved this", "internal change numbers"),
+        ("changes 10 & 11", "internal change numbers"),
+        ("CHANGES 4, 5", "internal change numbers"),
+        ("Change 26 added this", "internal change number"),
+        ("class Change26Test", "internal change number"),
+        ("withoutChange03()", "internal change number"),
+        ("per R.24 and KC.6", "internal requirement code"),
+        ("C3-A1 says", "internal spec id"),
+        ("see DECISIONS.md", "internal document"),
+        ("budget 40 → 44 KB (DECISIONS)", "internal document"),
+        ("an owner decision", "internal process note"),
+        ("../clikgate_api/docs", "private repository"),
+    ]
+    must_not = [
+        "this changes 10 lines",
+        "the app's decisions stay on the phone",
+        "Breaking changes: 2.1.6 adds getInstallationHeader",
+        "no changes in 2.1.5",
+        "It changes 3 files and 12 tests",  # numbers not joined as a list
+        "exchanges 10, 20",
+        "clikgate_api_key",
+        "version 2.1.6 changes the default",
+    ]
+    fails = []
+    for line, label in must:
+        if label not in problems_in(line):
+            fails.append(f"should find {label!r} in {line!r}, found {problems_in(line)}")
+    for line in must_not:
+        if problems_in(line):
+            fails.append(f"should find nothing in {line!r}, found {problems_in(line)}")
+    if fails:
+        print("check_public_repo self-test failed:\n  " + "\n  ".join(fails))
+        return 1
+    print(f"check_public_repo self-test passed ({len(must) + len(must_not)} checks)")
+    return 0
+
+
 def tracked() -> list[str]:
     out = subprocess.run(["git", "ls-files", "-z"], check=True, capture_output=True).stdout
     return [p for p in out.decode().split("\0") if p]
 
 
 def main(argv: list[str]) -> int:
+    if argv == ["--self-test"]:
+        return self_test()
     paths = argv or tracked()
     problems: list[str] = []
     for path in paths:

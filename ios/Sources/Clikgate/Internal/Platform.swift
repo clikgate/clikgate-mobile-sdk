@@ -52,16 +52,28 @@ struct SystemClock: ClikgateClock {
     }
 }
 
-/// Keychain item `com.clikgate.installation-id`: AfterFirstUnlock, never synchronised to iCloud.
-/// Keychain items survive app deletion, which is what makes reinstall detection work.
-struct SystemKeychain: KeychainStoring {
-    static let service = "com.clikgate.installation-id"
+/// Keychain items of service `com.clikgate.installation-id.<bundle ID>`: AfterFirstUnlock, never synchronised to
+/// iCloud. Keychain items survive app deletion, which is what makes reinstall detection work. The bundle ID keeps
+/// the items to this app: an item added without an access group goes to the app's first keychain access group,
+/// which other apps of the same team may share, and a search without one looks in every group the app is in.
+/// Items of the service without a bundle ID (SDKs before 2.1.6) are never read.
+class SystemKeychain: KeychainStoring, @unchecked Sendable {
     static let account = "installation_id"
+    let service: String
 
-    private func baseQuery() -> [String: Any] {
+    init(bundleId: String? = Bundle.main.bundleIdentifier) {
+        service = "com.clikgate.installation-id." + (bundleId ?? "")
+    }
+
+    // The Keychain calls (overridden in tests).
+    func copy(_ q: CFDictionary, _ out: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus { SecItemCopyMatching(q, out) }
+    func update(_ q: CFDictionary, _ attrs: CFDictionary) -> OSStatus { SecItemUpdate(q, attrs) }
+    func add(_ q: CFDictionary) -> OSStatus { SecItemAdd(q, nil) }
+
+    func baseQuery() -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Self.service,
+            kSecAttrService as String: service,
             kSecAttrAccount as String: Self.account,
             kSecAttrSynchronizable as String: kCFBooleanFalse as Any,
         ]
@@ -78,7 +90,7 @@ struct SystemKeychain: KeychainStoring {
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+        guard copy(query as CFDictionary, &item) == errSecSuccess,
               let data = item as? Data else { return nil }
         return String(data: data, encoding: .utf8)
     }
@@ -91,11 +103,10 @@ struct SystemKeychain: KeychainStoring {
         ]
         var query = baseQuery()
         query[kSecAttrAccount as String] = account
-        let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
+        let status = update(query as CFDictionary, attrs as CFDictionary)
         if status == errSecItemNotFound {
-            var add = query
-            add.merge(attrs) { $1 }
-            SecItemAdd(add as CFDictionary, nil)
+            query.merge(attrs) { $1 }
+            _ = add(query as CFDictionary)
         }
     }
 }

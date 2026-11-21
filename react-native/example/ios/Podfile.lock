@@ -1,7 +1,7 @@
 PODS:
-  - Clikgate (2.1.0)
-  - clikgate-react-native (2.1.0):
-    - Clikgate (~> 2.1.0)
+  - Clikgate (2.1.6)
+  - clikgate-react-native (2.1.6):
+    - Clikgate (~> 2.1.6)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2159,8 +2159,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Clikgate: 6439eb2a2d74ae7f4dd6d17ff99e7cc688b29aa0
-  clikgate-react-native: a5ff8e451d760383f0d2d181e7f23c33f8fb89ed
+  Clikgate: cc5312c5fa842e91737b91f1602e6c95ac2f6524
+  clikgate-react-native: 079ac9a87e76bb33969569efd5017bafdf1b8d06
   FBLazyVector: 2138c6c2ab66c31bf5754dc18097fbc498a49c7f
   hermes-engine: 63c5db7d529c36335fada6582fd293ae2a105d77
   RCTDeprecation: 96f68ebf33f8762466b01d57d6e873c4f30efb07

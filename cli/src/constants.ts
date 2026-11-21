@@ -5,7 +5,7 @@
 
 import type { Platform } from './args';
 
-export const CLI_VERSION = '2.1.4';
+export const CLI_VERSION = '2.1.6';
 
 export const DEFAULT_API_URL = 'https://api.clikgate.com';
 export const DASHBOARD_URL = 'https://app.clikgate.com';
@@ -58,10 +58,10 @@ export const MARKER_START = 'clikgate-setup:start';
 export const MARKER_END = 'clikgate-setup:end';
 
 export const SDK = {
-  flutter: { package: 'clikgate_flutter', constraint: '^2.1.4', minimum: '2.1.4' },
-  reactNative: { package: '@clikgate/react-native', constraint: '^2.1.3', minimum: '2.1.3' },
-  android: { group: 'com.clikgate', artifact: 'clikgate-android', version: '2.1.3' },
-  ios: { pod: 'Clikgate', podConstraint: '~> 2.1', spm: 'https://github.com/clikgate/clikgate-ios-sdk', version: '2.1.3' },
+  flutter: { package: 'clikgate_flutter', constraint: '^2.1.6', minimum: '2.1.6' },
+  reactNative: { package: '@clikgate/react-native', constraint: '^2.1.6', minimum: '2.1.6' },
+  android: { group: 'com.clikgate', artifact: 'clikgate-android', version: '2.1.6' },
+  ios: { pod: 'Clikgate', podConstraint: '~> 2.1', spm: 'https://github.com/clikgate/clikgate-ios-sdk', version: '2.1.6' },
 } as const;
 
 /**
@@ -83,11 +83,11 @@ export const GOAL_SNIPPET: Record<Platform, string> = {
  */
 export const IDENTIFY_GUIDE_URL = 'https://clikgate.com/docs/identify-users';
 export const IDENTIFY_SNIPPET: Record<Platform, string> = {
-  android: 'Clikgate.identifyUser(customerId = user.id, identityToken = response.clikgateToken)',
-  ios: 'Clikgate.shared.identifyUser(customerId: user.id, identityToken: response.clikgateToken)',
-  flutter: 'Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateToken)',
-  'react-native': 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateToken })',
-  expo: 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateToken })',
+  android: 'Clikgate.identifyUser(customerId = user.id, identityToken = response.clikgateIdentityToken)',
+  ios: 'Clikgate.shared.identifyUser(customerId: user.id, identityToken: response.clikgateIdentityToken)',
+  flutter: 'Clikgate.identifyUser(customerId: user.id, identityToken: response.clikgateIdentityToken)',
+  'react-native': 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateIdentityToken })',
+  expo: 'Clikgate.identifyUser({ customerId: user.id, identityToken: response.clikgateIdentityToken })',
 };
 export const INSTALLATION_ID_SNIPPET: Record<Platform, string> = {
   android: 'Clikgate.getInstallationId()',

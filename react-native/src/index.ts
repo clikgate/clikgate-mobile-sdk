@@ -27,6 +27,7 @@ export type {
   ClikgateEnvironment,
   ClikgateFeature,
   ClikgateFirebaseForwardingOptions,
+  ClikgateInstallationHeader,
   ClikgateLink,
   ClikgateLogLevel,
   ClikgatePasteboardMode,

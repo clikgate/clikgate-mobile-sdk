@@ -24,6 +24,8 @@ import {
   isTestHost,
 } from './constants';
 import { detect, detectPackageManager, type Candidate } from './detect';
+import { chooseWebsite, describeDownloadLink, ensureDownloadLinks, saveWebsite } from './downloadLink';
+import type { DownloadLink } from './api/clikgate';
 import { runLocalChecks, serverChecks, waitForFirstEvent, type Check } from './doctor';
 import { exists, read, rel } from './fsutil';
 import { backupFiles, treeState } from './git';
@@ -161,7 +163,7 @@ async function pickApps(opts: Options, deps: Deps, project: Project, clikgate: C
       }
       const create = opts.dryRun ? false : await ui.confirm(`No Clikgate ${label} app uses ${id}. Create "${project.name}" (${label}, ${id})?`, true);
       if (!create) {
-        if (!opts.dryRun) manual.push({ label: `${label} app`, detail: `No Clikgate ${label} app for ${id}. Create one in the dashboard (Apps › Add app), then run setup again.` });
+        if (!opts.dryRun) manual.push({ label: `${label} app`, detail: `No Clikgate ${label} app for ${id}. Create one in the dashboard (Connect › Apps › Add app), then run setup again.` });
         else ui.out(`${paint(ui, 'dim', '·')} ${label}: no Clikgate app uses ${id} (a real run offers to create it)`);
         continue;
       }
@@ -183,7 +185,7 @@ async function pickApps(opts: Options, deps: Deps, project: Project, clikgate: C
         let team = project.iosTeamId;
         if (!team) team = (await ui.ask('Your Apple Team ID (10 characters, from developer.apple.com › Membership), or Enter to skip:')).toUpperCase() || undefined;
         if (!team || !/^[A-Z0-9]{10}$/.test(team)) {
-          manual.push({ label: 'iOS app', detail: 'Clikgate needs the Apple Team ID to create the iOS app. Create it in the dashboard (Apps › Add app), then run setup again.' });
+          manual.push({ label: 'iOS app', detail: 'Clikgate needs the Apple Team ID to create the iOS app. Create it in the dashboard (Connect › Apps › Add app), then run setup again.' });
           continue;
         }
         body.bundle_id = id;
@@ -209,7 +211,7 @@ async function sendSigningDetails(opts: Options, deps: Deps, project: Project, c
     ui.out('Production App Links need the Play App Signing SHA-256 (Play Console › Protected with Play › Play Store protection › Manage Play app signing).');
     const play = opts.yes ? undefined : await askFingerprint(ui, 'Paste it now, or press Enter to add it later:');
     if (play && !have.has(play)) add.push(play);
-    if (!play) manual.push({ label: 'Play App Signing fingerprint', detail: 'Add the Play App Signing SHA-256 to the Android app in the dashboard (Apps › your app › Signing). Without it, App Links open the browser in Play Store installs.' });
+    if (!play) manual.push({ label: 'Play App Signing fingerprint', detail: 'Add the Play App Signing SHA-256 to the Android app in the dashboard (Connect › Apps › your app › Identifiers and store links › SHA-256 certificate fingerprints). Without it, App Links open the browser in Play Store installs.' });
     if (add.length && !opts.dryRun) {
       apps.android = await clikgate.updateApp(android.id, { sha256_cert_fingerprints: [...(android.sha256_cert_fingerprints ?? []), ...add] });
       ui.out(`${paint(ui, 'green', '✓')} Sent ${add.length} signing fingerprint${add.length > 1 ? 's' : ''} to Clikgate`);
@@ -286,7 +288,7 @@ async function confirmSubdomain(opts: Options, deps: Deps, clikgate: Clikgate, p
       throw e;
     }
   }
-  manual.push({ label: `${label} link subdomain`, detail: `Confirm your ${label} app's link subdomain in the dashboard (Apps › your app › Link subdomain), then run setup again. Until then its links can't open the app.` });
+  manual.push({ label: `${label} link subdomain`, detail: `Confirm your ${label} app's link subdomain in the dashboard (Connect › Apps › your app › Link subdomain), then run setup again. Until then its links can't open the app.` });
   return undefined;
 }
 
@@ -353,13 +355,13 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   const offline = opts.sdkKey !== undefined;
   if (offline) {
     if (SDK_KEY_LIVE.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, 'Use the test key; switch to live for release builds.');
-    if (!SDK_KEY_TEST.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, '--sdk-key must be a test SDK key (cg_sdk_test_…), from Dashboard › Apps › your app › SDK keys.');
+    if (!SDK_KEY_TEST.test(opts.sdkKey!)) throw new Exit(EXIT.PROBLEMS, '--sdk-key must be a test SDK key (cg_sdk_test_…), from Developers › SDKs › your app › SDK key, in Test mode.');
     if (!opts.domains?.length) throw new Exit(EXIT.PROBLEMS, "Offline mode needs --domain <host>[,<host>] (your app's link subdomain and custom domains, e.g. yourapp.ciz.to,go.acme.com; on the Free plan yourapp.ciz.ng).");
     const shared = opts.domains.filter(isSharedPlatformDomain);
     if (shared.length) {
       throw new Exit(
         EXIT.PROBLEMS,
-        `${shared.join(', ')}: ${SHARED_DOMAIN_FIX}. Pass your app's link subdomain instead (Dashboard › Apps › your app, e.g. --domain yourapp.ciz.to, or yourapp.ciz.ng on the Free plan), plus any custom domains.`
+        `${shared.join(', ')}: ${SHARED_DOMAIN_FIX}. Pass your app's link subdomain instead (Connect › Apps › your app › Link subdomain, e.g. --domain yourapp.ciz.to, or yourapp.ciz.ng on the Free plan), plus any custom domains.`
       );
     }
   }
@@ -397,6 +399,8 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     apps.ios = await fillAppStoreId(deps.ui, opts.yes, opts.dryRun, deps.fetch ?? fetch, clikgate, apps.ios, manual);
     const d = await chooseDomains(opts, deps, clikgate, apps, manual);
     schemeChoice = await chooseUriScheme(deps.ui, opts.yes, project, apps, manual);
+    const website = await chooseWebsite(deps.ui, opts.yes, apps);
+    if (website && !opts.dryRun) await saveWebsite(deps.ui, clikgate, website, manual);
     codeDomains = d.code;
     linkDomains = d.links;
     perPlatform = d.perPlatform;
@@ -407,7 +411,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
     sdkKey = androidKey ?? iosKey ?? 'cg_sdk_test_REPLACE_ME';
     sdkKeyIos = androidKey && iosKey && androidKey !== iosKey ? iosKey : undefined;
     if (!androidKey && !iosKey) manual.push({ label: 'SDK key', detail: 'No Clikgate app was chosen, so the start-up code has a placeholder key: replace cg_sdk_test_REPLACE_ME with your app\'s test SDK key.' });
-    if (codeDomains.length === 0 && Object.keys(apps).length) manual.push({ label: 'Link domains', detail: "No app link domain yet: confirm your app's link subdomain in the dashboard (Apps › your app › Link subdomain), then run setup again." });
+    if (codeDomains.length === 0 && Object.keys(apps).length) manual.push({ label: 'Link domains', detail: "No app link domain yet: confirm your app's link subdomain in the dashboard (Connect › Apps › your app › Link subdomain), then run setup again." });
   }
 
   // Plan.
@@ -438,6 +442,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   // Saved only once the project registers the scheme (written now, or already there), so "Open in app" never fails
   const schemePending = plan.steps.some((st) => st.kind === 'change' && st.summary.includes('URI scheme'));
   if (online && schemeChoice?.update.length && !opts.dryRun && (applied || !schemePending)) await saveUriScheme(ui, online.clikgate, schemeChoice);
+  const downloadLinks: DownloadLink[] = online && !opts.dryRun ? await ensureDownloadLinks(ui, online.clikgate, online.apps) : [];
 
   // Verify.
   ui.out('');
@@ -481,7 +486,7 @@ export async function runSetup(opts: Options, deps: Deps): Promise<number> {
   }
 
   // Summary.
-  printSummary(ui, plan, applied, checks, next, { sdkKey, root, online, testDomain, platform: project.candidate.platform });
+  printSummary(ui, plan, applied, checks, next, { sdkKey, root, online, testDomain, platform: project.candidate.platform, downloadLinks });
   ui.out('');
   ui.out(paint(ui, 'bold', SUCCESS_LINE));
   return EXIT.OK;
@@ -594,7 +599,7 @@ function printSummary(
   applied: { written: string[]; created: string[]; commandsRun: string[]; commandsSkipped: string[] } | undefined,
   checks: Check[],
   next: { message: string; doc_url: string | null }[],
-  ctx: { sdkKey: string; root: string; online?: OnlineResult; testDomain?: string; platform: Platform }
+  ctx: { sdkKey: string; root: string; online?: OnlineResult; testDomain?: string; platform: Platform; downloadLinks?: DownloadLink[] }
 ): void {
   ui.out('');
   ui.out(paint(ui, 'bold', 'Summary'));
@@ -617,6 +622,12 @@ function printSummary(
     ui.out('');
     ui.out(paint(ui, 'bold', 'Reminders:'));
     for (const r of plan.reminders) ui.out(`  • ${r}`);
+  }
+  if (ctx.downloadLinks?.length) {
+    const has = { ios: Boolean(ctx.online?.apps.ios), android: Boolean(ctx.online?.apps.android) };
+    ui.out('');
+    ui.out(paint(ui, 'bold', ctx.downloadLinks.length > 1 ? 'Your download links (share them anywhere):' : 'Your download link (share it anywhere):'));
+    for (const link of ctx.downloadLinks) for (const line of describeDownloadLink(ui, link, has)) ui.out(line);
   }
   ui.out('');
   ui.out(paint(ui, 'bold', 'Next steps:'));

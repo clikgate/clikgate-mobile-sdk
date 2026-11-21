@@ -8,6 +8,9 @@ export function createMockModule() {
     getInstallationId: jest.fn((_args: object) =>
       Promise.resolve<object>({ installationId: null })
     ),
+    getInstallationHeader: jest.fn((_args: object) =>
+      Promise.resolve<object>(null as unknown as object)
+    ),
     identifyUser: jest.fn((_args: object) => Promise.resolve(null)),
     setTrackingEnabled: jest.fn((_args: object) => Promise.resolve(null)),
     setPushToken: jest.fn((_args: object) => Promise.resolve(null)),
