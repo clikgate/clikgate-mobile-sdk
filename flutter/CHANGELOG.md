@@ -3,7 +3,8 @@
 - New `Clikgate.getInstallationHeader()` (never throws): the `Clikgate-Installation` header for your own server, value `<app ID>:<installation ID>`, as a `ClikgateInstallationHeader` (`name`, `value`), or `null` in the same cases as `getInstallationId()` and while the app ID isn't known yet. Send it with the sign-in request and signed-in requests to your own server only, over HTTPS. Native SDKs 2.1.6, where on iOS each app now has its own Keychain item, so two apps of one team never share an installation ID.
 - New test fake, `package:clikgate_flutter/testing.dart`: `ClikgateFake.install()` in a widget test answers the core plugin and the Engage features (their HTTP calls too), records every call (`goals`, `identifyCalls`, `appliedCodes`, `shares`, `engageRequests`) and pushes deep links with `pushDeepLink`. Tests only; your app's code never imports it. The plugin now lists `flutter_test` (an SDK package your app already has for its tests) as a dependency for this library.
 - Docs: the Engage features call the Clikgate API from Dart (only the core runs natively), and `identifyUser` returns nothing about the result on any platform (debug builds log why a token didn't verify).
-- `dart run clikgate_flutter:setup` runs setup command 2.1.6. Nothing removed or renamed.
+- Cancelling a `Clikgate.onDeepLink` or `onBrowserHandoff` subscription and awaiting it inside a `testWidgets` body no longer hangs the test.
+- `dart run clikgate_flutter:setup` runs setup command 2.1.6, which also has the 2.1.5 changes below (2.1.5 wasn't published on its own). Nothing removed or renamed.
 
 ## 2.1.5: Setup command 2.1.5
 

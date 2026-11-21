@@ -3,6 +3,9 @@
 ## 2.1.6
 
 - Installs the 2.1.6 SDKs (`clikgate-android` 2.1.6, `Clikgate` 2.1.6, `clikgate_flutter` ^2.1.6, `@clikgate/react-native` ^2.1.6): they add the installation header for your own server, and on iOS each app has its own installation ID.
+- The sign-in snippet setup prints passes `response.clikgateIdentityToken` to `identifyUser`, the field name the identity guide uses.
+- Messages name the dashboard pages where they are now: apps, link subdomains and store links under Connect › Apps, branded domains under Connect › Branded domains, SDK keys under Developers › SDKs, and web keys under Developers › SDKs › Website.
+- Includes the 2.1.5 changes below (your app's download link, and your website for computer visitors). 2.1.5 wasn't published on its own.
 
 ## 2.1.5
 
