@@ -351,12 +351,12 @@ There is no identity-signal API in any SDK: identity checks are server-to-server
 Nothing extra to install: `ClikgateEngage` is exported by `@clikgate/react-native` (there is
 no separate `@clikgate/react-native-engage` package).
 
-Pure TypeScript apart from the share menu (below). It calls the same `/v1/sdk/...` endpoints
+Pure TypeScript apart from the share menu and the saved referral link (below). It calls the same `/v1/sdk/...` endpoints
 with the core SDK's request context (`Clikgate.getRequestContext()`, internal) and keeps no attribution
 state. No UI components: render your own screens.
 
 ```ts
-import { Clikgate, ClikgateEngage } from '@clikgate/react-native';
+import { Clikgate, ClikgateEngage, ShareApp } from '@clikgate/react-native';
 
 const engage = new ClikgateEngage(); // keep one instance (it holds the 60 s read cache)
 
@@ -387,7 +387,7 @@ Rules:
   as off until the next config fetch).
 - `createLink`, `myStats`, `me`, `aroundMe`, `setOptOut` and `hostedPageUrl` act for the user: they reject
   with `not_identified` (no network) until `Clikgate.identifyUser({ customerId: userId })` was called. If the program requires
-  an identity token, the server answers `identity_required` until `identify` got a valid token.
+  an identity token, the server answers `identity_required` until `identifyUser` got a valid token.
 - Calls also reject with the core's `not_configured`, `opted_out` or `install_pending` (first install not
   recorded yet).
 - Reads (`myStats`, `top`, `me`, `aroundMe`) are cached in memory for 60 s per user; any write
@@ -402,7 +402,8 @@ Rules:
 
 **Share a link.** `share.link(url, {message?, app?, shareUrls?})` and
 `share.referralLink(link, {message?, app?})`: each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They go through the package's
-`ClikgateEngage` TurboModule (one method, over the native SDK's Engage features: `com.clikgate.engage` on
+`ClikgateEngage` TurboModule (`shareLink`, plus `savedLink` / `saveLink` for the referral link the native SDK keeps
+for the signed-in customer, so `createLink` without `displayName` answers at once, offline too; over the native SDK's Engage features: `com.clikgate.engage` on
 Android, `ClikgateEngage` in the `Clikgate` pod on iOS); without the native module they fail with
 `share_unavailable`. Behaviour as on [Android](android.md) and [iOS](ios.md).
 
@@ -464,11 +465,12 @@ then shows "“<App>” would like to paste from “<App>”" (Allow Paste / Don
 
 ## 6. Push token and uninstall tracking
 
-1. Turn on uninstall tracking in the dashboard.
+1. Turn on uninstall tracking in the dashboard (Settings › Features) and add the app's push credentials
+   (Connect › Apps › your app › Push credentials: an APNs key `.p8` for iOS, a Firebase service account JSON for Android).
 2. iOS: add the Push Notifications capability (the `aps-environment` entitlement) and keep the one forward line
    in your AppDelegate (below). `npx @clikgate/setup` adds both; on Expo the config plugin adds both on prebuild
    (section 7).
-3. Android: nothing, when Firebase Messaging (`@react-native-firebase/messaging`) is in the app.
+3. Android: nothing in the app, when Firebase Messaging (`@react-native-firebase/messaging`) is in the app.
 
 Users don't have to allow notifications. With `automaticPushToken` (default `true`), while uninstall tracking is
 on, tracking isn't opted out, the SDK version isn't blocked and consent allows it, the native SDK gets a push token
@@ -714,8 +716,9 @@ intended API change: `UPDATE_API_SNAPSHOT=1 npx jest publicApi`.
 ## 12. Removing the SDK
 
 See [react-native/README.md "Removing the SDK"](../react-native/README.md#removing-the-sdk): remove the
-calls and the package(s), the Expo plugin entry or the Associated Domains / intent filters / URL scheme,
-the push-token forwarding, and mark the app as no longer tracked in the Clikgate dashboard.
+calls and the package, the Expo plugin entry or the Associated Domains / intent filters / URL scheme,
+the push-token forwarding, then switch off **SDK enabled** under Connect › Apps › your app in the Clikgate dashboard
+(and remove its push credentials) so Clikgate stops sending silent check pushes.
 
 ## Existing users (2.1.1)
 
@@ -724,5 +727,5 @@ tracked**, not as installs, using the phone's own install date (no code needed).
 storage that the person used it before (for example a saved signed-in session), pass `Clikgate.configure({ existingUser: true })` to `configure`; it only
 counts when the phone's date can't be read. Call `identifyUser()` after sign-in **and at every app open when the user
 is already signed in**. `attribution.isExistingUser` is true for them (`status` is `organic`), and applying a referral
-code from such an installation fails with the existing-user error (code `existing_user`). Guide:
+code from such an installation rejects with `ExistingUserError` (a `ClikgateError` with code `existing_user`). Guide:
 https://clikgate.com/docs/existing-users

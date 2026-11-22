@@ -43,7 +43,7 @@ By hand: add the dependency and follow the sections below (configure, deep links
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^2.1.0
+  clikgate_flutter: ^2.1.6
 ```
 
 ## 2. Configure
@@ -244,8 +244,9 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
-  dropped.
+  Clikgate dashboard (Grow › Goals). A name with no goal behind it, or an archived goal, is stored
+  for 30 days but not counted (`GoalStatus.received`, reason `not_counted_yet` / `goal_archived`);
+  with **Allow unknown goal names** switched off, live calls are refused (`unknown_goal` / `goal_archived`).
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; an `int`, a `double` or a numeric `String` (pass a string for exact amounts: it reaches the native SDK as a decimal string, never a double; doubles Dart prints with an exponent are rejected). Whether a value is allowed or required, and how many decimal
   places the currency allows, is checked by the server (rejected goals are dropped and logged).
@@ -255,6 +256,8 @@ for the event (application number, order id, transaction reference).
   pass your own when you have one. A second goal with the same key and reference is ignored.
 - **isFirst** (optional): your statement that this is the customer's first such event (for
   "click to first purchase"). Clikgate never checks it against an identity.
+- **label** (optional): sets the person's label, like `identifyUser(label:)` (Growth and up; dropped in private
+  mode unless your organisation allows labels there).
 - Delivery: queued, batched and retried natively (the offline queue), attributed to the latest Clikgate link
   that opened the app, else the install. `goal()` is the only method for what happens in your app. Consent: while
   consent is required and `attribution` is unknown, goals wait on the device (up to 7 days); on deny
@@ -279,7 +282,7 @@ final result = await Clikgate.goal('purchase',
 // result.status == GoalStatus.waiting, result.reason == 'waiting_for_confirmation'
 ```
 
-- `Clikgate.goal(key, {value, currency, reference, provider, isFirst})` → `Future<GoalResult>`: `provider` is a payment provider: `ClikgateProvider.paystack`, `ClikgateProvider.mtnMomo`, … (`ClikgateProvider.values`), or `ClikgateProvider.fromString('newpay')` for a provider added after this SDK release
+- `Clikgate.goal(key, {value, currency, reference, provider, isFirst, label})` → `Future<GoalResult>`: `provider` is a payment provider: `ClikgateProvider.paystack`, `ClikgateProvider.mtnMomo`, … (`ClikgateProvider.values`), or `ClikgateProvider.fromString('newpay')` for a provider added after this SDK release
   (the server checks it and refuses unknown ones with `unknown_provider`).
 - **A Payment goal waits for its confirmation.** The app can't make a payment count. Clikgate counts it only
   when a trusted source confirms the same reference: your server right after its own verification (the server
@@ -320,7 +323,8 @@ final info = await Clikgate.referrals.referredBy();   // info.referred, info.ref
 ```
 
 `ClikgateException` has `code` (backend code or `not_configured`, `network_error`, `opted_out`,
-`invalid_argument`, `timeout`, `install_pending`, `unsupported_platform`, `feature_disabled`),
+`invalid_argument`, `timeout`, `install_pending`, `unsupported_platform`, `feature_disabled`, and
+`existing_user`, thrown as its subclass `ExistingUserException`),
 `message`, `status` (HTTP), `param`, `feature` (for `feature_disabled`) and `offlineTouchId`
 (Engage `codes.redeem`).
 
@@ -337,7 +341,7 @@ Read from the native SDK's cached config. Calls of a switched-off feature (core
 `referrals.*`, and every Engage call) throw `ClikgateException(code: 'feature_disabled',
 feature: ...)` without a network call (also when the server answers with its
 `feature_disabled` no-op body). Before the first config: `referrals`, `leaderboards`,
-`offline_codes`, `app_attribution` on, the rest off.
+`offline_codes`, `app_attribution` and `deep_linking` on, the rest off.
 
 ## 5d. Engage features (`package:clikgate_flutter/engage.dart`, apps without a backend)
 
@@ -389,7 +393,7 @@ Rules:
 - `createLink`, `myStats`, `me`, `aroundMe`, `setOptOut` and `hostedPageUrl` act for the user:
   `not_identified` (no network call) until `Clikgate.identifyUser` was called. Programs with
   `require_identity_token` answer `identity_required` from the server until a valid token was
-  passed to `identify`. `top` and `codes.redeem` don't need a user.
+  passed to `identifyUser`. `top` and `codes.redeem` don't need a user.
 - Reads (`myStats`, `top`, `me`, `aroundMe`) are cached in memory for 60 s per installation and
   user; writes (`createLink`, `setOptOut`, `redeem`) and `engage.clearCache()` drop the cache.
   Nothing is persisted. `hostedPageUrl` is never cached (short-lived token).
@@ -404,7 +408,7 @@ Rules:
 each app Clikgate knows gets its own version of the link (a short ending so Clikgate knows where you shared it), other apps get the plain link, and the share is recorded as a share count (the app and the link; no personal data, never a click). They use the native SDK's Engage share menu (the plugin's
 `com.clikgate/engage` channel, over `com.clikgate.engage` on Android and `ClikgateEngage` on iOS; everything else stays Dart),
 so the behaviour is the [Android](android.md) and [iOS](ios.md) one. With CocoaPods nothing extra is
-needed; the monorepo example substitutes the native SDK from `../../android`.
+needed; the monorepo example substitutes the native SDK from `../../../android` (see Native SDK dependency below).
 
 Share helper setup:
 
@@ -452,13 +456,14 @@ final c = await Clikgate.getConsent();   // c.required: true / false / null (unk
   `GoogleAdsOnDeviceConversion` pod in the app, the on-device measurement info goes with the first
   install. Call it before `configure`.
 - Google click ids (`gclid`, `gbraid`, `wbraid`) in Clikgate links and the Android install
-  referrer are picked up natively; nothing to do in Dart. LinkedIn `li_fat_id`, Snap `ScCid` and X `twclid` reach Clikgate
-  in the same links and referrer when your app passes ad click IDs. On iOS the Apple Ads token is requested
+  referrer are picked up natively; nothing to do in Dart. LinkedIn `li_fat_id`, Snap `ScCid` and X `twclid` in the same links
+  and referrer reach Clikgate unchanged, inside the launch / resolved URL. On iOS the Apple Ads token is requested
   when the install is sent (after consent when it is required) and never kept on the device.
 
 ## 6. Push token and uninstall tracking
 
-1. Turn on uninstall tracking in the dashboard.
+1. Turn on uninstall tracking in the dashboard (Settings › Features) and add the app's push credentials
+   (Connect › Apps › your app › Push credentials: APNs key `.p8` for iOS, Firebase service account JSON for Android).
 2. iOS: add the Push Notifications capability (the `aps-environment` entitlement; `npx @clikgate/setup` adds it).
    No AppDelegate code: the plugin is an application delegate and passes the APNs token to the SDK itself.
 3. Android: nothing, when `firebase_messaging` (Firebase Messaging) is in the app.
@@ -599,7 +604,7 @@ screen, `firebase_messaging` token registration (optional, below).
 | Invite link, share, stats | `GET /me/referral-link`, `/me/referral-stats` (the backend calls `/v1/referral-programs/{id}/referrers`) | `engage.referrals.createLink` / `myStats`, `engage.share.system` / `whatsApp` |
 | Weekly leaderboard (live ranks, "my rank", around me) | `GET /leaderboards/{id}`, `/me`, `/around-me` (backend calls `/v1/leaderboards/{id}/entries`, `/referrers/{id}`, `/entries/around/{id}`) | `engage.leaderboards.top` / `me` / `aroundMe`, plus the "hide me" switch (`setOptOut`) |
 | Promo codes | not in the app (a backend redeems with `POST /v1/codes/redeem`) | `engage.codes.redeem` screen |
-| "Buy something" | `POST /orders` → the `purchase` goal from the server (`POST /v1/goals/events`, credited to the installation from `getInstallationId()`) | `Clikgate.goal('purchase', …)` from the app |
+| "Buy something" | `POST /orders` → the `purchase` goal from the server (`POST /v1/goals/events`, credited to the signed-in customer ID; the sample backend also accepts an `installation_id` from `getInstallationId()`) | `Clikgate.goal('purchase', …)` from the app |
 
 The screens are shared: they use a small `ReferralFeatures` interface
 (`lib/src/variants/features.dart`) with `BackendFeatures` (package `http`) and `EngageFeatures`

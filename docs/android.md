@@ -18,7 +18,7 @@ promo codes and share helpers are **not** in it:
 // app/build.gradle.kts
 dependencies {
     // Includes the Engage features (com.clikgate.engage) for apps without a backend; R8 drops them if unused.
-    implementation("com.clikgate:clikgate-android:2.1.0")
+    implementation("com.clikgate:clikgate-android:2.1.6")
     // Optional, only if you enable Play Integrity attestation:
     // implementation("com.google.android.play:integrity:1.6.0")
 }
@@ -133,7 +133,7 @@ Clikgate.onDeepLink { link ->
     // link.path, link.data, link.isDeferred, link.matchType, link.link, link.referral
     when {
         link.referral != null -> showReferralWelcome(link.referral!!)
-        link.path?.startsWith("/products/") == true -> openProduct(link.data["product_id"])
+        link.path?.startsWith("/products/") == true -> openProduct(link.data["product_id"] as? String)
     }
 }
 ```
@@ -147,7 +147,7 @@ Clikgate.onDeepLink { link ->
   redirect, so the SDK asks the server first. A password link opens in the browser app (the password page;
   `onDeepLink` isn't called). A link blocked for the visitor's country (or by a block rule) arrives with
   `link.blockMessage` set and no `path`, `clickId` or `link`: show the text and don't route
-  (`if (link.blockMessage != null) { showNotice(link.blockMessage); return@onDeepLink }`).
+  (`link.blockMessage?.let { showNotice(it); return@onDeepLink }`).
 
 **App link subdomain.** Your app opens links from its own link subdomain (`yourapp.ciz.to`,
 shown in the dashboard under Connect › Apps › your app › Link subdomain), its test subdomain `yourapp.dev.ciz.to` (debug
@@ -164,7 +164,7 @@ app's own subdomain, not the shared domain `ciz.ng`, so declare it like `yourapp
 Basic install attribution (which link, campaign or creator brought each install) and goals work on every plan, up to
 the plan's allowance; re-engagement and the advanced app reports need Growth. Only when attribution is
 switched off for the app does the SDK run in deep-link-only mode: `Clikgate.goal(...)` then logs one warning and does
-nothing (no error, nothing is sent), and attribution reads `organic`. `Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION)` tells you which mode the app is in.
+nothing (nothing is sent; `onResult` gets `REFUSED` with `feature_disabled`), and attribution reads `organic`. `Clikgate.isFeatureEnabled(ClikgateFeatures.APP_ATTRIBUTION)` tells you which mode the app is in.
 Once the monthly deferred deep link allowance is used, new installs open your home screen: the SDK gets its normal
 "no deferred link" result, never an error. Links that open your app for people who already have it are sent with
 the click they came from, so one tap is one click.
@@ -319,7 +319,7 @@ confirmation, so pass `reference` and `provider`; a `value` sent from the app is
 | `GoalStatus.COUNTED` | Counted. |
 | `GoalStatus.WAITING` | Stored, not counted yet: `reason = "waiting_for_confirmation"` for a Payment goal until it's confirmed. |
 | `GoalStatus.RECEIVED` | Stored, not counted: the name isn't ticked as a goal in the dashboard yet (`reason = "not_counted_yet"`; "Seen from your app and website" › "Count this as a goal") or the goal is archived (`goal_archived`). A success: never retried. |
-| `GoalStatus.REFUSED` | Not counted. `reason` is the server's code (`unattributed`, `goal_not_found`, `payment_goal_needs_confirmation` when a Payment goal is missing `provider` or `reference`, `unknown_goal` when the business has switched off "Allow unknown goal names" and the name isn't set up (final, never retried; debug builds log "Goal `{name}` isn't set up in Clikgate"), ...) or, on the device, `invalid_argument`, `feature_disabled` (deep-link-only plan), `opted_out`, `consent_denied` or `sdk_version_blocked`. |
+| `GoalStatus.REFUSED` | Not counted. `reason` is the server's code (`unattributed`, `goal_not_found`, `payment_goal_needs_confirmation` when a Payment goal is missing `provider` or `reference`, `unknown_goal` when the business has switched off "Allow unknown goal names" and the name isn't set up (final, never retried; debug builds log "Goal `{name}` isn't set up in Clikgate"), ...) or, on the device, `invalid_argument`, `feature_disabled` (deep-link-only mode), `opted_out`, `consent_denied` or `sdk_version_blocked`. |
 
 `result.goalKind` (`GoalKind.STANDARD` / `PAYMENT`) and `result.valueIgnored` come from the server.
 `onResult` runs on the main thread once Clikgate has answered; while the device is offline the goal
@@ -336,8 +336,9 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
-  dropped.
+  Clikgate dashboard (Grow › Goals). A name that isn't a goal yet, or an archived goal, is stored but
+  not counted (`RECEIVED`); with "Allow unknown goal names" switched off, an unknown name is
+  `REFUSED` (`unknown_goal`).
 - **Value** (optional): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `BigDecimal` (never a `Double`), sent as a decimal string. Whether a value is allowed or required, and how many decimal
   places the currency allows, is checked by the server (rejected goals are dropped and logged).
@@ -347,6 +348,8 @@ for the event (application number, order id, transaction reference).
   pass your own when you have one. A second goal with the same key and reference is ignored.
 - **isFirst** (optional): your statement that this is the customer's first such event (for
   "click to first purchase"). Clikgate never checks it against an identity.
+- **label** (optional): sets the person's label, like `identifyUser(label = ...)` (Growth and up;
+  dropped in private mode unless your organisation allows labels there).
 - Delivery: queued (SQLite, ≤ 1000 / 1 MB), batched (at 20, every 15 s in foreground, on background and on start)
   and retried (WorkManager offline), attributed to the latest Clikgate link that opened the app, else the install.
   `goal()` is the only method for what happens in your app. Consent: while
@@ -709,7 +712,7 @@ SDK leaves them unused in the app's data directory (delete them on first launch 
 | `Clikgate.handleUrl(uri / url): Boolean` | URLs from other sources (QR codes) |
 | `Clikgate.onDeepLink { }` | single listener, buffered |
 | `Clikgate.attribution { }` / `awaitAttribution()` | |
-| `Clikgate.goal(key, value?, currency?, reference?, provider?, isFirst?, onResult?)` | `value` is a `BigDecimal`; `provider` a `Provider`; `onResult` gets a `GoalResult` |
+| `Clikgate.goal(key, value?, currency?, reference?, provider?, isFirst?, label?, onResult?)` | `value` is a `BigDecimal`; `provider` a `Provider`; `onResult` gets a `GoalResult` |
 | `Clikgate.onBrowserHandoff(listener?)` | 1.4.0; another organisation's shared-domain link opened in Custom Tabs |
 | `Clikgate.identifyUser(label?, customerId?, identityToken?)` | customer ID dropped in private mode, label only when allowed; [identify-users](https://clikgate.com/docs/identify-users) |
 | `Clikgate.getInstallationId(): String?` (suspend) / `getInstallationId(listener)` | identity Path B; null when tracking is off |
