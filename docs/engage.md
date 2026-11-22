@@ -5,7 +5,7 @@ platform):
 
 | Layer | Where | What it does |
 |---|---|---|
-| **Core SDK** | `com.clikgate:clikgate-android`, `Clikgate` (SPM product / pod), `clikgate_flutter`, `@clikgate/react-native` | Only what must happen on the device: installation id, first launch / reinstall / opens, Play Install Referrer, pasteboard token, deep links (direct + deferred), events with an offline queue, `identify`, push token + uninstall-check filtering, attestation, SKAN values, Apple Search Ads token, opt-out, feature switches, and the referee-side referral calls `referrals.applyCode` / `referrals.referredBy`. |
+| **Core SDK** | `com.clikgate:clikgate-android`, `Clikgate` (SPM product / pod), `clikgate_flutter`, `@clikgate/react-native` | Only what must happen on the device: installation id, first launch / reinstall / opens, Play Install Referrer, pasteboard token, deep links (direct + deferred), goals with an offline queue, `identifyUser`, push token + uninstall-check filtering, attestation, Apple Ads token, opt-out, feature switches, and the referee-side referral calls `referrals.applyCode` / `referrals.referredBy`. |
 | **Engage features** (use them only without a backend) | In the same packages: `com.clikgate.engage` (Android), the `ClikgateEngage` module of the `Clikgate` SPM product (`import ClikgateEngage`; with CocoaPods it's in the `Clikgate` module, so wrap it in `#if canImport(ClikgateEngage)` to build with both), `package:clikgate_flutter/engage.dart` (Dart, plus the plugin's share-menu channel), `ClikgateEngage` exported by `@clikgate/react-native` (TypeScript, plus a share-menu TurboModule) | Convenience reads and actions for apps **without their own backend**: the user's referral link, "my referral stats", leaderboards (top / me / around me / opt-out / hosted page URL), promo/offline code redemption, share helpers (share a link with a version per app, system share sheet, WhatsApp). |
 
 Engage uses the core, never the other way round: the core code never calls Engage, and an app that
@@ -17,7 +17,7 @@ ranking, rewards, fraud).
 
 **Your app has a backend → don't use Engage.** This is the recommended path in every guide:
 
-1. The app uses the core SDK (deep links, attribution, events, `identify`, apply code /
+1. The app uses the core SDK (deep links, attribution, goals, `identifyUser`, apply code /
    referred-by, push token).
 2. Your backend calls the Clikgate control-plane API with an API key and returns what your screens
    need:
@@ -73,7 +73,7 @@ rewards, server events for confirmed purchases) and identity checks.
   `leaderboards`, `offline_codes`) and fails with `feature_disabled` without a network call.
 - **Identity.** Calls on behalf of a user (link, stats, my rank, around me, opt-out, hosted page)
   need `Clikgate.identifyUser(...)` first (`not_identified` otherwise, no network call). Programs with
-  `require_identity_token` answer `identity_required` until `identify` got a valid identity token
+  `require_identity_token` answer `identity_required` until `identifyUser` got a valid identity token
   from a backend, so apps without one should leave `require_identity_token` off.
 - **Caching.** Read results are kept in memory for 60 s (per installation, user and request);
   nothing is written to disk. Writes (`createLink`, `setOptOut`, `redeem`) clear the cache, and

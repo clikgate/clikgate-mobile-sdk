@@ -19,7 +19,7 @@ Requirements:
 
 ## 1. Podfile
 
-Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.1.0`, which includes the Engage features) from CocoaPods
+Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.1.6`, which includes the Engage features) from CocoaPods
 trunk. Set the platform to at least what your other plugins need:
 
 ```ruby
@@ -72,7 +72,8 @@ Add to `ios/Runner/Info.plist` (or use **Info → URL Types**):
 
 ## 4. Push (uninstall tracking)
 
-1. Turn on uninstall tracking in the dashboard.
+1. Turn on uninstall tracking in the dashboard (Settings › Features) and add the APNs key (`.p8`) under
+   Connect › Apps › your app › Push credentials.
 2. **Signing & Capabilities → + Push Notifications** (the `aps-environment` entitlement; `npx @clikgate/setup`
    adds it). Background Modes → Remote notifications is not needed for uninstall checks: the check reads APNs'
    reply, not delivery.
@@ -166,5 +167,5 @@ Info.plist entry; when WhatsApp isn't installed the system share sheet is shown 
 
 ## 8. Releasing
 
-The published plugin's podspec depends on `Clikgate ~> 2.1.0` from trunk, so release the iOS SDK
+The published plugin's podspec depends on `Clikgate ~> 2.1.6` from trunk, so release the iOS SDK
 (`ios-v<version>` tag → CocoaPods trunk + SPM mirror) **before** publishing a plugin version that needs it.

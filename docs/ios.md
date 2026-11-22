@@ -16,7 +16,7 @@ features** (`ClikgateEngage`, section 7b), which ship in the same package. See [
 ## 1. Install
 
 **Swift Package Manager**: add `https://github.com/clikgate/clikgate-ios-sdk` (the SPM mirror: `Package.swift`,
-`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.1.0`, and link the `Clikgate` product. It contains two modules: `Clikgate` (core) and
+`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.1.6`, and link the `Clikgate` product. It contains two modules: `Clikgate` (core) and
 `ClikgateEngage` (the Engage features, section 7b; `import ClikgateEngage` only if you use them).
 
 **CocoaPods**
@@ -227,8 +227,9 @@ answer in time it returns `.pending`; the deferred deep link still arrives on `o
 
 Off by default since 1.2.0: the SDK touches the pasteboard only when you set `pasteboardMode` to
 `.automatic` or `.pasteControlOnly` **and** clipboard deferred linking is switched on for the app in the
-dashboard (`pasteboard_matching`, per app, off by default). Probabilistic matching never runs on iOS, so
-without it a deferred deep link needs a Universal Link, Apple Search Ads or a code.
+dashboard (Connect › Deep linking › Link behaviour › "iOS interstitial: pasteboard matching"; `pasteboard_matching`,
+per app, off by default). Probabilistic matching never runs on iOS, so
+without it a deferred deep link needs a Universal Link, Apple Ads or a code.
 
 The landing page copies `https://<link domain>/_cg/p/cgdl_…` only after the user taps **Open in app**.
 On the first launch only:
@@ -253,13 +254,13 @@ view.addSubview(paste)
 step saw (`pasteboard_outcome`; never the pasteboard contents), so the dashboard can show the app's iPhone
 match rate:
 
-- **Token found**: the link the landing page copied was on the pasteboard.
-- **Didn't tap Open in app** (`no_link`): no link was on the pasteboard, so nothing was read.
-- **Something else was copied** (`no_token`): the pasteboard held something, but not a Clikgate link.
-- **Declined paste** (`denied`): the user tapped **Don't Allow** on the paste prompt.
-- **Paste button** (`paste_control`): `.pasteControlOnly`, no automatic read; a tap on the Paste button can
+- **Matched from the clipboard** (`token_found`): the link the landing page copied was on the pasteboard.
+- **Didn't tap Open in app** (`no_link`; or copied something else first): no link was on the pasteboard, so nothing was read.
+- **Something else was on the clipboard** (`no_token`): the pasteboard held something, but not a Clikgate link.
+- **Declined the paste prompt** (`denied`): the user tapped **Don't Allow** on the paste prompt.
+- **Waiting for the Paste button** (`paste_control`): `.pasteControlOnly`, no automatic read; a tap on the Paste button can
   still match later.
-- **Token expired** (worked out by the server): a token was sent but had expired or was already used.
+- **Link token expired or already used** (worked out by the server): a token was sent but had expired or was already used.
 
 Nothing is sent with `.off`, when the dashboard setting is off, or when the user opted out or denied
 consent. How it works end to end: https://clikgate.com/docs/deferred-deep-links-iphone
@@ -389,7 +390,7 @@ postback copies, add to `Info.plist`:
 - AdAttributionKit: the `AdAttributionKit` dictionary with `AttributionCopyEndpoint` = `https://<your Clikgate domain>`.
 - SKAdNetwork: `NSAdvertisingAttributionReportEndpoint` = `https://<your Clikgate domain>`.
 
-**Apple Ads.** Turn it on in the dashboard (the setting is still called `apple_search_ads` in the API); there is no SDK switch. The SDK requests the AdServices token (iOS 14.3+) when it sends the install, so after the consent grant when consent is required, requests a new one if 24 hours passed since it was fetched, and keeps nothing on the device after sending. It isn't requested when attribution consent is denied. With identity-check consent the install also carries the IDFV, so Clikgate can link an Apple Ads redownload to the earlier install. No ATT prompt is involved.
+**Apple Ads.** Turn it on in the dashboard (Settings › Features for the organisation, then **Apple Ads attribution** under Connect › Apps › your app; the setting is still called `apple_search_ads` in the API); there is no SDK switch. The SDK requests the AdServices token (iOS 14.3+) when it sends the install, so after the consent grant when consent is required, requests a new one if 24 hours passed since it was fetched, and keeps nothing on the device after sending. It isn't requested when attribution consent is denied. With identity-check consent the install also carries the IDFV, so Clikgate can link an Apple Ads redownload to the earlier install. No ATT prompt is involved.
 
 ## 6a. Send goals: one `goal()` method
 
@@ -442,8 +443,8 @@ phone numbers, account numbers or user ids in the key or the reference: `referen
 for the event (application number, order id, transaction reference).
 
 - **Key:** snake_case, 2–40 characters (`^[a-z][a-z0-9_]*$`), one of the goals defined in the
-  Clikgate dashboard (Grow › Goals). An unknown or archived goal is rejected by the server and
-  dropped.
+  Clikgate dashboard (Grow › Goals). An unknown or archived goal is refused by the server (and dropped)
+  only when "Allow unknown goal names" is off; otherwise it comes back `.received` (see above).
 - **Value** (optional, Standard goals): normal units, never kobo or cents (₦2,000,000 is `2000000`), ≥ 0, at most
   15 significant digits; a `Decimal` (never a `Double`: build it from a string or an integer literal), sent as a decimal string. Whether a value is allowed or required, and how many decimal
   places the currency allows, is checked by the server (rejected goals are dropped and logged).
@@ -500,7 +501,7 @@ if Clikgate.shared.isFeatureEnabled(ClikgateFeatures.referrals) { showEnterCodeF
 ```
 
 - Before the first config fetch, and for keys an older server doesn't send, `referrals`,
-  `leaderboards`, `offline_codes` and `app_attribution` count as on; everything else is off.
+  `leaderboards`, `offline_codes`, `app_attribution` and `deep_linking` count as on; everything else is off.
   Unknown keys are off.
 - A call to a switched-off feature throws `ClikgateError` `feature_disabled` (with `feature` set)
   **without a network call**. You only need `isFeatureEnabled` to hide UI.
@@ -581,7 +582,8 @@ Details:
 
 ## 8. Push tokens and uninstall tracking
 
-1. Turn on uninstall tracking in the dashboard.
+1. Turn on uninstall tracking in the dashboard (Settings › Features) and add your APNs key (.p8) under
+   Connect › Apps › your app › Push credentials.
 2. **Signing & Capabilities → Push Notifications** (the `aps-environment` entitlement; `npx @clikgate/setup`
    adds it). Background Modes → Remote notifications is not needed: the check reads APNs' reply, not delivery.
 3. Keep the one forward line. Users don't have to allow notifications: with `automaticPushToken` (default
@@ -656,7 +658,7 @@ xcodebuild test -scheme Clikgate-Package -destination 'platform=iOS Simulator,na
 # or, without booting a simulator (host Mac Catalyst run of the same unit tests, core + Engage):
 xcodebuild test -scheme Clikgate-Package -destination 'platform=macOS,variant=Mac Catalyst'
 ./scripts/check_api.sh                  # public-API snapshots + core/Engage boundary (--update to accept)
-./scripts/check_size.sh                 # size budgets: core < 410 KB, Engage < 80 KB
+./scripts/check_size.sh                 # size budgets: core < 410 KB, Engage < 95 KB
 ./scripts/build_xcframework.sh          # build/xcframework/{Clikgate,ClikgateEngage}.xcframework + size report
 pod lib lint Clikgate.podspec --allow-warnings
 ```

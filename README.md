@@ -2,7 +2,8 @@
 
 This repository holds the **mobile SDKs + setup command**: the Android, iOS, Flutter and React Native
 SDKs (Apache 2.0), and `npx @clikgate/setup` in [`cli/`](cli) (MIT), which installs and configures them
-in an app project. The server SDKs and AI guides are in `clikgate_sdks`.
+in an app project. The server SDKs and AI guides are in
+[clikgate/clikgate-sdks](https://github.com/clikgate/clikgate-sdks).
 
 Deep linking, deferred deep linking, install attribution, referrals and uninstall tracking for
 apps that use [Clikgate](https://clikgate.com) links. The SDKs talk to the
@@ -40,7 +41,7 @@ call Engage don't ship it (R8, the linker and Dart tree-shaking drop it).
 
 `npx @clikgate/setup` sets up Clikgate in a Flutter, React Native, Expo, Android or iOS app project
 (the SDK dependency, start-up code, app links on the app's link subdomain and custom domains, with the test subdomain in debug builds only), and
-`npx @clikgate/setup doctor` checks one. It moved here from `clikgate_sdks` on 2026-10-26 because it
+`npx @clikgate/setup doctor` checks one. It lives in this repository because it
 writes these SDKs' versions and configure snippets, so an SDK change and the matching command change
 land in one PR. `scripts/check_cli_sdk_versions.mjs` fails when the versions in
 `cli/src/constants.ts` drift from `android/gradle.properties`, `ios/Clikgate.podspec`,
@@ -192,8 +193,8 @@ Native; the `Clikgate.browserHandoffNotification` notification on iOS). Option `
   debug builds use `yourapp.dev.ciz.to` on every plan. The setup command and `doctor` handle both. An app
   subdomain under `ciz.ng` is not a shared domain.
 - Basic install attribution and goals work on every plan, up to the plan's allowance. Only when
-  attribution is switched off for the app (deep-link-only mode) does `goal()` log one warning and do nothing (no
-  error); attribution reads `organic`.
+  attribution is switched off for the app (deep-link-only mode) does `goal()` log one warning and send nothing
+  (no exception; the result is `refused` with reason `feature_disabled`); attribution reads `organic`.
 - At the monthly deferred deep link allowance the SDK gets the normal "no deferred link" result (the app opens
   its home screen), never an error.
 
@@ -210,7 +211,8 @@ Each guide has a "Removing the SDK" section: [Android](docs/android.md#12-removi
 [iOS](docs/ios.md#11-removing-the-sdk), [Flutter](flutter/README.md#removing-the-sdk),
 [React Native](react-native/README.md#removing-the-sdk). In short: remove the dependency, `configure` and
 every call, the Associated Domains / intent filters / URL schemes, and push-token forwarding (uninstall
-tracking), then mark the app as no longer tracked in the Clikgate dashboard.
+tracking), then switch off **SDK enabled** under Connect › Apps › your app in the Clikgate dashboard (and remove
+its push credentials).
 
 ## Shared contract
 
@@ -256,6 +258,6 @@ This repository has mixed licences:
   `flutter/` and `react-native/` for their packages. The Android POM,
   the podspecs and the SDK `package.json` files declare `Apache-2.0`.
 - **MIT** for the setup command in `cli/`: [cli/LICENSE](cli/LICENSE), and `"license": "MIT"` in
-  `cli/package.json` (it kept its licence when it moved here from `clikgate_sdks`).
+  `cli/package.json`.
 
-The server SDKs and AI guides in `clikgate_sdks` are MIT.
+The server SDKs and AI guides in [clikgate/clikgate-sdks](https://github.com/clikgate/clikgate-sdks) are MIT.

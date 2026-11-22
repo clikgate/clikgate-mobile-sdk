@@ -54,5 +54,5 @@ The sample shows both; your app needs one.
 
 ## Plugin version
 
-`pubspec.yaml` uses the plugin from this repository (`path: ../../flutter`), so the sample works before the next
-version is published. At release, change it to `clikgate_flutter: ^2.1.6`.
+`pubspec.yaml` uses the plugin from this repository (`path: ../../flutter`), so the sample always matches the code
+here. In your own app, depend on the published package: `clikgate_flutter: ^2.1.6`.

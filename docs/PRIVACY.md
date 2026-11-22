@@ -78,7 +78,7 @@ prevention.
 
 Since SDK 1.2.0 Clikgate never runs probabilistic matching for iOS installs, and the iOS SDK 1.2.0 no
 longer collects any signal used only for it (screen size) or any device-configuration probe (jailbreak
-checks). iOS attribution is deterministic only: link click ids, Apple Search Ads, SKAdNetwork /
+checks). iOS attribution is deterministic only: link click ids, Apple Ads, SKAdNetwork /
 AdAttributionKit, the opt-in clipboard token and the app's own user identity (no IDFA). On Android it additionally needs attribution consent and a window of at most
 24 hours; the rest of this section describes it.
 

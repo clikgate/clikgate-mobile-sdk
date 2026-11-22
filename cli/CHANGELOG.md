@@ -89,7 +89,7 @@
   and doctor passes it. Offline mode accepts `--domain yourapp.ciz.ng` and derives `yourapp.dev.ciz.to` for debug
   builds. Prompts and messages name the plan's parent (`ciz.to` or `ciz.ng`) from the server's `link_hostnames`.
 
-- **App links on the app's own subdomain (N.1).** Release builds get the hosts in the app's
+- **App links on the app's own subdomain.** Release builds get the hosts in the app's
   `app_link_domains.release` (`yourapp.ciz.to` plus the organisation's active custom domains), debug builds
   also `app_link_domains.debug` (`yourapp.dev.ciz.to`). Never a shared domain (`ciz.to`, `ciz.ng`,
   `dev.ciz.to`), on iOS entitlements and Android intent filters alike. Each platform's files get only its own
@@ -106,7 +106,7 @@
   `domains[]` holds the app's subdomains (their AASA / assetlinks must contain the app), and
   `clikgate.<platform>.link_subdomain` fails while the subdomain is unconfirmed (`link_subdomain_not_confirmed`).
   The `not_listed_on_shared_domain` and `shared_domain_file_full` fixes are removed.
-- **Device sign-in (N.3):** prints that the approval page asks for the authenticator code when the account uses
+- **Device sign-in:** prints that the approval page asks for the authenticator code when the account uses
   two-factor; after a minute of waiting, reminds the person to approve in the browser. Polling is unchanged.
 - Writes the 1.5.0 SDKs: `clikgate_flutter ^1.5.0`, `@clikgate/react-native ^1.6.0`,
   `com.clikgate:clikgate-android:1.5.0`, `pod 'Clikgate', '~> 1.5'`.

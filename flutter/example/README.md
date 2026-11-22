@@ -28,10 +28,11 @@ flutter run \
 # engage variant: the same with --dart-define=CLIKGATE_VARIANT=engage (no SAMPLE_BACKEND_URL)
 ```
 
-Push is optional: add `--dart-define=FIREBASE_API_KEY=… FIREBASE_APP_ID=… FIREBASE_MESSAGING_SENDER_ID=… FIREBASE_PROJECT_ID=…`.
+Push is optional: add `--dart-define=FIREBASE_API_KEY=… --dart-define=FIREBASE_APP_ID=… --dart-define=FIREBASE_MESSAGING_SENDER_ID=… --dart-define=FIREBASE_PROJECT_ID=…`.
 Without them the app runs and skips push (no `google-services.json` needed).
 
-On Android the native SDK is built from `../../android` (Gradle composite build, see
+On Android the native SDK is built from the repository's `android/` folder (`../../../android` from
+`flutter/example/android`; Gradle composite build, see
 `android/settings.gradle.kts`).
 
 Try a direct link on the emulator:
@@ -43,7 +44,7 @@ adb shell am start -a android.intent.action.VIEW -d "https://inv.myapp.com/p/dre
 Tests:
 
 ```sh
-flutter test        # widget tests of both variants (backend_variant_test, engage_variant_test, core_screens_test)
+flutter test        # widget tests of both variants (backend_variant_test, engage_variant_test, core_screens_test, consent_screen_test, clikgate_fake_test)
 flutter test integration_test --dart-define=CLIKGATE_API_BASE_URL=http://10.0.2.2:8000 --dart-define=CLIKGATE_SDK_KEY=cg_sdk_...
 ```
 
@@ -55,7 +56,8 @@ The integration tests are skipped unless `CLIKGATE_API_BASE_URL` is defined.
 - `lib/src/variants/features.dart`: the `ReferralFeatures` interface the screens use;
   `backend_features.dart` (HTTP to the sample backend) and `engage_features.dart` (`package:clikgate_flutter/engage.dart`).
 - `lib/src/screens.dart` (home, sign-in, invite, apply code, product, welcome),
-  `leaderboard.dart`, `promo_code.dart` (Engage only), `push.dart` (`firebase_messaging`).
+  `leaderboard.dart`, `promo_code.dart` (Engage only), `consent.dart`, `push.dart` (`firebase_messaging`).
+- `lib/src/config.dart`: the `--dart-define` values and their defaults.
 
 ## iOS signing
 

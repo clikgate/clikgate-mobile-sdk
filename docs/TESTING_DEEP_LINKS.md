@@ -27,8 +27,7 @@ use App Attest development keys.
 5. Re-run first-launch flows: `POST /v1/apps/{id}/sandbox/reset-installation
    {"installation_id": "..."}`, then uninstall/reinstall the app (or clear its data).
 
-Local backend: run the Clikgate backend (`make dev`, `make dev-redirect`, `make worker`, `make ingest`) and
-point the SDK at it with `apiBaseUrl` (Android emulator: `http://10.0.2.2:8000`; iOS
+Another backend (for example a local one): point the SDK at it with `apiBaseUrl` (Android emulator: `http://10.0.2.2:8000`; iOS
 simulator: `http://localhost:8000`). Universal Links / App Links need a real HTTPS domain; for
 local link tests use the custom scheme or `adb shell am start` / `xcrun simctl openurl`.
 
@@ -75,7 +74,8 @@ curl -s https://sdk.clikgate.com/v1/sdk/install -H "Clikgate-SDK-Key: $SDK_KEY" 
 ```
 
 **iOS (pasteboard).** Needs `pasteboardMode: .automatic` or `.pasteControlOnly` in the app **and**
-the app's dashboard setting `pasteboard_matching = on_interstitial_tap` (off by default). Open the
+the app's dashboard setting `pasteboard_matching = on_interstitial_tap` (off by default; Connect › Deep linking ›
+Link behaviour › "iOS interstitial: pasteboard matching"). Open the
 link in Safari without the app installed → interstitial → tap "Open in app" (copies a
 `https://<domain>/_cg/p/cgdl_...` link) → install (TestFlight / Xcode) → first launch. On iOS 16+ the
 system asks to allow paste (or use `ClikgatePasteControl`, which needs no prompt). Expect
@@ -95,7 +95,7 @@ To see each one (delete the app between runs; the paste step runs on the first l
 | (not sent) | `pasteboardMode: .off`, the dashboard setting off, or tracking/consent denied |
 
 **iOS never uses probabilistic matching.** The redirect collects no iOS signals and the
-probabilistic setting is rejected (422) for iOS apps. Without a Universal Link, Apple Search Ads, a
+probabilistic setting is rejected (422) for iOS apps. Without a Universal Link, Apple Ads, a
 pasteboard token or a code, an iOS install is organic and the app opens on its home screen.
 Probabilistic matching is Android only, opt-in and consented (see [PRIVACY.md](PRIVACY.md)).
 
@@ -115,7 +115,7 @@ Probabilistic matching is Android only, opt-in and consented (see [PRIVACY.md](P
    response carries `referral` with `status = installed`; webhook `referral.created`.
 4. On device B: sign up → `identifyUser()`, `goal("sign_up")`, `goal("purchase", reference, provider)` (ticked as goals in the dashboard); watch
    `referral.step_completed`, then `referral.holding`.
-5. Hold: the worker's `referral_hold_evaluator` qualifies it after `hold_until` if the referee is
+5. Hold: Clikgate qualifies it after `hold_until` if the referee is
    still installed and was active on `min_active_days` distinct days → `referral.qualified`.
 6. Manual code entry: install without a link, then `referrals.applyCode(programId, "CODE")`.
 7. Self-referral: install on a second device signed in as the referrer → `referral.rejected`
