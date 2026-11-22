@@ -1,6 +1,6 @@
 # Setup command (`npx @clikgate/setup`)
 
-Source: `cli/` in this repository (`clikgate_mobile_sdk`; it moved here from `clikgate_sdks` on 2026-10-26). Licence: **MIT** (`cli/LICENSE`), unlike the mobile SDKs in this repository, which are Apache 2.0.
+Source: `cli/` in this repository. Licence: **MIT** (`cli/LICENSE`), unlike the mobile SDKs in this repository, which are Apache 2.0.
 
 The command sets up Clikgate in a Flutter, React Native, Expo, native Android or native iOS app project. It shows every change as a diff and asks once before writing anything. It only ever uses the **test** SDK key. App links use the app's own **link subdomain** (`yourapp.ciz.to`, or `yourapp.ciz.ng` on the Free plan, and `yourapp.dev.ciz.to` in **debug builds only**) plus the organisation's verified custom domains, never a shared domain.
 
@@ -224,7 +224,7 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
 | `flutter` `package` / `minimum` / `constraint` (`^version`) | `flutter/pubspec.yaml` `name` / `version` |
 | `reactNative` `package` / `minimum` / `constraint` (`^version`) | `react-native/package.json` `name` / `version` |
 
-`node scripts/check_cli_sdk_versions.mjs` (or `cd cli && npm run check:sdk-versions`) fails when they drift; it also checks `CLI_VERSION` against `cli/package.json` and against the Flutter runner's `setup_binaries.g.dart` (version, and the checksums when the binaries are built). CI runs it (`cli.yml` › `sdk-versions`, and before every `cli-release.yml` publish). So an SDK release that bumps a version bumps `cli/src/constants.ts`, the CLI's snapshots (`cd cli && npm run test:update`, then review), this page, and the CLI changelog in the same change. The AI guides in `clikgate_sdks` (`ai-guides/versions.json`) are checked against the same constants there.
+`node scripts/check_cli_sdk_versions.mjs` (or `cd cli && npm run check:sdk-versions`) fails when they drift; it also checks `CLI_VERSION` against `cli/package.json` and against the Flutter runner's `setup_binaries.g.dart` (version, and the checksums when the binaries are built). CI runs it (`cli.yml` › `sdk-versions`, and before every `cli-release.yml` publish). So an SDK release that bumps a version bumps `cli/src/constants.ts`, the CLI's snapshots (`cd cli && npm run test:update`, then review), this page, and the CLI changelog in the same change. The AI guides in [clikgate/clikgate-sdks](https://github.com/clikgate/clikgate-sdks) (`ai-guides/versions.json`) are checked against the same constants there.
 
 ## Tests and CI
 
@@ -263,26 +263,9 @@ The SDK's own `linkDomains` include the test subdomain only in debug builds too:
 
 Fixtures are trimmed to the files the command reads or edits: no build outputs, `node_modules`, images or Gradle wrappers. The two Android Studio fixtures keep the template's resources (themes, strings, launcher icons, `backup_rules.xml`, `data_extraction_rules.xml`) because CI builds them.
 
-## Publishing (owner actions)
+## Publishing
 
-**One-time first publish.** npm configures a trusted publisher on the package's settings page, so the package must exist first. A new trusted-publisher configuration must complete a successful publish within 2 days.
-
-1. Create the npm organisation **`clikgate`** (the `@clikgate` scope doesn't exist on npm yet, as of 2026-10-26). Enable 2FA for publishing.
-2. From a clean checkout of this repository, with an owner account: `node scripts/check_cli_sdk_versions.mjs && cd cli && npm ci && npm test && npm run build && npm publish --access public` (version `1.0.0`). This first publish has no provenance; every later one does.
-3. On npmjs.com › `@clikgate/setup` › Settings › Trusted publishing, add GitHub Actions with organisation `clikgate`, repository **`clikgate-mobile-sdk`**, workflow `cli-release.yml` and environment `npm`. The `npm` environment already exists in this repository for the React Native releases; add required reviewers if wanted.
-4. Then set "Publishing access" to "Require two-factor authentication and disallow tokens", so only the workflow can publish.
-5. Later releases: bump `cli/package.json` `version` and `CLI_VERSION` in `cli/src/constants.ts`, update the changelog, run `node scripts/check_cli_sdk_versions.mjs`, then tag `cli-v<version>` and push it. Release the SDK versions the command writes first, so `npx @clikgate/setup` never installs an unpublished version.
-
-**Look-alike names to reserve**. Publish a placeholder `0.0.1` under each, with a README that says "Use `npx @clikgate/setup`" and points to the docs, then deprecate it with `npm deprecate <name> "Use npx @clikgate/setup"`:
-
-- `clikgate-setup` (unscoped; same as the bin name);
-- `@clikgate/cli`;
-- `clikgate` (unscoped);
-- optionally `@clikgate/init` and `create-clikgate`, the usual "npm init" names.
-
-All five were free on 2026-10-26. Don't publish the `@clikgate/react-native` placeholder here: it belongs to the mobile SDK release.
-
-**Also before launch:**
-
-- The packages the command installs must be live: `clikgate_flutter` on pub.dev, `clikgate_flutter` 2.1.0, `@clikgate/react-native` 2.1.0 on npm, `com.clikgate:clikgate-android` 2.1.0 on Maven Central, `Clikgate` 2.1.0, and the `Clikgate` pod / SPM mirror. Until then, use `--no-install` in demos.
-- Run the command once on a real iOS project on a Mac (iOS isn't build-tested in CI), and once on a device for the "first event" check.
+`.github/workflows/cli-release.yml` publishes `@clikgate/setup` to npm with trusted publishing and provenance (GitHub
+environment `npm`). To release: bump `cli/package.json` `version` and `CLI_VERSION` in `cli/src/constants.ts`, update
+the changelog, run `node scripts/check_cli_sdk_versions.mjs`, then tag `cli-v<version>` and push the tag. Release the
+SDK versions the command writes first, so `npx @clikgate/setup` never installs an unpublished version.
