@@ -41,7 +41,8 @@ final String? installationId = await Clikgate.getInstallationId(); // send it wi
 await Clikgate.identifyUser(customerId: null); // sign-out
 await Clikgate.setTrackingEnabled(false);
 
-// Uninstall tracking: turn it on in the dashboard; the push token is automatic (automaticPushToken,
+// Uninstall tracking: turn it on in the dashboard (Settings › Features, plus the app's push credentials under
+// Connect › Apps › your app); the push token is automatic (automaticPushToken,
 // no AppDelegate code, no permission prompt). iOS needs the Push Notifications capability.
 if (Clikgate.isClikgateMessage(message.data)) return; // in your FCM onMessage and background handlers
 
@@ -158,7 +159,7 @@ Deep links work on every plan, Free included (deferred deep links: 1,000 a month
 Free the app's link subdomain is `yourapp.ciz.ng` in release builds; debug builds use `yourapp.dev.ciz.to`.
 Install attribution and `goal` work on every plan, Free through Enterprise, up to the plan's allowance: basic app
 attribution is included in all of them. `goal` does nothing only when app attribution is switched off for the app
-(deep-link-only mode), where it logs one warning (no error). See the platform guide.
+(deep-link-only mode), where it logs one warning and the result is `refused` with `feature_disabled` (no exception). See the platform guide.
 
 ## Removing the SDK
 
@@ -174,6 +175,6 @@ attribution is included in all of them. `goal` does nothing only when app attrib
 4. Remove push-token forwarding for uninstall tracking (`Clikgate.setPushToken`, the
    `isClikgateMessage` filters in your FCM handlers), and the Push Notifications capability if only
    Clikgate used it. Keep your own push setup.
-5. In the Clikgate dashboard, mark the app as no longer tracked (app settings), so Clikgate stops
-   uninstall checks and doesn't expect goals. Links keep redirecting to their web or store
+5. In the Clikgate dashboard, open Connect › Apps › your app and switch off **SDK enabled** (and remove its push
+   credentials), so Clikgate stops uninstall checks and doesn't expect goals. Links keep redirecting to their web or store
    destinations. Then run `pod install` (iOS) and a clean build.

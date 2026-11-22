@@ -33,7 +33,8 @@ await Clikgate.enableFirebaseForwarding();
 const metadata = await Clikgate.attributionMetadata(); // {cg_click_id, cg_link_id} for Paystack metadata
 ```
 
-Expo: `"plugins": [["@clikgate/react-native", { "linkDomains": ["myapp.ciz.to", "inv.myapp.com"], "testLinkDomain": "myapp.dev.ciz.to", "uriScheme": "myapp" }]]` (the test domain goes into development builds only).
+Expo: `"plugins": [["@clikgate/react-native", { "linkDomains": ["myapp.ciz.to", "inv.myapp.com"], "testLinkDomain": "myapp.dev.ciz.to", "uriScheme": "myapp" }]]` (the test domain goes into debug builds, and into every build of the `development` and `preview` variants; see
+`testVariants`).
 
 Integration guide: [docs/react-native.md](https://github.com/clikgate/clikgate-mobile-sdk/blob/main/docs/react-native.md).
 Requires the New Architecture (React Native 0.76+).
@@ -62,7 +63,7 @@ Deep links work on every plan, Free included (deferred deep links: 1,000 a month
 Free the app's link subdomain is `yourapp.ciz.ng` in release builds; debug builds use `yourapp.dev.ciz.to`.
 Install attribution and `goal` work on every plan, Free through Enterprise, up to the plan's allowance: basic app
 attribution is included in all of them. `goal` does nothing only when app attribution is switched off for the app
-(deep-link-only mode), where it logs one warning (no error). See the platform guide.
+(deep-link-only mode), where it logs one warning and the result is `GoalStatus.Refused` with `feature_disabled` (no exception). See the platform guide.
 
 ## Removing the SDK
 
@@ -76,6 +77,6 @@ attribution is included in all of them. `goal` does nothing only when app attrib
    `autoVerify` intent filters for your link domains, and the URI scheme only Clikgate links used.
 4. Remove push-token forwarding for uninstall tracking: `Clikgate.setPushToken(...)`, the
    `isClikgateMessage` checks in your FCM handlers, and any `ClikgateRN` calls in the AppDelegate.
-5. In the Clikgate dashboard, mark the app as no longer tracked (and switch off uninstall
-   tracking) so Clikgate stops sending silent check pushes and your reports show the cut-off.
+5. In the Clikgate dashboard, open Connect › Apps › your app and switch off **SDK enabled** (and remove its push
+   credentials), so Clikgate stops sending silent check pushes and your reports show the cut-off.
    Leaving Clikgate entirely: export your data first (Settings › Leaving Clikgate).

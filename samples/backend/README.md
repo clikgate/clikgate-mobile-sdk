@@ -59,8 +59,9 @@ cp .env.example .env          # fill in the API key, identity secret, program, l
 ```
 
 Settings (environment or `.env`, see [.env.example](.env.example)): `CLIKGATE_API_KEY`
-(scopes `links:write`, `links:read`, `analytics:read`, `conversions:write`),
-`CLIKGATE_IDENTITY_SECRET` (`POST /v1/apps/{app_id}/identity-secret/rotate`),
+(Developers › API keys & clients; scopes `links:write`, `links:read`, `analytics:read`, `conversions:write`),
+`CLIKGATE_IDENTITY_SECRET` (dashboard: Developers › SDKs › your app › Set up identity › Identity secret; or
+`POST /v1/apps/{app_id}/identity-secret/rotate`),
 `CLIKGATE_PROGRAM_ID`, `CLIKGATE_LEADERBOARD_IDS`, `CLIKGATE_APP_ID` (or
 `CLIKGATE_APP_ID_ANDROID` / `_IOS`), `CLIKGATE_API_URL` (default `https://api.clikgate.com`; a
 local Clikgate backend is `http://localhost:8000`), `SESSION_SECRET`.
@@ -99,7 +100,7 @@ order events and error mapping. No network.
 
 ## Files
 
-- `app/main.py`: routes (`create_app(settings, clikgate_client)`).
+- `app/main.py`: routes (`create_app(settings, clikgate)`).
 - `app/clikgate.py`: control-plane client (API key auth, error decoding).
 - `app/tokens.py`: identity tokens and the demo session tokens.
 - `app/config.py`: settings.
