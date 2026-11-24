@@ -538,6 +538,17 @@ public object Clikgate {
     @ClikgateInternalApi
     @JvmStatic
     public fun requestContext(callback: ClikgateCallback<ClikgateRequestContext>) {
+        requestContext(true, callback)
+    }
+
+    /**
+     * Internal (Engage features, wrappers): [requestContext] with [wait] false answers with the stored
+     * installation id, customer user id and identity token at once (same gates), without waiting for
+     * the first `/install` or a pending [identifyUser]. For reads the server answers from the token.
+     */
+    @ClikgateInternalApi
+    @JvmStatic
+    public fun requestContext(wait: Boolean, callback: ClikgateCallback<ClikgateRequestContext>) {
         val c = core
         if (c == null) {
             Handler(Looper.getMainLooper()).post {
@@ -545,7 +556,7 @@ public object Clikgate {
             }
             return
         }
-        c.requestContext(callback::onResult)
+        c.requestContext(wait, callback::onResult)
     }
 
     /** Suspending [requestContext]; throws [ClikgateError]. */

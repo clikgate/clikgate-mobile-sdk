@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Installs the 2.1.7 SDKs (`clikgate-android` 2.1.7, `Clikgate` 2.1.7, `clikgate_flutter` ^2.1.7, `@clikgate/react-native` ^2.1.7): `myStats` answers without waiting for the install, and the new `myLink` returns the user's code and share links from the device.
+
 ## 2.1.6
 
 - Installs the 2.1.6 SDKs (`clikgate-android` 2.1.6, `Clikgate` 2.1.6, `clikgate_flutter` ^2.1.6, `@clikgate/react-native` ^2.1.6): they add the installation header for your own server, and on iOS each app has its own installation ID.

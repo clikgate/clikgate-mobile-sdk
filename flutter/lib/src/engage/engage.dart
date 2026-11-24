@@ -73,7 +73,7 @@ class ClikgateEngage {
   final EngageClient _client;
 
   /// Version of this package.
-  static const String version = '2.1.6';
+  static const String version = '2.1.7';
 
   /// Referrer side: the user's link and stats (feature `referrals`).
   final EngageReferrals referrals;
@@ -157,9 +157,35 @@ class EngageReferrals {
   }
 
   /// The current user's code, link and counts (`referrer_not_found` if they
-  /// have no link yet). Cached for 60 s.
+  /// have no link yet). Cached for 60 s. Sent at once when an identity token
+  /// is stored (no wait for the install); the link is saved for [myLink].
   Future<ReferralStats> myStats({required String programId}) async {
     _requireId(programId, 'program_id');
+    final saved = await _savedLinks.saved(programId);
+    return ReferralStats.fromJson(await _stats(programId, saved.token));
+  }
+
+  /// The current user's code and share links, returned at once from the
+  /// phone after the first time (no network, no waiting) and refreshed in the
+  /// background at most once a minute. Use it for share buttons; [myStats]
+  /// has the live counts. Errors as [myStats] (`referrer_not_found` until the
+  /// user has a link).
+  Future<ReferralLink> myLink({required String programId}) async {
+    _requireId(programId, 'program_id');
+    final saved = await _savedLinks.saved(programId);
+    final link = saved.link;
+    if (link != null &&
+        await _client.core.isFeatureEnabled(ClikgateFeatures.referrals)) {
+      if (_client.claimRefresh('$programId|${saved.token}')) {
+        // Best effort: the answer updates the saved link, errors are dropped
+        unawaited(_stats(programId, saved.token).then((_) {}, onError: (_) {}));
+      }
+      return ReferralLink.fromJson(link);
+    }
+    return ReferralLink.fromJson(await _stats(programId, saved.token));
+  }
+
+  Future<Map<String, dynamic>> _stats(String programId, String? token) async {
     final j = await _client.call(
       feature: ClikgateFeatures.referrals,
       method: 'GET',
@@ -167,8 +193,13 @@ class EngageReferrals {
       query: {'program_id': programId},
       needsUser: true,
       cacheable: true,
+      byToken: true,
     );
-    return ReferralStats.fromJson(j);
+    await _savedLinks.save(programId, {
+      for (final k in const ['referrer_id', 'program_id', 'code', 'url', 'short_url'])
+        if (j.containsKey(k)) k: j[k],
+    }, token);
+    return j;
   }
 }
 

@@ -214,7 +214,7 @@ public object EngageShare {
     internal fun record(url: String, app: ShareApp) {
         val body = JSONObject().put("url", url).put("app", app.value)
         ClikgateEngage.client.call("", "POST", "/v1/share-events", body, userCall = false, cacheable = false, write = false,
-            kind = EngageJson.UNIT, callback = IGNORE)
+            kind = EngageJson.UNIT, callback = IGNORE, byToken = false)
     }
 
     private fun unavailable(e: Exception) = ClikgateError(EngageErrors.SHARE_UNAVAILABLE, "No app can share text on this device", cause = e)

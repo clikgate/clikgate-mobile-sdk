@@ -19,7 +19,7 @@ Requirements:
 
 ## 1. Podfile
 
-Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.1.6`, which includes the Engage features) from CocoaPods
+Nothing to add: `clikgate_flutter.podspec` depends on the `Clikgate` pod (`~> 2.1.7`, which includes the Engage features) from CocoaPods
 trunk. Set the platform to at least what your other plugins need:
 
 ```ruby
@@ -167,5 +167,5 @@ Info.plist entry; when WhatsApp isn't installed the system share sheet is shown 
 
 ## 8. Releasing
 
-The published plugin's podspec depends on `Clikgate ~> 2.1.6` from trunk, so release the iOS SDK
+The published plugin's podspec depends on `Clikgate ~> 2.1.7` from trunk, so release the iOS SDK
 (`ios-v<version>` tag → CocoaPods trunk + SPM mirror) **before** publishing a plugin version that needs it.

@@ -195,8 +195,10 @@ public final class ClikgateRNImpl: NSObject {
     /// Request context for the Engage features (src/engage).
     @objc public func getRequestContext(_ args: NSDictionary, resolve: @escaping Resolve, reject: @escaping Reject) {
         guard Self.requireConfigured(reject) else { return }
+        // wait: false answers with the stored values at once (no wait for the install or identify)
+        let wait = args["wait"] as? Bool ?? true
         Self.run(nil, resolve, reject, Self.map) {
-            try await Clikgate.shared.requestContext()
+            try await Clikgate.shared.requestContext(wait: wait)
         }
     }
 

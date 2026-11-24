@@ -88,7 +88,7 @@ public object EngageReferrals {
         val saved = if (displayName == null) com.clikgate.Clikgate.coreOrNull()?.savedLink(programId) else null
         if (saved != null) client.deliver(callback, ClikgateResult.Success(EngageJson.referralLink(saved)))
         client.call(FEATURE, "POST", "/v1/sdk/referrals/link", body, userCall = true, cacheable = false, write = true,
-            kind = EngageJson.LINK, callback = if (saved != null) null else callback)
+            kind = EngageJson.LINK, callback = if (saved != null) null else callback, byToken = false)
     }
 
     /** Suspending [createLink]. */
@@ -99,11 +99,25 @@ public object EngageReferrals {
     public fun myStats(programId: String, callback: ClikgateCallback<ReferralStats>) {
         if (programId.isBlank()) return client.invalid(callback, "programId is required", "program_id")
         client.call(FEATURE, "GET", "/v1/sdk/referrals/me" + query("program_id" to programId), null,
-            userCall = true, cacheable = true, write = false, kind = EngageJson.STATS, callback = callback)
+            userCall = true, cacheable = true, write = false, kind = EngageJson.STATS, callback = callback, byToken = true)
     }
 
     /** Suspending [myStats]. */
     public suspend fun myStats(programId: String): ReferralStats = suspendCoroutine { myStats(programId, Resume(it)) }
+
+    /**
+     * The current user's code and share links in [programId], answered at once from the device after the
+     * first time (no network, no waiting) and refreshed in the background at most once a minute. Use it for
+     * share buttons; [myStats] has the live counts. Errors as [myStats] (`referrer_not_found` until the user
+     * has a link); `not_identified` before [com.clikgate.Clikgate.identifyUser].
+     */
+    public fun myLink(programId: String, callback: ClikgateCallback<ReferralLink>) {
+        if (programId.isBlank()) return client.invalid(callback, "programId is required", "program_id")
+        client.myLink(programId, "/v1/sdk/referrals/me" + query("program_id" to programId), callback)
+    }
+
+    /** Suspending [myLink]. */
+    public suspend fun myLink(programId: String): ReferralLink = suspendCoroutine { myLink(programId, Resume(it)) }
 }
 
 /**
@@ -145,7 +159,7 @@ public object EngageLeaderboards {
         if (!check(leaderboardId, period, callback)) return
         val p = path(leaderboardId, "") + query("period" to period, "segment" to segment, "limit" to limit.coerceIn(1, 100).toString())
         client.call(FEATURE, "GET", p, null, userCall = false, cacheable = true, write = false,
-            kind = EngageJson.PAGE, callback = callback)
+            kind = EngageJson.PAGE, callback = callback, byToken = false)
     }
 
     /** Suspending [top]. */
@@ -170,7 +184,7 @@ public object EngageLeaderboards {
         if (!check(leaderboardId, period, callback)) return
         val p = path(leaderboardId, "/me") + query("period" to period, "segment" to segment)
         client.call(FEATURE, "GET", p, null, userCall = true, cacheable = true, write = false,
-            kind = EngageJson.RANK, callback = callback)
+            kind = EngageJson.RANK, callback = callback, byToken = false)
     }
 
     /** Suspending [me]. */
@@ -196,7 +210,7 @@ public object EngageLeaderboards {
         val p = path(leaderboardId, "/around-me") +
             query("radius" to radius.coerceIn(1, 25).toString(), "period" to period, "segment" to segment)
         client.call(FEATURE, "GET", p, null, userCall = true, cacheable = true, write = false,
-            kind = EngageJson.PAGE, callback = callback)
+            kind = EngageJson.PAGE, callback = callback, byToken = false)
     }
 
     /** Suspending [aroundMe]. */
@@ -213,7 +227,7 @@ public object EngageLeaderboards {
         if (programId.isBlank()) return client.invalid(cb, "programId is required", "program_id")
         val body = JSONObject().put("program_id", programId).put("opt_out", optOut)
         client.call(FEATURE, "POST", "/v1/sdk/leaderboards/opt-out", body, userCall = true, cacheable = false, write = true,
-            kind = EngageJson.UNIT, callback = cb)
+            kind = EngageJson.UNIT, callback = cb, byToken = false)
     }
 
     /** Suspending [setOptOut]. */
@@ -229,7 +243,7 @@ public object EngageLeaderboards {
         if (!check(leaderboardId, period, callback)) return
         val p = path(leaderboardId, "/me") + query("period" to period, "embed" to "1")
         client.call(FEATURE, "GET", p, null, userCall = true, cacheable = false, write = false,
-            kind = EngageJson.EMBED_URL, callback = callback)
+            kind = EngageJson.EMBED_URL, callback = callback, byToken = false)
     }
 
     /** Suspending [hostedPageUrl]. */
@@ -256,7 +270,7 @@ public object EngageCodes {
             return client.invalid(callback, "code must be $MIN_LENGTH-$MAX_LENGTH characters", "code")
         }
         client.call("offline_codes", "POST", "/v1/sdk/codes/redeem", JSONObject().put("code", trimmed),
-            userCall = false, cacheable = false, write = true, kind = EngageJson.REDEMPTION, callback = callback)
+            userCall = false, cacheable = false, write = true, kind = EngageJson.REDEMPTION, callback = callback, byToken = false)
     }
 
     /** Suspending [redeem]. */

@@ -33,6 +33,13 @@ final class EngageClient: @unchecked Sendable {
         lock.lock(); cache.removeAll(); lock.unlock()
     }
 
+    /// True (and noted, as an empty entry of the read cache) when `key` wasn't claimed in the last 60 s.
+    func claimRefresh(_ key: String) -> Bool {
+        if cached(key) != nil { return false }
+        store(key, EngageJSON(object: [:]))
+        return true
+    }
+
     private func cached(_ key: String) -> EngageJSON? {
         lock.lock(); defer { lock.unlock() }
         guard let e = cache[key] else { return nil }
@@ -48,46 +55,66 @@ final class EngageClient: @unchecked Sendable {
     /// One Engage call. `needsUser`: fails with `not_identified` (no network) when the installation
     /// isn't identified. `cacheable`: a GET whose result may be served from memory for 60 s.
     ///
+    /// `byToken`: a read the server answers from the identity token alone. With a stored customer
+    /// ID and token it goes out at once with `Clikgate-Customer-User-Id` (no wait for the install or
+    /// identify); `installation_unknown` / `not_identified` (an older server, or a race) retry once
+    /// through the waiting context. Without a token it waits as other calls do.
+    ///
     /// Non-generic on purpose (code size: one copy of the async state machine); callers decode the
     /// returned object with ``decode(_:_:)``. The cache holds the response object.
     func call(feature: String, method: String, path: String, query: [URLQueryItem] = [],
-              body: [String: Any]? = nil, needsUser: Bool, cacheable: Bool) async throws -> EngageJSON {
+              body: [String: Any]? = nil, needsUser: Bool, cacheable: Bool, byToken: Bool = false) async throws -> EngageJSON {
         // An empty feature (share events) has no switch and keeps the read cache.
         guard feature.isEmpty || host.isFeatureEnabled(feature) else { throw Self.featureDisabled(feature) }
-        let ctx = try await host.requestContext()
-        if needsUser && ctx.customerUserId == nil {
-            throw ClikgateError(code: ClikgateError.notIdentified,
-                                message: "Call Clikgate.shared.identifyUser(customerId:identityToken:) first.")
-        }
-        let request = Self.makeRequest(ctx, method: method, path: path, query: query, body: body)
-        let key = "\(ctx.installationId)|\(ctx.customerUserId ?? "")|\(ctx.identityToken == nil ? 0 : 1)|\(method) \(request.url?.absoluteString ?? path)"
-        if method != "GET" && !feature.isEmpty { clearCache() }
-        if cacheable, let hit = cached(key) { return hit }
+        var fast = byToken
+        while true {
+            let ctx = try await host.requestContext(wait: !fast)
+            if needsUser && ctx.customerUserId == nil {
+                throw ClikgateError(code: ClikgateError.notIdentified,
+                                    message: "Call Clikgate.shared.identifyUser(customerId:identityToken:) first.")
+            }
+            if fast && ctx.identityToken == nil { fast = false; continue }
+            var request = Self.makeRequest(ctx, method: method, path: path, query: query, body: body)
+            if fast {
+                request.setValue(ctx.customerUserId?.addingPercentEncoding(withAllowedCharacters: Self.unreserved),
+                                 forHTTPHeaderField: "Clikgate-Customer-User-Id")
+            }
+            let key = "\(ctx.installationId)|\(ctx.customerUserId ?? "")|\(ctx.identityToken == nil ? 0 : 1)|\(method) \(request.url?.absoluteString ?? path)"
+            if method != "GET" && !feature.isEmpty { clearCache() }
+            if cacheable, let hit = cached(key) { return hit }
 
-        let (data, http) = try await send(request)
-        if (200..<300).contains(http.statusCode) {
-            let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-            if let j = json, Self.isFeatureDisabledBody(j) {
-                let k = (j["feature"] as? String) ?? feature
-                host.reportServerError(code: ClikgateError.featureDisabled, feature: k)
-                if k != feature { host.reportServerError(code: ClikgateError.featureDisabled, feature: feature) }
-                throw Self.featureDisabled(k)
+            let (data, http) = try await send(request)
+            if (200..<300).contains(http.statusCode) {
+                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                if let j = json, Self.isFeatureDisabledBody(j) {
+                    let k = (j["feature"] as? String) ?? feature
+                    host.reportServerError(code: ClikgateError.featureDisabled, feature: k)
+                    if k != feature { host.reportServerError(code: ClikgateError.featureDisabled, feature: feature) }
+                    throw Self.featureDisabled(k)
+                }
+                guard let j = json else {
+                    throw ClikgateError(code: ClikgateError.serverError, message: "Unexpected response from \(path)", status: http.statusCode)
+                }
+                let value = EngageJSON(object: j)
+                if cacheable { store(key, value) }
+                return value
             }
-            guard let j = json else {
-                throw ClikgateError(code: ClikgateError.serverError, message: "Unexpected response from \(path)", status: http.statusCode)
+            let error = Self.decodeError(data: data, status: http.statusCode)
+            // An older server ignores the header, or the install / identify is still on its way
+            if fast && (error.code == ClikgateError.installationUnknown || error.code == ClikgateError.notIdentified) {
+                fast = false; continue
             }
-            let value = EngageJSON(object: j)
-            if cacheable { store(key, value) }
-            return value
+            switch error.code {
+            case ClikgateError.invalidSdkKey, ClikgateError.sdkDisabled, ClikgateError.installationUnknown:
+                host.reportServerError(code: error.code, feature: nil)
+            default: break
+            }
+            throw error
         }
-        let error = Self.decodeError(data: data, status: http.statusCode)
-        switch error.code {
-        case ClikgateError.invalidSdkKey, ClikgateError.sdkDisabled, ClikgateError.installationUnknown:
-            host.reportServerError(code: error.code, feature: nil)
-        default: break
-        }
-        throw error
     }
+
+    /// RFC 3986 unreserved characters: everything else in the customer ID header is percent-encoded (UTF-8).
+    static let unreserved = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
 
     /// Sends `request`, retrying once (after 0.5 s) when the request didn't reach the server.
     private func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {

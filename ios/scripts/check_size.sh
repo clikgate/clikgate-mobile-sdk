@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Size budgets of the iOS SDK: core < 410 KB, Engage < 95 KB (80 KB before share.link was added).
+# Size budgets of the iOS SDK: core < 410 KB, Engage < 98 KB (95 KB before myLink and the token-only stats read; 80 KB before share.link).
 #
 #   ios/scripts/check_size.sh
 #
@@ -18,7 +18,7 @@ trap 'rm -rf "$WORK"' EXIT
 SDK="$(xcrun -sdk iphoneos --show-sdk-path)"
 TARGET="arm64-apple-ios13.0"
 CORE_BUDGET=$((410 * 1024))
-ENGAGE_BUDGET=$((95 * 1024))
+ENGAGE_BUDGET=$((98 * 1024))
 
 linked_bytes() { # $1 = object file
   size -m "$1" | awk '/Section/ && !/zerofill/ && !/__LD, __compact_unwind/ && !/__LLVM/ && !/__DWARF/ { gsub(/[():,]/, " "); s += $NF } END { print s + 0 }'
@@ -41,10 +41,10 @@ kb() { awk -v b="$1" 'BEGIN { printf "%.1f KB", b / 1024 }'; }
 build -O
 echo "-O     (info):   core $(kb "$CORE"), Engage $(kb "$ENGAGE")"
 build -Osize
-echo "-Osize (budget): core $(kb "$CORE") (< 410 KB), Engage $(kb "$ENGAGE") (< 95 KB)"
+echo "-Osize (budget): core $(kb "$CORE") (< 410 KB), Engage $(kb "$ENGAGE") (< 98 KB)"
 
 fail=0
 [ "$CORE" -lt "$CORE_BUDGET" ] || { echo "error: core iOS SDK is $(kb "$CORE"), budget 410 KB (a hard ceiling: trim, do not raise it)" >&2; fail=1; }
-[ "$ENGAGE" -lt "$ENGAGE_BUDGET" ] || { echo "error: ClikgateEngage is $(kb "$ENGAGE"), budget 95 KB" >&2; fail=1; }
+[ "$ENGAGE" -lt "$ENGAGE_BUDGET" ] || { echo "error: ClikgateEngage is $(kb "$ENGAGE"), budget 98 KB" >&2; fail=1; }
 [ -z "${GITHUB_STEP_SUMMARY:-}" ] || echo "iOS sizes (-Osize, arm64): core $(kb "$CORE"), Engage $(kb "$ENGAGE")" >> "$GITHUB_STEP_SUMMARY"
 exit $fail

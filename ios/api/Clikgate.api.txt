@@ -278,7 +278,7 @@ ClikgateRequestContext.!=(_:_:): static func != (lhs: Self, rhs: Self) -> Bool
 [spi] Clikgate.isConfigured: var isConfigured: Bool { get }
 [spi] Clikgate.onCustomerIdentified(_:): func onCustomerIdentified(_ prepare: @escaping ([String]) -> Void)
 [spi] Clikgate.reportServerError(code:feature:): func reportServerError(code: String, feature: String?)
-[spi] Clikgate.requestContext(): func requestContext() async throws -> ClikgateRequestContext
+[spi] Clikgate.requestContext(wait:): func requestContext(wait: Bool = true) async throws -> ClikgateRequestContext
 [spi] Clikgate.saveLinkJSON(programId:json:token:): func saveLinkJSON(programId: String, json: Data, token: String?)
 [spi] Clikgate.saveLinkObject(programId:object:token:): func saveLinkObject(programId: String, object: [String : Any], token: String?)
 [spi] Clikgate.savedLinkJSON(programId:): func savedLinkJSON(programId: String) -> (Data?, String?)

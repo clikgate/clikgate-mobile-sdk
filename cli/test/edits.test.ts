@@ -102,9 +102,9 @@ describe('plist, pbxproj, gradle, pubspec, json', () => {
   it('gradle: brace scanner ignores strings and comments; dependency lines per DSL', () => {
     const g = 'android {\n  defaultConfig { applicationId "a{b" } // }\n}\ndependencies {\n    implementation "x:y:1" /* } */\n}\n';
     expect(blocks(g).filter((b) => b.depth === 0).map((b) => b.name)).toEqual(['android', 'dependencies']);
-    expect(addDependency(g, dependencyLine(false, false))).toContain("    implementation 'com.clikgate:clikgate-android:2.1.6'\n    // clikgate-setup:end\n}\n");
-    expect(dependencyLine(true, false)).toBe('implementation("com.clikgate:clikgate-android:2.1.6")');
-    expect(addCatalogEntries('[versions]\nagp = "8"\n\n[libraries]\nx = { module = "a:b" }\n')).toBe('[versions]\nagp = "8"\nclikgate = "2.1.6"\n\n[libraries]\nx = { module = "a:b" }\nclikgate-android = { group = "com.clikgate", name = "clikgate-android", version.ref = "clikgate" }\n');
+    expect(addDependency(g, dependencyLine(false, false))).toContain("    implementation 'com.clikgate:clikgate-android:2.1.7'\n    // clikgate-setup:end\n}\n");
+    expect(dependencyLine(true, false)).toBe('implementation("com.clikgate:clikgate-android:2.1.7")');
+    expect(addCatalogEntries('[versions]\nagp = "8"\n\n[libraries]\nx = { module = "a:b" }\n')).toBe('[versions]\nagp = "8"\nclikgate = "2.1.7"\n\n[libraries]\nx = { module = "a:b" }\nclikgate-android = { group = "com.clikgate", name = "clikgate-android", version.ref = "clikgate" }\n');
   });
   it('pubspec: keeps comments and adds after the last dependency', () => {
     const y = 'name: a\ndependencies:\n  flutter:\n    sdk: flutter\n  # icons\n  cupertino_icons: ^1.0.8 # keep\n\n# dev\ndev_dependencies:\n  lints: ^5.0.0\n';

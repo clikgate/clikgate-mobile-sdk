@@ -6,7 +6,13 @@ import { asJson } from './models';
 /** What Engage needs from the core package (`Clikgate` from `@clikgate/react-native`). */
 export interface EngageCore {
   isFeatureEnabled(key: string): Promise<boolean>;
-  getRequestContext(): Promise<ClikgateRequestContext>;
+  /**
+   * `wait: false`: the stored context at once (same gates), without waiting for the install or
+   * a pending identify. A core that ignores it waits as before.
+   */
+  getRequestContext(options?: {
+    wait?: boolean;
+  }): Promise<ClikgateRequestContext>;
   reportServerError(code: string, feature?: string | null): Promise<void>;
 }
 
@@ -36,6 +42,13 @@ export interface EngageRequest<T> {
   identified: boolean;
   /** GET whose result may be served from the 60 s in-memory cache. */
   cacheable: boolean;
+  /**
+   * A read the server can answer from the identity token alone: with a stored customer ID and
+   * token it is sent at once with `Clikgate-Customer-User-Id` (no wait for the install or
+   * identify); `installation_unknown` / `not_identified` (an older server, or a race) retry once
+   * through the waiting context. Without a token it waits as other calls do.
+   */
+  byToken?: boolean;
   parse: (body: unknown) => T;
 }
 
@@ -71,6 +84,7 @@ function queryString(q: EngageRequest<unknown>['query']): string {
  */
 export class EngageClient {
   private readonly cache = new Map<string, { at: number; value: unknown }>();
+  private readonly refreshedAt = new Map<string, number>();
 
   constructor(
     private readonly core: EngageCore,
@@ -82,6 +96,18 @@ export class EngageClient {
 
   clearCache(): void {
     this.cache.clear();
+    this.refreshedAt.clear();
+  }
+
+  /** True (and noted) when `key` wasn't claimed in the last 60 s: a background refresh at most once per period. */
+  claimRefresh(key: string): boolean {
+    const now = this.now();
+    const last = this.refreshedAt.get(key);
+    if (last != null && now - last >= 0 && now - last < CACHE_TTL_MS) {
+      return false;
+    }
+    this.refreshedAt.set(key, now);
+    return true;
   }
 
   async call<T>(req: EngageRequest<T>): Promise<T> {
@@ -90,7 +116,16 @@ export class EngageClient {
       throw featureDisabled(req.feature);
     }
     // 2. Context from the core SDK (not_configured, opted_out, install_pending, ...).
-    const ctx = await this.core.getRequestContext();
+    let ctx = req.byToken
+      ? await this.core.getRequestContext({ wait: false })
+      : await this.core.getRequestContext();
+    const fast =
+      req.byToken === true &&
+      ctx.customerUserId != null &&
+      ctx.identityToken != null;
+    if (req.byToken === true && !fast && ctx.customerUserId != null) {
+      ctx = await this.core.getRequestContext();
+    }
     // 3. Identity rule.
     if (req.identified && ctx.customerUserId == null) {
       throw new ClikgateError(
@@ -99,6 +134,7 @@ export class EngageClient {
       );
     }
     const pathAndQuery = req.path + queryString(req.query);
+    // The customer ID is part of the key: one user's answer is never served to another.
     const key = req.cacheable
       ? [
           ctx.installationId,
@@ -116,7 +152,12 @@ export class EngageClient {
     // Any write invalidates every cached read.
     if (req.method !== 'GET') this.cache.clear();
 
-    const { status, text } = await this.send(ctx, req, pathAndQuery);
+    const { status, text } = await this.send(
+      ctx,
+      req,
+      pathAndQuery,
+      fast ? ctx.customerUserId : null
+    );
     let json: unknown = {};
     if (text.trim().length > 0) {
       try {
@@ -144,6 +185,13 @@ export class EngageClient {
       return value;
     }
     const error = errorFromBody(status, json);
+    if (
+      fast &&
+      (error.code === 'installation_unknown' || error.code === 'not_identified')
+    ) {
+      // An older server ignores the header, or the install / identify is still on its way
+      return this.call({ ...req, byToken: false });
+    }
     if (GLOBAL_CODES.has(error.code)) {
       await this.core.reportServerError(error.code, null);
     } else if (error.code === 'feature_disabled') {
@@ -159,7 +207,8 @@ export class EngageClient {
   private async send(
     ctx: ClikgateRequestContext,
     req: EngageRequest<unknown>,
-    pathAndQuery: string
+    pathAndQuery: string,
+    customer: string | null
   ): Promise<{ status: number; text: string }> {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
@@ -172,6 +221,9 @@ export class EngageClient {
     }
     if (ctx.identityToken != null) {
       headers['Clikgate-Identity-Token'] = ctx.identityToken;
+    }
+    if (customer != null) {
+      headers['Clikgate-Customer-User-Id'] = encodeRfc3986(customer);
     }
     let body: string | undefined;
     if (req.body != null) {

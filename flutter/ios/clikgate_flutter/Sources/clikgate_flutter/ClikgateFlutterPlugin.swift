@@ -209,9 +209,11 @@ public final class ClikgateFlutterPlugin: NSObject, FlutterPlugin, FlutterStream
 
         // ---- Engage features support (internal): the Engage features (engage.dart) call /v1/sdk/* itself
         case "getRequestContext":
+            // wait: false answers with the stored values at once (no wait for the install or identify)
+            let wait = args["wait"] as? Bool ?? true
             Task {
                 do {
-                    let c = try await sdk.requestContext()
+                    let c = try await sdk.requestContext(wait: wait)
                     let m = Self.map(c)
                     await MainActor.run { result(m) }
                 } catch let e as ClikgateError {

@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # The plugin from this repository (see README.md). At release: clikgate_flutter: ^2.1.6
+  # The plugin from this repository (see README.md). At release: clikgate_flutter: ^2.1.7
   clikgate_flutter:
     path: ../../flutter
   dio: ^5.9.0

@@ -32,6 +32,8 @@ ClikgateEngageLeaderboards.top(id:period:segment:limit:completion:): func top(id
 ClikgateEngageLeaderboards: final class ClikgateEngageLeaderboards
 ClikgateEngageReferrals.createLink(programId:displayName:): func createLink(programId: String, displayName: String? = nil) async throws -> ClikgateReferralLink
 ClikgateEngageReferrals.createLink(programId:displayName:completion:): func createLink(programId: String, displayName: String? = nil, completion: @escaping @MainActor (Result<ClikgateReferralLink, ClikgateError>) -> Void)
+ClikgateEngageReferrals.myLink(programId:): func myLink(programId: String) async throws -> ClikgateReferralLink
+ClikgateEngageReferrals.myLink(programId:completion:): func myLink(programId: String, completion: @escaping @MainActor (Result<ClikgateReferralLink, ClikgateError>) -> Void)
 ClikgateEngageReferrals.myStats(programId:): func myStats(programId: String) async throws -> ClikgateReferralStats
 ClikgateEngageReferrals.myStats(programId:completion:): func myStats(programId: String, completion: @escaping @MainActor (Result<ClikgateReferralStats, ClikgateError>) -> Void)
 ClikgateEngageReferrals: final class ClikgateEngageReferrals

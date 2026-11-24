@@ -21,6 +21,7 @@ class ClikgateEngage
 class EngageReferrals
   Future<ReferralLink> createLink({required String programId, String? displayName})
   Future<ReferralStats> myStats({required String programId})
+  Future<ReferralLink> myLink({required String programId})
 class EngageShare
   Future<bool> link(String url, {String? message, ShareApp? app, Map<ShareApp, String>? shareUrls})
   Future<bool> referralLink(ReferralLink link, {String? message, ShareApp? app})

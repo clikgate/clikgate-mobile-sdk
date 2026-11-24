@@ -16,7 +16,7 @@ features** (`ClikgateEngage`, section 7b), which ship in the same package. See [
 ## 1. Install
 
 **Swift Package Manager**: add `https://github.com/clikgate/clikgate-ios-sdk` (the SPM mirror: `Package.swift`,
-`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.1.6`, and link the `Clikgate` product. It contains two modules: `Clikgate` (core) and
+`Sources`, `LICENSE` and `ios/README.md` from this repository) from version `2.1.7`, and link the `Clikgate` product. It contains two modules: `Clikgate` (core) and
 `ClikgateEngage` (the Engage features, section 7b; `import ClikgateEngage` only if you use them).
 
 **CocoaPods**
@@ -521,6 +521,7 @@ import ClikgateEngage   // SPM and the XCFramework; with CocoaPods, Engage is pa
 
 let link = try await ClikgateEngage.referrals.createLink(programId: "rpg_...", displayName: "Ada")  // code, url, shortUrl
 let stats = try await ClikgateEngage.referrals.myStats(programId: "rpg_...")     // clicks, installs, qualified, …
+let mine = try await ClikgateEngage.referrals.myLink(programId: "rpg_...")       // code, url, shortUrl from the device
 try await ClikgateEngage.share.referralLink(link, message: "Join me on MyApp:")  // share sheet; each app gets its own version
 let opened = try await ClikgateEngage.share.link("https://inv.myapp.com/summer", app: .whatsapp)  // false = share sheet used
 try ClikgateEngage.share.system(text: "Join me on MyApp: \(link.url)")            // plain text, nothing recorded
@@ -546,6 +547,10 @@ Rules:
   fail with `not_identified` until `Clikgate.shared.identifyUser(customerId:identityToken:)` was called.
   If the program requires a verified identity token, the server answers `identity_required` /
   `identity_invalid`.
+- `myLink`: the code and share links, returned instantly from the device after the first time (no
+  network, no waiting; refreshed in the background at most once a minute); use it for share buttons.
+  `myStats`: live counts. With an identity token stored, `myStats` (and `myLink` the first time) is sent at
+  once, without waiting for the first install or identify.
 - Reads (`myStats`, `top`, `me`, `aroundMe`) are cached in memory for 60 s (never on disk);
   `ClikgateEngage.clearCache()` drops them, and every write clears them.
 - A network error is retried once; nothing else is retried (a long `Retry-After` comes back as `rate_limited`).

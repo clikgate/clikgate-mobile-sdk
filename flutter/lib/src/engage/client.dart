@@ -5,6 +5,7 @@ import 'dart:io' show SocketException, HandshakeException;
 import 'package:clikgate_flutter/clikgate_flutter.dart';
 import 'package:http/http.dart' as http;
 
+import '../channel.dart';
 import '../test_seams.dart';
 import 'errors.dart';
 
@@ -21,6 +22,20 @@ abstract interface class EngageCore {
   /// `Clikgate.reportServerError`.
   Future<void> reportServerError(String code, {String? feature});
 }
+
+/// An [EngageCore] that can also give the request context at once: the
+/// stored installation id, customer ID and identity token after the same
+/// gates, without waiting for the install or a pending identify. Not exported
+/// ([ClikgateCoreBridge] does this over the plugin; tests implement it).
+abstract interface class EngageNoWaitCore {
+  Future<ClikgateRequestContext> requestContextNoWait();
+}
+
+/// RFC 3986 percent-encoding of the UTF-8 bytes of [s] (only
+/// `A-Z a-z 0-9 - . _ ~` stay as they are).
+String pctEncode(String s) => Uri.encodeComponent(s).replaceAllMapped(
+    RegExp(r"[!*'()]"),
+    (m) => '%${m[0]!.codeUnitAt(0).toRadixString(16).toUpperCase()}');
 
 /// [EngageCore] over the `clikgate_flutter` plugin.
 class ClikgateCoreBridge implements EngageCore {
@@ -65,15 +80,46 @@ class EngageClient {
   final Duration retryDelay;
   final DateTime Function() _clock;
   final Map<String, _CacheEntry> _cache = {};
+  final Map<String, DateTime> _refreshedAt = {};
 
   /// Global error codes the core SDK must also see.
   static const _reportedCodes = {'invalid_sdk_key', 'sdk_disabled', 'installation_unknown'};
 
-  void clearCache() => _cache.clear();
+  void clearCache() {
+    _cache.clear();
+    _refreshedAt.clear();
+  }
+
+  /// True (and noted) when [key] wasn't claimed in the last [cacheTtl]: a
+  /// background refresh at most once per period.
+  bool claimRefresh(String key) {
+    final now = _clock();
+    final last = _refreshedAt[key];
+    if (last != null && now.difference(last) < cacheTtl && !now.isBefore(last)) {
+      return false;
+    }
+    _refreshedAt[key] = now;
+    return true;
+  }
+
+  Future<ClikgateRequestContext> _noWaitContext() async {
+    final c = core;
+    if (c case final EngageNoWaitCore n) return n.requestContextNoWait();
+    if (c is ClikgateCoreBridge) {
+      return ClikgateRequestContext.fromMap(await ClikgateChannels.invokeMap(
+          'getRequestContext', {'wait': false}));
+    }
+    return c.requestContext();
+  }
 
   /// Runs one call. [needsUser]: fail with `not_identified` when the
   /// installation isn't identified. [cacheable]: GET results kept for
-  /// [cacheTtl]. [write]: clears the cache after success.
+  /// [cacheTtl]. [write]: clears the cache after success. [byToken]: a read
+  /// the server can answer from the identity token alone: with a stored
+  /// customer ID and token it is sent at once with `Clikgate-Customer-User-Id`
+  /// (no wait for the install or identify); `installation_unknown` /
+  /// `not_identified` (an older server, or a race) retry once through the
+  /// waiting context. Without a token it waits as other calls do.
   Future<Map<String, dynamic>> call({
     required String feature,
     required String method,
@@ -83,19 +129,25 @@ class EngageClient {
     bool needsUser = false,
     bool cacheable = false,
     bool write = false,
+    bool byToken = false,
   }) async {
     if (!await core.isFeatureEnabled(feature)) {
       throw ClikgateException(ClikgateException.featureDisabled,
           "The '$feature' feature is switched off for this app",
           feature: feature);
     }
-    final ctx = await core.requestContext();
+    var ctx = byToken ? await _noWaitContext() : await core.requestContext();
+    final fast = byToken && ctx.customerUserId != null && ctx.identityToken != null;
+    if (byToken && !fast && ctx.customerUserId != null) {
+      ctx = await core.requestContext();
+    }
     if (needsUser && ctx.customerUserId == null) {
       throw const ClikgateException(ClikgateEngageErrors.notIdentified,
           'Call Clikgate.identifyUser() first: this call acts on behalf of a user.');
     }
     final base = Uri.parse(ctx.apiBaseUrl.replaceFirst(RegExp(r'/+$'), '') + path);
     final uri = query.isEmpty ? base : base.replace(queryParameters: query);
+    // The customer ID is part of the key: one user's answer is never served to another.
     final key = '${ctx.installationId}|${ctx.customerUserId}|${ctx.identityToken != null}|$method $uri';
     if (cacheable) {
       final hit = _cache[key];
@@ -103,20 +155,39 @@ class EngageClient {
       _cache.remove(key);
     }
 
-    final response = await _send(ctx, method, uri, body);
-    final json = await _handle(response, feature);
+    final Map<String, dynamic> json;
+    try {
+      final response = await _send(ctx, method, uri, body,
+          customer: fast ? ctx.customerUserId : null);
+      json = await _handle(response, feature, retrying: fast);
+    } on ClikgateException catch (e) {
+      if (!fast || (e.code != 'installation_unknown' && e.code != ClikgateEngageErrors.notIdentified)) {
+        rethrow;
+      }
+      // An older server ignores the header, or the install / identify is still on its way
+      return call(
+          feature: feature,
+          method: method,
+          path: path,
+          query: query,
+          body: body,
+          needsUser: needsUser,
+          cacheable: cacheable,
+          write: write);
+    }
     if (write) _cache.clear();
     if (cacheable) _cache[key] = _CacheEntry(_clock(), json);
     return json;
   }
 
   Future<http.Response> _send(ClikgateRequestContext ctx, String method, Uri uri,
-      Map<String, Object?>? body) async {
+      Map<String, Object?>? body, {String? customer}) async {
     for (var attempt = 0;; attempt++) {
       final req = http.Request(method, uri)
         ..followRedirects = false
         ..headers.addAll(ctx.headers)
         ..headers['Accept'] = 'application/json';
+      if (customer != null) req.headers['Clikgate-Customer-User-Id'] = pctEncode(customer);
       if (body != null) {
         req.headers['Content-Type'] = 'application/json; charset=utf-8';
         req.body = jsonEncode(body);
@@ -141,7 +212,10 @@ class EngageClient {
     }
   }
 
-  Future<Map<String, dynamic>> _handle(http.Response r, String feature) async {
+  /// [retrying]: a token-only read retried through the waiting path, which
+  /// reports `installation_unknown` itself if it still holds.
+  Future<Map<String, dynamic>> _handle(http.Response r, String feature,
+      {bool retrying = false}) async {
     final text = utf8.decode(r.bodyBytes, allowMalformed: true);
     Map<String, dynamic>? json;
     if (text.trim().isNotEmpty) {
@@ -186,7 +260,9 @@ class EngageClient {
       >= 500 => 'server_error',
       _ => 'http_${r.statusCode}',
     };
-    if (_reportedCodes.contains(code)) await _report(code, null);
+    if (_reportedCodes.contains(code) && !(retrying && code == 'installation_unknown')) {
+      await _report(code, null);
+    }
     throw ClikgateException(code, message ?? 'HTTP ${r.statusCode}',
         status: r.statusCode, param: param, feature: errFeature, offlineTouchId: touch);
   }

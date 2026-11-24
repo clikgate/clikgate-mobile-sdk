@@ -365,6 +365,7 @@ await Clikgate.identifyUser({ customerId: 'user_42', identityToken }); // user c
 // Referrer side (feature `referrals`)
 const link = await engage.referrals.createLink({ programId: 'rpg_...', displayName: 'Ada' }); // code, url, shortUrl
 const stats = await engage.referrals.myStats({ programId: 'rpg_...' }); // clicks, installs, signups, qualified, ...
+const mine = await engage.referrals.myLink({ programId: 'rpg_...' }); // code, url, shortUrl from the device
 await engage.share.referralLink(link, { message: 'Join me on MyApp:' }); // share menu; each app gets its own version
 const opened = await engage.share.link('https://inv.myapp.com/summer', { app: ShareApp.WhatsApp }); // false = menu used
 await engage.share.system({ text: `Join me on MyApp: ${link.url}` }); // plain text, nothing recorded
@@ -390,6 +391,10 @@ Rules:
   an identity token, the server answers `identity_required` until `identifyUser` got a valid token.
 - Calls also reject with the core's `not_configured`, `opted_out` or `install_pending` (first install not
   recorded yet).
+- `myLink`: the code and share links, returned instantly from the device after the first time (no
+  network, no waiting; refreshed in the background at most once a minute); use it for share buttons.
+  `myStats`: live counts. With an identity token stored, `myStats` (and `myLink` the first time) is sent at
+  once, without waiting for the first install or identify.
 - Reads (`myStats`, `top`, `me`, `aroundMe`) are cached in memory for 60 s per user; any write
   (`createLink`, `setOptOut`, `redeem`) and `engage.clearCache()` drop the cache. Nothing is persisted.
 - At most one retry, only for network errors (no connection, 10 s timeout); HTTP errors (429, 5xx, ...)

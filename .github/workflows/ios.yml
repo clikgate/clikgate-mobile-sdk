@@ -41,7 +41,7 @@ jobs:
         working-directory: ios
         run: ./scripts/check_api.sh
 
-      - name: Size budgets (core < 410 KB, Engage < 95 KB)
+      - name: Size budgets (core < 410 KB, Engage < 98 KB)
         working-directory: ios
         run: ./scripts/check_size.sh
 

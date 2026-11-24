@@ -42,7 +42,7 @@ public final class ClikgateEngageReferrals: Sendable {
         try requireNonBlank(programId, "programId", param: "program_id")
         register()
         if displayName == nil,
-           let link = EngageJSON(Clikgate.shared.savedLinkObject(programId: programId)).flatMap(ClikgateReferralLink.init(json:)) {
+           let link = EngageJSON(client.host.savedLink(programId).0).flatMap(ClikgateReferralLink.init(json:)) {
             Task { _ = try? await self.fetch(programId, nil) }
             return link
         }
@@ -50,22 +50,41 @@ public final class ClikgateEngageReferrals: Sendable {
     }
 
     private func fetch(_ programId: String, _ displayName: String?) async throws -> ClikgateReferralLink {
-        let token = Clikgate.shared.savedLinkJSON(programId: programId).1
+        let token = client.host.savedLink(programId).1
         var body: [String: Any] = ["program_id": programId]
         if let d = displayName { body["display_name"] = d }
         let j = try await client.call(feature: referralsFeature, method: "POST", path: "v1/sdk/referrals/link", body: body,
                                       needsUser: true, cacheable: false)
-        Clikgate.shared.saveLinkObject(programId: programId, object: j.o, token: token)
+        client.host.saveLink(programId, j.o, token: token)
         return try EngageClient.decode(j, ClikgateReferralLink.init(json:))
     }
 
     /// The current user's code, link and stats (`GET /v1/sdk/referrals/me`; cached 60 s).
     /// `referrer_not_found` until the user has a link in the program.
+    /// Sent at once when an identity token is stored; the link fields are saved on the phone (``myLink(programId:)``).
     public func myStats(programId: String) async throws -> ClikgateReferralStats {
         try requireNonBlank(programId, "programId", param: "program_id")
-        return try EngageClient.decode(await client.call(feature: referralsFeature, method: "GET", path: "v1/sdk/referrals/me",
-                                     query: [URLQueryItem(name: "program_id", value: programId)],
-                                     needsUser: true, cacheable: true), ClikgateReferralStats.init(json:))
+        let owner = client.host.savedLink(programId).1
+        let j = try await client.call(feature: referralsFeature, method: "GET", path: "v1/sdk/referrals/me",
+                                      query: [URLQueryItem(name: "program_id", value: programId)],
+                                      needsUser: true, cacheable: true, byToken: true)
+        client.host.saveLink(programId, j.o, token: owner)
+        return try EngageClient.decode(j, ClikgateReferralStats.init(json:))
+    }
+
+    /// The current user's code and share links, answered at once from the phone after the first time (no
+    /// network, no waiting) and refreshed in the background at most once a minute. Use it for share buttons;
+    /// ``myStats(programId:)`` has the live counts. Errors as `myStats` (`referrer_not_found` until the user
+    /// has a link).
+    public func myLink(programId: String) async throws -> ClikgateReferralLink {
+        let (saved, owner) = client.host.savedLink(programId)
+        if client.host.isFeatureEnabled(referralsFeature), let link = EngageJSON(saved).flatMap(ClikgateReferralLink.init(json:)) {
+            // Best effort: the answer saves the link, errors are dropped
+            if client.claimRefresh(programId + (owner ?? "")) { myStats(programId: programId) { _ in } }
+            return link
+        }
+        let s = try await myStats(programId: programId)
+        return ClikgateReferralLink(referrerId: s.referrerId, programId: s.programId, code: s.code, url: s.url, shortUrl: s.shortUrl)
     }
 
     public func createLink(programId: String, displayName: String? = nil,
@@ -76,6 +95,11 @@ public final class ClikgateEngageReferrals: Sendable {
     public func myStats(programId: String,
                         completion: @escaping @MainActor @Sendable (Result<ClikgateReferralStats, ClikgateError>) -> Void) {
         EngageAsync.run(completion) { try await self.myStats(programId: programId) }
+    }
+
+    public func myLink(programId: String,
+                       completion: @escaping @MainActor @Sendable (Result<ClikgateReferralLink, ClikgateError>) -> Void) {
+        EngageAsync.run(completion) { try await self.myLink(programId: programId) }
     }
 }
 

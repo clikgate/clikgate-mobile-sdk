@@ -191,7 +191,7 @@ class ClikgateFlutterPlugin :
                 // iOS only (Google on-device conversion measurement).
                 "enableGoogleOnDeviceMeasurement" -> result.success(null)
                 // ---- Engage features support (internal): the Engage features (engage.dart) call /v1/sdk/... itself
-                "getRequestContext" -> requestContext(result)
+                "getRequestContext" -> requestContext(call, result)
                 "reportServerError" -> reportServerError(call, result)
                 "sdkVersion" -> result.success(Clikgate.sdkVersion)
                 else -> result.notImplemented()
@@ -260,8 +260,9 @@ class ClikgateFlutterPlugin :
     }
 
     @OptIn(ClikgateInternalApi::class)
-    private fun requestContext(result: MethodChannel.Result) {
-        Clikgate.requestContext { reply(result, it, ::requestContextMap) }
+    private fun requestContext(call: MethodCall, result: MethodChannel.Result) {
+        // wait: false answers with the stored values at once (no wait for the install or identify)
+        Clikgate.requestContext(call.argument<Boolean>("wait") != false) { reply(result, it, ::requestContextMap) }
     }
 
     @OptIn(ClikgateInternalApi::class)

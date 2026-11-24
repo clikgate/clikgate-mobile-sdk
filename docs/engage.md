@@ -49,6 +49,7 @@ leaderboard and promo-code screens without a server:
 final engage = ClikgateEngage();
 final link = await engage.referrals.createLink(programId: 'rpg_...', displayName: 'Ada');
 final stats = await engage.referrals.myStats(programId: 'rpg_...');
+final mine = await engage.referrals.myLink(programId: 'rpg_...');    // code and share links from the device
 await engage.share.referralLink(link, message: 'Join me on MyApp:');   // each app gets its own version
 final page = await engage.leaderboards.top('lb_...', period: LeaderboardPeriod.current, limit: 50);
 final me = await engage.leaderboards.me('lb_...');

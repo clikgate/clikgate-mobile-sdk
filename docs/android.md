@@ -18,7 +18,7 @@ promo codes and share helpers are **not** in it:
 // app/build.gradle.kts
 dependencies {
     // Includes the Engage features (com.clikgate.engage) for apps without a backend; R8 drops them if unused.
-    implementation("com.clikgate:clikgate-android:2.1.6")
+    implementation("com.clikgate:clikgate-android:2.1.7")
     // Optional, only if you enable Play Integrity attestation:
     // implementation("com.google.android.play:integrity:1.6.0")
 }
@@ -432,6 +432,7 @@ Every call has a callback (main thread) and a `suspend` variant with the same na
 // Referrer side (needs Clikgate.identifyUser)
 ClikgateEngage.referrals.createLink(programId, displayName = "Ada") { r -> r.getOrNull()?.let { show(it.code, it.url, it.shortUrl) } }
 val stats = ClikgateEngage.referrals.myStats(programId)          // suspend: clicks, installs, signups, qualified, ...
+val mine = ClikgateEngage.referrals.myLink(programId)            // suspend: code, url, shortUrl from the device
 
 // Share a link: each app gets its own version, and the share is recorded
 ClikgateEngage.share.referralLink(activity, link, "Join me on MyApp:")                  // share menu
@@ -459,6 +460,10 @@ Rules:
   they fail with `not_identified` (no network) until `Clikgate.identifyUser(customerId = userId, identityToken = token)`. Programs
   with `require_identity_token` answer `identity_required` until a valid token was given.
   `top` and `codes.redeem` don't need a user.
+- `myLink`: the code and share links, returned instantly from the device after the first time (no
+  network, no waiting; refreshed in the background at most once a minute); use it for share buttons.
+  `myStats`: live counts. With an identity token stored, `myStats` (and `myLink` the first time) is sent at
+  once, without waiting for the first install or identify.
 - Reads (`myStats`, `top`, `me`, `aroundMe`) are cached **in memory for 60 s** per user (nothing
   on disk); `createLink`, `setOptOut` and `redeem` clear the cache; `ClikgateEngage.clearCache()`
   drops it (e.g. pull to refresh). `hostedPageUrl` is never cached.
@@ -728,6 +733,7 @@ SDK leaves them unused in the app's data directory (delete them on first launch 
 | `Clikgate.sdkVersion` | |
 | *Engage features* (`com.clikgate.engage`, in `clikgate-android`) | callback + same-name `suspend` variants |
 | `ClikgateEngage.referrals.createLink(programId, displayName?)` / `myStats(programId)` | `ReferralLink` / `ReferralStats` |
+| `ClikgateEngage.referrals.myLink(programId)` | 2.1.7; `ReferralLink`. `myLink`: the code and share links, returned instantly from the device after the first time; use it for share buttons. `myStats`: live counts. |
 | `ClikgateEngage.share.link(context, url, message?, app?, shareUrls?, chooserTitle?)` / `referralLink(context, link, message?, app?, chooserTitle?)` | `Boolean` (`app` itself opened); `ShareApp` |
 | `ClikgateEngage.share.system(context, text, chooserTitle?)` / `whatsApp(context, text)` | `Unit` / `Boolean` (WhatsApp opened) |
 | `ClikgateEngage.leaderboards.top(id, period, segment?, limit)` | `LeaderboardPage` |
