@@ -1680,9 +1680,13 @@ internal class Core(
         return saved.optJSONObject("l")?.optJSONObject(programId)
     }
 
-    /** An Engage link answer to the request [body] (its `program_id`), made for [customerId]. */
+    /**
+     * An Engage link or stats answer (its link fields only) to the request [body], or to a GET whose
+     * answer names its `program_id`, made for [customerId].
+     */
     fun saveLinkAnswer(body: JSONObject?, customerId: String?, link: JSONObject) {
-        saveLink(body?.optString("program_id") ?: return, customerId, link)
+        val program = body?.optString("program_id") ?: link.optString("program_id").ifEmpty { return }
+        saveLink(program, customerId, JSONObject(link, arrayOf("referrer_id", "program_id", "code", "url", "short_url")))
     }
 
     /** Saves [link] for [programId] if [customerId] is still the customer signed in (any thread). */
@@ -1910,47 +1914,51 @@ internal class Core(
      * The request context for the Engage features / wrappers, once `/install` succeeded (waits up to
      * [Deps.installWaitForReferralMs], else `install_pending`) and a pending identify was sent, so
      * the server knows the user. Same gates as [featureCall]. [cb] runs on the main thread.
+     *
+     * [wait] false: the same gates, then the stored values at once, without waiting for the
+     * install or a pending identify (for reads the server can answer from the identity token).
+     * Only serial-thread state is read, which no network call holds up.
      */
     @OptIn(ClikgateInternalApi::class)
-    fun requestContext(cb: (ClikgateResult<ClikgateRequestContext>) -> Unit) {
+    fun requestContext(wait: Boolean = true, cb: (ClikgateResult<ClikgateRequestContext>) -> Unit) {
         fun finish(result: ClikgateResult<ClikgateRequestContext>) {
             main.post { cb(result) }
         }
         runSerial {
-            val gate = when {
-                !storage.trackingEnabled -> ClikgateError(ClikgateError.OPTED_OUT, "Tracking is disabled for this installation")
-                invalidKey -> ClikgateError(ClikgateError.INVALID_SDK_KEY, "Invalid SDK key", 401)
-                deps.clock() < disabledUntil -> ClikgateError(ClikgateError.SDK_DISABLED, "SDK disabled", 403)
-                gate() != Gate.ALLOWED -> consentRequiredError()
-                blocked && listOf("referrals", "leaderboards", "codes").none(::allows) ->
-                    ClikgateError(ClikgateError.SDK_VERSION_BLOCKED, "This Clikgate SDK version is blocked; update the SDK.")
-                else -> null
-            }
-            if (gate != null) return@runSerial finish(ClikgateResult.Failure(gate))
+            contextGateError()?.let { return@runSerial finish(ClikgateResult.Failure(it)) }
+            if (!wait) return@runSerial finish(ClikgateResult.Success(currentContext()))
             awaitInstall { ok ->
                 if (!ok) {
                     finish(ClikgateResult.Failure(ClikgateError(ClikgateError.INSTALL_PENDING, "The install hasn't been recorded yet; try again shortly")))
                     return@awaitInstall
                 }
-                awaitIdentify {
-                    finish(
-                        ClikgateResult.Success(
-                            ClikgateRequestContext(
-                                installationId = installationId,
-                                sdkKey = sdkKey,
-                                environment = options.environment.name.lowercase(Locale.US),
-                                apiBaseUrl = options.apiBaseUrl.trimEnd('/'),
-                                identityToken = storage.identityToken,
-                                customerUserId = storage.customerUserId,
-                                sdkVersion = if (wrapper != null) "${wrapper.name}/${wrapper.version}" else "android/$nativeVersion",
-                                nativeSdkVersion = if (wrapper != null) "android/$nativeVersion" else null,
-                            ),
-                        ),
-                    )
-                }
+                awaitIdentify { finish(ClikgateResult.Success(currentContext())) }
             }
         }
     }
+
+    /** The synchronous gates of [requestContext] (serial thread; null = allowed). */
+    private fun contextGateError(): ClikgateError? = when {
+        !storage.trackingEnabled -> ClikgateError(ClikgateError.OPTED_OUT, "Tracking is disabled for this installation")
+        invalidKey -> ClikgateError(ClikgateError.INVALID_SDK_KEY, "Invalid SDK key", 401)
+        deps.clock() < disabledUntil -> ClikgateError(ClikgateError.SDK_DISABLED, "SDK disabled", 403)
+        gate() != Gate.ALLOWED -> consentRequiredError()
+        blocked && listOf("referrals", "leaderboards", "codes").none(::allows) ->
+            ClikgateError(ClikgateError.SDK_VERSION_BLOCKED, "This Clikgate SDK version is blocked; update the SDK.")
+        else -> null
+    }
+
+    @OptIn(ClikgateInternalApi::class)
+    private fun currentContext() = ClikgateRequestContext(
+        installationId = installationId,
+        sdkKey = sdkKey,
+        environment = options.environment.name.lowercase(Locale.US),
+        apiBaseUrl = options.apiBaseUrl.trimEnd('/'),
+        identityToken = storage.identityToken,
+        customerUserId = storage.customerUserId,
+        sdkVersion = if (wrapper != null) "${wrapper.name}/${wrapper.version}" else "android/$nativeVersion",
+        nativeSdkVersion = if (wrapper != null) "android/$nativeVersion" else null,
+    )
 
     /**
      * An error the Engage features got from a `/v1/sdk/...` call it made with the request context:

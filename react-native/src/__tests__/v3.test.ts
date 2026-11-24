@@ -59,6 +59,13 @@ describe('getRequestContext / reportServerError (internal, Engage)', () => {
     expect(mockModule.getRequestContext).toHaveBeenCalledWith({});
   });
 
+  it('asks for the context without waiting with wait: false', async () => {
+    await Clikgate.getRequestContext({ wait: false });
+    expect(mockModule.getRequestContext).toHaveBeenLastCalledWith({
+      wait: false,
+    });
+  });
+
   it('strips a trailing slash and keeps the identity fields', async () => {
     mockModule.getRequestContext.mockResolvedValueOnce({
       installationId: 'i',

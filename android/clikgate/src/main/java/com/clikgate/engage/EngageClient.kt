@@ -26,8 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger
 internal interface ContextSource {
     fun isFeatureEnabled(key: String): Boolean
 
-    /** Delivers the context or a [ClikgateError] (any thread). */
-    fun requestContext(callback: (ClikgateResult<ClikgateRequestContext>) -> Unit)
+    /**
+     * Delivers the context or a [ClikgateError] (any thread). [wait] false: the stored context at
+     * once (same gates), without waiting for the install or a pending identify.
+     */
+    fun requestContext(wait: Boolean, callback: (ClikgateResult<ClikgateRequestContext>) -> Unit)
 
     fun reportServerError(code: String, feature: String?)
 }
@@ -35,8 +38,8 @@ internal interface ContextSource {
 internal object CoreContextSource : ContextSource {
     override fun isFeatureEnabled(key: String): Boolean = Clikgate.isFeatureEnabled(key)
 
-    override fun requestContext(callback: (ClikgateResult<ClikgateRequestContext>) -> Unit) =
-        Clikgate.requestContext { callback(it) }
+    override fun requestContext(wait: Boolean, callback: (ClikgateResult<ClikgateRequestContext>) -> Unit) =
+        Clikgate.requestContext(wait) { callback(it) }
 
     override fun reportServerError(code: String, feature: String?) = Clikgate.reportServerError(code, feature)
 }
@@ -58,7 +61,7 @@ internal class EngageClient(
      */
     override fun prepareLink(programId: String) = call<ReferralLink>(
         "referrals", "POST", "/v1/sdk/referrals/link", JSONObject().put("program_id", programId),
-        userCall = true, cacheable = false, write = true, kind = EngageJson.LINK, callback = null,
+        userCall = true, cacheable = false, write = true, kind = EngageJson.LINK, callback = null, byToken = false,
     )
 
     /** Registers [prepareLink] with the core (the core keeps only the first registration of a configured SDK). */
@@ -83,6 +86,27 @@ internal class EngageClient(
 
     fun clearCache() = cache.clear()
 
+    /**
+     * [EngageReferrals.myLink]: the link saved on the device for the signed-in customer at once,
+     * then a background refresh (at most once per [CACHE_TTL_MS] per program and customer) through
+     * the stats read, which saves the answer; with nothing saved, that read answers.
+     */
+    fun myLink(programId: String, path: String, callback: ClikgateCallback<ReferralLink>) {
+        // Null when the feature is off, tracking is off or nobody is signed in: the read below says why
+        val core = Clikgate.coreOrNull()
+        val saved = core?.savedLink(programId)
+        if (saved != null) {
+            deliver(callback, ClikgateResult.Success(EngageJson.referralLink(saved)))
+            // When the saved link (program and customer) was last refreshed, kept with the read cache
+            val key = "$programId|${core.linkToken()}"
+            val last = cache[key]
+            if (last != null && clock() - last.at in 0 until CACHE_TTL_MS) return
+            cache[key] = Entry(clock(), null)
+        }
+        call("referrals", "GET", path, null, userCall = true, cacheable = false, write = false, kind = EngageJson.LINK,
+            callback = if (saved != null) null else callback, byToken = true)
+    }
+
     fun <T> fail(callback: ClikgateCallback<T>?, error: ClikgateError) = deliver(callback, ClikgateResult.Failure(error))
 
     /** [callback] null: a background call whose answer only the core keeps (saved referral links). */
@@ -97,6 +121,10 @@ internal class EngageClient(
      * Runs one call. [userCall]: needs an identified installation (`not_identified` otherwise, no
      * network). [cacheable]: GET whose result may be served from the 60 s cache. [write]: clears the
      * cache. [kind] selects the [EngageJson.parse] mapping (which may throw [ClikgateError]).
+     * [byToken]: a read the server can answer from the identity token alone. With a stored customer
+     * ID and token it is sent at once with `Clikgate-Customer-User-Id` (no wait for the install or
+     * identify); `installation_unknown` / `not_identified` (an older server, or a race) retry once
+     * through the waiting context. Without a token it waits as other calls do.
      */
     fun <T> call(
         feature: String,
@@ -108,21 +136,28 @@ internal class EngageClient(
         write: Boolean,
         kind: Int,
         callback: ClikgateCallback<T>?,
+        byToken: Boolean,
     ) {
         val src = source
         // An empty feature (share events) has no switch.
         if (feature.isNotEmpty() && !src.isFeatureEnabled(feature)) return fail(callback, featureDisabled(feature))
-        src.requestContext { r ->
+        src.requestContext(!byToken) { r ->
             when (r) {
                 is ClikgateResult.Failure -> fail(callback, r.error)
                 is ClikgateResult.Success -> {
                     val ctx = r.value
+                    // Without a token the server needs the install and identify: wait as other calls do
+                    // (without a customer ID, not_identified below answers at once).
+                    if (byToken && ctx.customerUserId != null && ctx.identityToken == null) {
+                        return@requestContext call(feature, method, path, body, userCall, cacheable, write, kind, callback, false)
+                    }
                     if (userCall && ctx.customerUserId == null) {
                         return@requestContext fail(
                             callback,
                             ClikgateError(EngageErrors.NOT_IDENTIFIED, "Call Clikgate.identifyUser() before this call"),
                         )
                     }
+                    // The customer ID is part of the key: one user's answer is never served to another.
                     val key = "${ctx.installationId}|${ctx.customerUserId}|${ctx.identityToken != null}|$method $path"
                     if (cacheable) {
                         val hit = cache[key]
@@ -135,7 +170,12 @@ internal class EngageClient(
                     }
                     if (write) cache.clear()
                     network.execute {
-                        val result: ClikgateResult<T> = execute(src, ctx, feature, method, path, body, kind)
+                        val result: ClikgateResult<T> = execute(src, ctx, feature, method, path, body, kind, byToken)
+                        val code = result.errorOrNull()?.code
+                        if (byToken && (code == INSTALLATION_UNKNOWN || code == EngageErrors.NOT_IDENTIFIED)) {
+                            // An older server ignores the header, or the install / identify is still on its way
+                            return@execute call(feature, method, path, body, userCall, cacheable, write, kind, callback, false)
+                        }
                         if (result is ClikgateResult.Success) {
                             if (cacheable) cache[key] = Entry(clock(), result.value)
                             if (write) cache.clear()
@@ -155,19 +195,22 @@ internal class EngageClient(
         path: String,
         body: JSONObject?,
         kind: Int,
+        byToken: Boolean,
     ): ClikgateResult<T> {
-        var response = send(ctx, method, path, body)
+        var response = send(ctx, method, path, body, byToken)
         if (isNetworkFailure(response)) {
             // At most one retry, for network errors only (interactive calls).
             try {
                 Thread.sleep(retryDelayMs)
             } catch (_: InterruptedException) {
             }
-            response = send(ctx, method, path, body)
+            response = send(ctx, method, path, body, byToken)
         }
         return when (response) {
             is ClikgateResult.Failure -> {
-                if (response.error.code in REPORTED_CODES) src.reportServerError(response.error.code, response.error.feature)
+                val code = response.error.code
+                // Retried through the waiting path, which reports it if it still holds
+                if (code in REPORTED_CODES && !(byToken && code == INSTALLATION_UNKNOWN)) src.reportServerError(code, response.error.feature)
                 response
             }
             is ClikgateResult.Success -> {
@@ -182,7 +225,9 @@ internal class EngageClient(
                         @Suppress("UNCHECKED_CAST")
                         val value = EngageJson.parse(kind, json) as T
                         // A link answer is saved for the customer it was made for
-                        if (kind == EngageJson.LINK) Clikgate.coreOrNull()?.saveLinkAnswer(body, ctx.customerUserId, json)
+                        if (kind == EngageJson.LINK || kind == EngageJson.STATS) {
+                            Clikgate.coreOrNull()?.saveLinkAnswer(body, ctx.customerUserId, json)
+                        }
                         ClikgateResult.Success(value)
                     } catch (e: ClikgateError) {
                         ClikgateResult.Failure(e)
@@ -200,7 +245,7 @@ internal class EngageClient(
         return code == ClikgateError.NETWORK_ERROR || code == ClikgateError.TIMEOUT
     }
 
-    private fun send(ctx: ClikgateRequestContext, method: String, path: String, body: JSONObject?): ClikgateResult<JSONObject> {
+    private fun send(ctx: ClikgateRequestContext, method: String, path: String, body: JSONObject?, byToken: Boolean): ClikgateResult<JSONObject> {
         attempts.incrementAndGet()
         var conn: HttpURLConnection? = null
         try {
@@ -212,6 +257,7 @@ internal class EngageClient(
                 instanceFollowRedirects = false
                 setRequestProperty("Accept", "application/json")
                 for ((k, v) in ctx.headers()) setRequestProperty(k, v)
+                if (byToken) setRequestProperty("Clikgate-Customer-User-Id", pctEncode(ctx.customerUserId!!))
             }
             val payload = body?.toString()?.toByteArray(Charsets.UTF_8)
             if (payload != null) {
@@ -279,7 +325,12 @@ internal class EngageClient(
             )
         }
 
+        private const val INSTALLATION_UNKNOWN = "installation_unknown"
+
         fun enc(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+        /** Percent-encoded UTF-8; only `A-Z a-z 0-9 - . _ ~` stay as they are (form encoding fixed up). */
+        fun pctEncode(s: String): String = enc(s).replace("+", "%20").replace("*", "%2A").replace("%7E", "~")
 
         fun query(vararg q: Pair<String, String?>): String {
             val sb = StringBuilder()

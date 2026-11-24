@@ -68,6 +68,7 @@ public final class com/clikgate/Clikgate {
 	public static final fun onDeepLink (Lcom/clikgate/DeepLinkListener;)V
 	public static final fun reportServerError (Ljava/lang/String;Ljava/lang/String;)V
 	public static final fun requestContext (Lcom/clikgate/ClikgateCallback;)V
+	public static final fun requestContext (ZLcom/clikgate/ClikgateCallback;)V
 	public static final fun saveLinkJson (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public static final fun savedLinkJson (Ljava/lang/String;)Lkotlin/Pair;
 	public static final fun setConsent ()V
@@ -621,6 +622,8 @@ public final class com/clikgate/engage/EngageReferrals {
 	public final fun createLink (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun createLink$default (Lcom/clikgate/engage/EngageReferrals;Ljava/lang/String;Ljava/lang/String;Lcom/clikgate/ClikgateCallback;ILjava/lang/Object;)V
 	public static synthetic fun createLink$default (Lcom/clikgate/engage/EngageReferrals;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun myLink (Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
+	public final fun myLink (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun myStats (Ljava/lang/String;Lcom/clikgate/ClikgateCallback;)V
 	public final fun myStats (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }

@@ -12,7 +12,7 @@ import UIKit
 @objc(Clikgate)
 public final class Clikgate: NSObject, @unchecked Sendable {
     /// The native SDK version.
-    public static let sdkVersion = "2.1.6"
+    public static let sdkVersion = "2.1.7"
 
     @objc public static let shared = Clikgate()
 
@@ -149,11 +149,12 @@ public final class Clikgate: NSObject, @unchecked Sendable {
 
     /// **Internal**, for the `ClikgateEngage` add-on: the request context for a `/v1/sdk` call.
     /// Throws `not_configured`, `opted_out`, `invalid_sdk_key`, `sdk_disabled` or `install_pending`;
-    /// sends a pending identify first.
+    /// sends a pending identify first. `wait` false: the stored installation ID, customer ID and
+    /// identity token at once (same gates), without waiting for the install or a pending identify.
     @_spi(ClikgateEngage)
-    public func requestContext() async throws -> ClikgateRequestContext {
+    public func requestContext(wait: Bool = true) async throws -> ClikgateRequestContext {
         guard let c = currentCore else { throw ClikgateError.notConfiguredError() }
-        return try await c.requestContext()
+        return try await c.requestContext(wait: wait)
     }
 
     /// **Internal**, for the `ClikgateEngage` add-on: a server answer the core must act on.

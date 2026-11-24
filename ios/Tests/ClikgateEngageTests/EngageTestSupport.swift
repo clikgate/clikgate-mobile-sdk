@@ -32,13 +32,47 @@ final class FakeHost: EngageHost, @unchecked Sendable {
 
     func isFeatureEnabled(_ key: String) -> Bool { lock.lock(); defer { lock.unlock() }; return !disabled.contains(key) }
 
-    func requestContext() async throws -> ClikgateRequestContext {
-        lock.lock(); contextCalls += 1; let err = contextError; let user = customerUserId; let token = identityToken; lock.unlock()
+    private(set) var noWaitCalls = 0
+    /// The waiting context holds its answer (an install still on its way) until ``releaseWaiting()``.
+    var holdWaiting = false
+    private var held: [CheckedContinuation<Void, Never>] = []
+    /// Saved links: program → (owner, link); answered only to the owner (the signed-in customer).
+    private(set) var links: [String: (owner: String, link: [String: Any])] = [:]
+
+    func releaseWaiting() {
+        lock.lock(); holdWaiting = false; let h = held; held = []; lock.unlock()
+        h.forEach { $0.resume() }
+    }
+
+    func requestContext(wait: Bool) async throws -> ClikgateRequestContext {
+        lock.lock()
+        if wait { contextCalls += 1 } else { noWaitCalls += 1 }
+        let hold = wait && holdWaiting
+        lock.unlock()
+        if hold {
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                lock.lock(); held.append(c); lock.unlock()
+            }
+        }
+        lock.lock(); let err = contextError; let user = customerUserId; let token = identityToken; lock.unlock()
         if let e = err { throw e }
         return ClikgateRequestContext(installationId: "6a1f0c2e-0000-4000-8000-000000000001", sdkKey: "cg_sdk_test_abc",
                                       environment: "production", apiBaseUrl: URL(string: "https://sdk.example.test")!,
                                       identityToken: token, customerUserId: user,
                                       sdkVersion: "flutter/1.0.0", nativeSdkVersion: "ios/1.0.0")
+    }
+
+    func savedLink(_ programId: String) -> ([String: Any]?, String?) {
+        lock.lock(); defer { lock.unlock() }
+        guard let o = customerUserId else { return (nil, nil) }
+        guard let e = links[programId], e.owner == o else { return (nil, o) }
+        return (e.link, o)
+    }
+
+    func saveLink(_ programId: String, _ object: [String: Any], token: String?) {
+        lock.lock(); defer { lock.unlock() }
+        guard let t = token, t == customerUserId else { return }
+        links[programId] = (t, object)
     }
 
     func reportServerError(code: String, feature: String?) {

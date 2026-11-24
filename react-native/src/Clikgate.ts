@@ -303,11 +303,18 @@ export const Clikgate = {
    * The request context (installation id, SDK key, environment, base URL, identity token, user
    * id, version headers) for a `/v1/sdk/...` call, once the first install was recorded and a
    * pending `identify` was sent. Rejects with `not_configured`, `opted_out`, `install_pending`,
-   * `invalid_sdk_key` or `sdk_disabled`.
+   * `invalid_sdk_key` or `sdk_disabled`. `wait: false`: the stored installation id, customer
+   * ID and identity token at once (same gates), without waiting for the install or a pending
+   * `identify`.
    */
-  async getRequestContext(): Promise<ClikgateRequestContext> {
+  async getRequestContext(options?: {
+    wait?: boolean;
+  }): Promise<ClikgateRequestContext> {
     return requestContextFromMap(
-      await invoke<unknown>('getRequestContext', {})
+      await invoke<unknown>(
+        'getRequestContext',
+        options?.wait === false ? { wait: false } : {}
+      )
     );
   },
 

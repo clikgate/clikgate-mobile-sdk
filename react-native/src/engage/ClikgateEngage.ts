@@ -28,6 +28,9 @@ import {
 } from './models';
 import { VERSION } from './version';
 
+/** The fields of a stats answer saved as the user's link (`myLink`). */
+const LINK_FIELDS = ['referrer_id', 'program_id', 'code', 'url', 'short_url'];
+
 /** Largest `limit` of `leaderboards.top` (API maximum; larger values are clamped). */
 export const MAX_LEADERBOARD_LIMIT = 100;
 /** Largest `radius` of `leaderboards.aroundMe` (API maximum; larger values are clamped). */
@@ -129,13 +132,15 @@ export class ClikgateEngage {
   private readonly linking: EngageLinking;
   private readonly shareLink: EngageLinkSharer;
   private readonly savedLinks: EngageSavedLinks;
+  private readonly core: EngageCore;
 
   constructor(options: ClikgateEngageOptions = {}) {
     const fetchFn =
       options.fetch ??
       ((url, init) => (globalThis.fetch as unknown as FetchLike)(url, init));
+    this.core = options.core ?? Clikgate;
     this.client = new EngageClient(
-      options.core ?? Clikgate,
+      this.core,
       fetchFn,
       options.now ?? Date.now,
       options.timeoutMs ?? 10_000,
@@ -195,18 +200,67 @@ export class ClikgateEngage {
       return this.fetchLink(programId, displayName, saved.token);
     },
 
-    /** The user's code, link and counts. `referrer_not_found` before `createLink`. Cached 60 s. */
-    myStats: async (options: { programId: string }): Promise<ReferralStats> =>
-      this.client.call({
-        feature: 'referrals',
-        method: 'GET',
-        path: '/v1/sdk/referrals/me',
-        query: { program_id: requireString(options?.programId, 'programId') },
-        identified: true,
-        cacheable: true,
-        parse: referralStatsFromJson,
-      }),
+    /**
+     * The user's code, link and counts. `referrer_not_found` before `createLink`. Cached 60 s.
+     * Sent at once when an identity token is stored (no wait for the install); the link is saved
+     * for `myLink`.
+     */
+    myStats: async (options: { programId: string }): Promise<ReferralStats> => {
+      const programId = requireString(options?.programId, 'programId');
+      const saved = await this.savedLinks.saved(programId);
+      return referralStatsFromJson(
+        await this.fetchStats(programId, saved.token)
+      );
+    },
+
+    /**
+     * The user's code and share links, returned at once from the phone after the first time (no
+     * network, no waiting) and refreshed in the background at most once a minute. Use it for
+     * share buttons; `myStats` has the live counts. Errors as `myStats` (`referrer_not_found`
+     * until the user has a link).
+     */
+    myLink: async (options: { programId: string }): Promise<ReferralLink> => {
+      const programId = requireString(options?.programId, 'programId');
+      const saved = await this.savedLinks.saved(programId);
+      if (
+        saved.link != null &&
+        (await this.core.isFeatureEnabled('referrals'))
+      ) {
+        if (this.client.claimRefresh(`${programId}|${saved.token ?? ''}`)) {
+          // Best effort: the answer updates the saved link, errors are dropped
+          this.fetchStats(programId, saved.token).catch(() => undefined);
+        }
+        return referralLinkFromJson(saved.link);
+      }
+      return referralLinkFromJson(
+        await this.fetchStats(programId, saved.token)
+      );
+    },
   };
+
+  /** The stats read (raw JSON, cached 60 s); its link fields are saved on the phone. */
+  private async fetchStats(
+    programId: string,
+    token: string | null
+  ): Promise<unknown> {
+    const raw = await this.client.call({
+      feature: 'referrals',
+      method: 'GET',
+      path: '/v1/sdk/referrals/me',
+      query: { program_id: programId },
+      identified: true,
+      cacheable: true,
+      byToken: true,
+      parse: (b: unknown) => b,
+    });
+    if (token != null) {
+      const j = asJson(raw);
+      const link: Record<string, unknown> = {};
+      for (const k of LINK_FIELDS) if (k in j) link[k] = j[k];
+      await this.savedLinks.save(programId, link, token).catch(() => undefined);
+    }
+    return raw;
+  }
 
   private async fetchLink(
     programId: string,

@@ -1,3 +1,9 @@
+## 2.1.7: myStats without waiting, new myLink
+
+- `engage.referrals.myStats` no longer waits for the first install or a pending `identifyUser`: when a customer ID and identity token are stored it is sent at once with the `Clikgate-Customer-User-Id` header (percent-encoded UTF-8) and the server answers from the token. Without a token it waits as before. If the server answers `installation_unknown` or `not_identified` (an older server, or the install still on its way) it is retried once the old way. Other Engage calls are unchanged.
+- New `engage.referrals.myLink(programId: ...)`: the user's code and share links (`ReferralLink`), returned at once from the phone after the first time, with no network and no waiting, then refreshed in the background at most once a minute. Use it for share buttons; `myStats` has the live counts. The first time it reads the stats once and saves the link; `myStats` saves it too. Links are kept per signed-in customer. `not_identified` before `identifyUser`, at once.
+- The `getRequestContext` platform call takes an optional `wait: false` (internal; `Clikgate.getRequestContext()` is unchanged). Native SDKs 2.1.7. Nothing removed or renamed.
+
 ## 2.1.6: Installation header
 
 - New `Clikgate.getInstallationHeader()` (never throws): the `Clikgate-Installation` header for your own server, value `<app ID>:<installation ID>`, as a `ClikgateInstallationHeader` (`name`, `value`), or `null` in the same cases as `getInstallationId()` and while the app ID isn't known yet. Send it with the sign-in request and signed-in requests to your own server only, over HTTPS. Native SDKs 2.1.6, where on iOS each app now has its own Keychain item, so two apps of one team never share an installation ID.

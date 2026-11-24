@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'Clikgate'
-  s.version          = '2.1.6'
+  s.version          = '2.1.7'
   s.summary          = 'Clikgate iOS SDK: deep links, deferred deep links, install attribution, referrals, uninstall tracking and Engage features.'
   s.description      = <<-DESC
     The Clikgate SDK handles Universal Links and custom-scheme links, deferred deep links

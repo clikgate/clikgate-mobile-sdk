@@ -124,4 +124,32 @@ class RequestContextTest {
         assertTrue(context().isSuccess)
         assertTrue(Clikgate.isFeatureEnabled("leaderboards"))
     }
+
+    @Test
+    fun noWaitAnswersAtOnceWhileTheInstallAndIdentifyArePending() {
+        env.api.on("POST /v1/sdk/install", MockResponse().setResponseCode(503))
+        env.configure()
+        Clikgate.identifyUser(customerId = "user_42", identityToken = "sig.1760954400")
+        val started = System.currentTimeMillis()
+        var result: ClikgateResult<ClikgateRequestContext>? = null
+        Clikgate.requestContext(false) { result = it }
+        eventually(1_000) { result != null }
+        assertTrue(System.currentTimeMillis() - started < 1_000)
+        val ctx = result!!.getOrThrow()
+        assertFalse(env.storage.installDone)
+        assertEquals(env.storage.installationId(), ctx.installationId)
+        assertEquals("user_42", ctx.customerUserId)
+        assertEquals("sig.1760954400", ctx.identityToken)
+        assertTrue(env.api.calls("POST /v1/sdk/identify").isEmpty())
+    }
+
+    @Test
+    fun noWaitKeepsTheGates() {
+        installed()
+        Clikgate.setTrackingEnabled(false)
+        var result: ClikgateResult<ClikgateRequestContext>? = null
+        Clikgate.requestContext(false) { result = it }
+        eventually { result != null }
+        assertEquals(ClikgateError.OPTED_OUT, result!!.errorOrNull()!!.code)
+    }
 }

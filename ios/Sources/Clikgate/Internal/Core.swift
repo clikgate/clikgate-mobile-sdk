@@ -1273,17 +1273,18 @@ actor ClikgateCore {
 
     /// The context Engage needs for a `/v1/sdk` call, with the same gates the core's feature calls
     /// use: opted out / invalid key / kill switch, `install_pending` before the first `/install`,
-    /// and a pending identify is sent first so the server knows the user.
-    func requestContext() async throws -> ClikgateRequestContext {
+    /// and a pending identify is sent first so the server knows the user. `wait` false: the same
+    /// gates, then the stored values at once (no wait for the install or a pending identify).
+    func requestContext(wait: Bool = true) async throws -> ClikgateRequestContext {
         if let e = activeGateError() { throw e }
         if gate != .allowed { throw Self.consentRequiredError() }
         if isBlocked, let b = config.blocked, !b.allowedCalls.contains(where: { ["referrals", "leaderboards", "codes"].contains($0) }) {
             throw Self.versionBlockedError()
         }
-        guard state.installDone, let id = state.installationId else {
+        guard !wait || state.installDone, let id = state.installationId else {
             throw ClikgateError(code: ClikgateError.installPending, message: "The first /install hasn't completed yet.")
         }
-        if state.identifyPending { await sendIdentify() }
+        if wait && state.identifyPending { await sendIdentify() }
         return ClikgateRequestContext(
             installationId: id, sdkKey: api.sdkKey,
             environment: config.environment ?? options.environment.rawValue,

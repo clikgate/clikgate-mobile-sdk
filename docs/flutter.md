@@ -43,7 +43,7 @@ By hand: add the dependency and follow the sections below (configure, deep links
 
 ```yaml
 dependencies:
-  clikgate_flutter: ^2.1.6
+  clikgate_flutter: ^2.1.7
 ```
 
 ## 2. Configure
@@ -363,6 +363,7 @@ final engage = ClikgateEngage();
 // Referrer side (needs Clikgate.identifyUser)
 final link = await engage.referrals.createLink(programId: programId, displayName: 'Ada');   // code, url, shortUrl
 final stats = await engage.referrals.myStats(programId: programId);    // clicks, installs, signups, inProgress, qualified, ...
+final mine = await engage.referrals.myLink(programId: programId);      // code, url, shortUrl from the device
 await engage.share.referralLink(link, message: 'Join me on MyApp:');   // share menu; each app gets its own version
 final opened = await engage.share.link('https://inv.myapp.com/summer', app: ShareApp.whatsapp);   // false = menu used
 await engage.share.system(text: 'Join me on MyApp: ${link.url}');      // plain text, nothing recorded
@@ -394,6 +395,10 @@ Rules:
   `not_identified` (no network call) until `Clikgate.identifyUser` was called. Programs with
   `require_identity_token` answer `identity_required` from the server until a valid token was
   passed to `identifyUser`. `top` and `codes.redeem` don't need a user.
+- `myLink`: the code and share links, returned instantly from the device after the first time (no
+  network, no waiting; refreshed in the background at most once a minute); use it for share buttons.
+  `myStats`: live counts. With an identity token stored, `myStats` (and `myLink` the first time) is sent at
+  once, without waiting for the first install or identify.
 - Reads (`myStats`, `top`, `me`, `aroundMe`) are cached in memory for 60 s per installation and
   user; writes (`createLink`, `setOptOut`, `redeem`) and `engage.clearCache()` drop the cache.
   Nothing is persisted. `hostedPageUrl` is never cached (short-lived token).

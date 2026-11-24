@@ -280,7 +280,8 @@ class ClikgateModule(reactContext: ReactApplicationContext) :
   /** Request context for the Engage features (src/engage). */
   @OptIn(ClikgateInternalApi::class)
   override fun getRequestContext(args: ReadableMap, promise: Promise) = guard(promise) {
-    Clikgate.requestContext { r -> reply(promise, r, null, BridgeMaps::requestContext) }
+    // wait: false answers with the stored values at once (no wait for the install or identify)
+    Clikgate.requestContext(args.bool("wait", true)) { r -> reply(promise, r, null, BridgeMaps::requestContext) }
   }
 
   @OptIn(ClikgateInternalApi::class)

@@ -1,6 +1,21 @@
 # Changelog — Clikgate iOS SDK
 
 
+## 2.1.7: myStats without waiting, new myLink
+
+- `ClikgateEngage.referrals.myStats` no longer waits for a pending `identifyUser` round trip (or fails with
+  `install_pending` before the first install): when a customer ID and identity token are stored it is sent at once
+  with the `Clikgate-Customer-User-Id` header (percent-encoded UTF-8) and the server answers from the token. Without
+  a token it works as before. If the server answers `installation_unknown` or `not_identified` (an older server, or
+  the install still on its way) it is retried once the old way. Other Engage calls are unchanged.
+- New `ClikgateEngage.referrals.myLink(programId:)` (async and completion): the user's code and share links
+  (`ClikgateReferralLink`), returned at once from the phone after the first time, with no network and no waiting,
+  then refreshed in the background at most once a minute. Use it for share buttons; `myStats` has the live counts.
+  The first time (nothing saved yet) it reads the stats once and saves the link; `myStats` saves it too. Links are
+  kept per signed-in customer. `not_identified` before `identifyUser`, at once.
+- SPI for the Flutter and React Native plugins: `requestContext(wait:)` (default `true`, as before). Nothing removed
+  or renamed.
+
 ## 2.1.6: Installation header, one installation ID per app
 
 - New `Clikgate.shared.installationHeader()` (async, never throws): the `Clikgate-Installation` header for your own

@@ -1,2 +1,2 @@
 /** Version of `@clikgate/react-native` (kept equal to package.json by a unit test). */
-export const VERSION = '2.1.6';
+export const VERSION = '2.1.7';

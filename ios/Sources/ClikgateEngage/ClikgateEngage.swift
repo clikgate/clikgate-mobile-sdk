@@ -26,7 +26,7 @@ import Foundation
 /// errors are ``ClikgateError``s. Engage has no UI components.
 public enum ClikgateEngage {
     /// Version of the Engage features (the SDK version).
-    public static var version: String { "2.1.6" }
+    public static var version: String { "2.1.7" }
 
     /// The user's referral link and stats (feature `referrals`).
     public static let referrals = ClikgateEngageReferrals(client: .live)
@@ -66,14 +66,24 @@ extension ClikgateError {
 /// What Engage needs from the core SDK.
 protocol EngageHost: Sendable {
     func isFeatureEnabled(_ key: String) -> Bool
-    func requestContext() async throws -> ClikgateRequestContext
+    /// `wait` false: the stored context at once (same gates), without waiting for the install or identify.
+    func requestContext(wait: Bool) async throws -> ClikgateRequestContext
     func reportServerError(code: String, feature: String?)
+    /// The link saved on the phone for the signed-in customer (JSON object) and the token to save an answer with.
+    func savedLink(_ programId: String) -> ([String: Any]?, String?)
+    func saveLink(_ programId: String, _ object: [String: Any], token: String?)
 }
 
 struct LiveEngageHost: EngageHost {
     func isFeatureEnabled(_ key: String) -> Bool { Clikgate.shared.isFeatureEnabled(key) }
-    func requestContext() async throws -> ClikgateRequestContext { try await Clikgate.shared.requestContext() }
+    func requestContext(wait: Bool) async throws -> ClikgateRequestContext { try await Clikgate.shared.requestContext(wait: wait) }
     func reportServerError(code: String, feature: String?) { Clikgate.shared.reportServerError(code: code, feature: feature) }
+    func savedLink(_ programId: String) -> ([String: Any]?, String?) {
+        (Clikgate.shared.savedLinkObject(programId: programId), Clikgate.shared.savedLinkJSON(programId: programId).1)
+    }
+    func saveLink(_ programId: String, _ object: [String: Any], token: String?) {
+        Clikgate.shared.saveLinkObject(programId: programId, object: object, token: token)
+    }
 }
 
 protocol EngageTransport: Sendable {

@@ -77,12 +77,26 @@ internal class FakeSource(private val api: FakeApi) : ContextSource {
     var nativeVersion: String? = null
     var contextError: ClikgateError? = null
     val reports = CopyOnWriteArrayList<Pair<String, String?>>()
-    var contextCalls = 0
 
     override fun isFeatureEnabled(key: String) = key !in disabled
 
-    override fun requestContext(callback: (ClikgateResult<ClikgateRequestContext>) -> Unit) {
-        contextCalls++
+    /** Calls of the waiting context. */
+    @Volatile var contextCalls = 0
+
+    /** Calls of the no-wait context. */
+    @Volatile var noWaitCalls = 0
+
+    /** The waiting context holds its answer (an install still on its way) until [releaseWaiting]. */
+    @Volatile var holdWaiting = false
+    private val held = CopyOnWriteArrayList<(ClikgateResult<ClikgateRequestContext>) -> Unit>()
+
+    fun releaseWaiting() {
+        holdWaiting = false
+        held.forEach(::answer)
+        held.clear()
+    }
+
+    private fun answer(callback: (ClikgateResult<ClikgateRequestContext>) -> Unit) {
         val e = contextError
         if (e != null) return callback(ClikgateResult.Failure(e))
         callback(
@@ -91,6 +105,15 @@ internal class FakeSource(private val api: FakeApi) : ContextSource {
                     token, userId, sdkVersion, nativeVersion),
             ),
         )
+    }
+
+    override fun requestContext(wait: Boolean, callback: (ClikgateResult<ClikgateRequestContext>) -> Unit) {
+        if (!wait) {
+            noWaitCalls++
+            return answer(callback)
+        }
+        contextCalls++
+        if (holdWaiting) held.add(callback) else answer(callback)
     }
 
     override fun reportServerError(code: String, feature: String?) {
@@ -109,6 +132,15 @@ internal class EngageEnv {
         c.clock = { now }
         c.retryDelayMs = 1
         c.clearCache()
+    }
+
+    /** Resets the fake API calls, reports, context counters and the cache (a loop of cases in one test). */
+    fun clearForNextCase() {
+        api.requests.clear()
+        source.reports.clear()
+        source.contextCalls = 0
+        source.noWaitCalls = 0
+        ClikgateEngage.client.clearCache()
     }
 
     fun tearDown() {

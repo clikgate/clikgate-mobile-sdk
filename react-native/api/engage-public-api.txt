@@ -9,7 +9,9 @@ ClikgateEngage.cacheTtlMs
 engage.callShareLink()
 engage.clearCache()
 engage.fetchLink()
+engage.fetchStats()
 engage.referrals.createLink
+engage.referrals.myLink
 engage.referrals.myStats
 engage.share.link
 engage.share.referralLink

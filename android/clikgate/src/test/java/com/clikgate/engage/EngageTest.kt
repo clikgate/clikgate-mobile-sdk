@@ -331,4 +331,100 @@ class EngageTest {
         assertEquals(ClikgateError.INVALID_ARGUMENT, await<ReferralLink> { ClikgateEngage.referrals.createLink("", callback = it) }.errorOrNull()!!.code)
         assertTrue(api.requests.isEmpty())
     }
+
+    // ------------------------------------------------------------ myStats without waiting
+
+    @Test
+    fun myStatsSendsAtOnceWithTheCustomerHeaderWhileTheInstallIsPending() {
+        env.source.holdWaiting = true
+        env.source.userId = "usér 42/%"
+        val s = await<ReferralStats> { ClikgateEngage.referrals.myStats(program, it) }.getOrThrow()
+        assertTrue(s.code.isNotEmpty())
+        val r = api.calls("GET /v1/sdk/referrals/me").single()
+        assertEquals("us%C3%A9r%2042%2F%25", r.getHeader("Clikgate-Customer-User-Id"))
+        assertEquals("sig.1760954400", r.getHeader("Clikgate-Identity-Token"))
+        assertEquals(1, env.source.noWaitCalls)
+        assertEquals(0, env.source.contextCalls)
+        // The 60 s cache answers the same user, and never another one
+        await<ReferralStats> { ClikgateEngage.referrals.myStats(program, it) }.getOrThrow()
+        assertEquals(1, api.calls("GET /v1/sdk/referrals/me").size)
+        env.source.userId = "user_43"
+        await<ReferralStats> { ClikgateEngage.referrals.myStats(program, it) }.getOrThrow()
+        assertEquals(2, api.calls("GET /v1/sdk/referrals/me").size)
+        assertEquals("user_43", api.calls("GET /v1/sdk/referrals/me")[1].getHeader("Clikgate-Customer-User-Id"))
+    }
+
+    @Test
+    fun myStatsFallsBackOnceThroughTheWaitingPath() {
+        for (code in listOf("installation_unknown", "not_identified")) {
+            env.clearForNextCase()
+            api.on("GET /v1/sdk/referrals/me", errorCode(if (code == "not_identified") 403 else 404, code), ok(Fixtures.text("referral_stats_response")))
+            env.source.holdWaiting = true
+            var result: com.clikgate.ClikgateResult<ReferralStats>? = null
+            ClikgateEngage.referrals.myStats(program) { result = it }
+            eventually { env.source.contextCalls == 1 }
+            assertNull("waits for the install before the retry", result)
+            env.source.releaseWaiting()
+            eventually { result != null }
+            result!!.getOrThrow()
+            val calls = api.calls("GET /v1/sdk/referrals/me")
+            assertEquals(2, calls.size)
+            assertEquals("user_42", calls[0].getHeader("Clikgate-Customer-User-Id"))
+            assertNull(calls[1].getHeader("Clikgate-Customer-User-Id"))
+            assertTrue("the retried code is not reported", env.source.reports.isEmpty())
+        }
+    }
+
+    @Test
+    fun myStatsFallbackHappensOnlyOnce() {
+        api.on("GET /v1/sdk/referrals/me", errorCode(403, "not_identified"))
+        val err = await<ReferralStats> { ClikgateEngage.referrals.myStats(program, it) }.errorOrNull()!!
+        assertEquals(EngageErrors.NOT_IDENTIFIED, err.code)
+        assertEquals(2, api.calls("GET /v1/sdk/referrals/me").size)
+    }
+
+    @Test
+    fun myStatsOtherErrorsAreNotRetried() {
+        api.on("GET /v1/sdk/referrals/me", errorCode(422, "identity_invalid"))
+        val err = await<ReferralStats> { ClikgateEngage.referrals.myStats(program, it) }.errorOrNull()!!
+        assertEquals("identity_invalid", err.code)
+        assertEquals(1, api.calls("GET /v1/sdk/referrals/me").size)
+        assertEquals(0, env.source.contextCalls)
+    }
+
+    @Test
+    fun myStatsWithoutATokenWaitsAsBefore() {
+        env.source.token = null
+        env.source.holdWaiting = true
+        var result: com.clikgate.ClikgateResult<ReferralStats>? = null
+        ClikgateEngage.referrals.myStats(program) { result = it }
+        eventually { env.source.contextCalls == 1 }
+        settle()
+        assertTrue(api.requests.isEmpty())
+        env.source.releaseWaiting()
+        eventually { result != null }
+        result!!.getOrThrow()
+        assertNull(api.calls("GET /v1/sdk/referrals/me").single().getHeader("Clikgate-Customer-User-Id"))
+    }
+
+    @Test
+    fun otherCallsKeepWaiting() {
+        env.source.holdWaiting = true
+        var result: com.clikgate.ClikgateResult<ReferralLink>? = null
+        ClikgateEngage.referrals.createLink(program) { result = it }
+        settle()
+        assertTrue(api.requests.isEmpty())
+        assertEquals(0, env.source.noWaitCalls)
+        env.source.releaseWaiting()
+        eventually { result != null }
+        assertNull(api.calls("POST /v1/sdk/referrals/link").single().getHeader("Clikgate-Customer-User-Id"))
+    }
+
+    private fun settle(ms: Long = 200) {
+        val end = System.currentTimeMillis() + ms
+        while (System.currentTimeMillis() < end) {
+            org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(10)
+        }
+    }
 }

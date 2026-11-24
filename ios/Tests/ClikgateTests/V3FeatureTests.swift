@@ -232,6 +232,23 @@ final class V3FeatureTests: XCTestCase {
         _ = await expectError(ClikgateError.optedOut) { try await sdk.requestContext() }
     }
 
+    func testRequestContextWithoutWaitingAnswersBeforeTheInstall() async throws {
+        stubHappyPath()
+        server.on("POST /v1/sdk/install", StubResponse(status: 400, body: Data(#"{"error":{"code":"validation_error","message":"x"}}"#.utf8)))
+        let core = h.makeCore()
+        await core.start(startTimers: false)
+        await core.identifyUser(label: nil, customerId: "user_42", identityToken: "sig.1760954400")
+        let state = await core.currentState()
+        XCTAssertFalse(state.installDone)
+        let identifies = server.requests("POST /v1/sdk/identify").count
+        let ctx = try await core.requestContext(wait: false)
+        XCTAssertEqual(ctx.installationId, state.installationId)
+        XCTAssertEqual(ctx.customerUserId, "user_42")
+        XCTAssertEqual(ctx.identityToken, "sig.1760954400")
+        XCTAssertEqual(server.requests("POST /v1/sdk/identify").count, identifies, "no identify round trip")
+        _ = await expectError(ClikgateError.installPending) { try await core.requestContext() }
+    }
+
     func testReportServerError() async throws {
         let sdk = try await installed()
         let configBefore = server.requests("GET /v1/sdk/config").count
